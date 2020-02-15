@@ -1,0 +1,7 @@
+Input wikipedia pages for all items on the list here.
+One entry per line, seperate the name and link with a commma, no spaces
+Ex:
+andromeda,https://en.wikipedia.org/wiki/Andromeda_(constellation)
+
+There is a script that can generate this list for you.
+If manually inputting, delete all text here before using.
