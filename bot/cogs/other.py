@@ -23,7 +23,7 @@ import wikipedia
 from discord.ext import commands
 
 import bot.config as config
-from bot.data import database, get_aliases, id_list, logger, aliases
+from bot.data import database, get_aliases, id_list, logger, aliases, groups
 from bot.functions import channel_setup, owner_check, user_setup, build_id_list
 from bot.core import send_image
 
@@ -93,6 +93,18 @@ class Other(commands.Cog):
             f"The national {config.ID_TYPE} list has **{str(len(group_list))}** {detected_groups}.\n" +
             f"*A full list of {detected_groups} has been sent to you via DMs.*"
         )
+
+
+    # Group command - lists groups
+    @commands.command(help="- DMs the user with the appropriate list.", aliases=["taxons", "group", "categories"])
+    @commands.cooldown(1, 8.0, type=commands.BucketType.user)
+    async def groups(self, ctx):
+        logger.info("command: list")
+
+        await channel_setup(ctx)
+        await user_setup(ctx)
+
+        await ctx.send(f"**Valid Groups**: `{', '.join(map(str, list(groups.keys())))}`")
 
 
     # Wiki command - argument is the wiki page
