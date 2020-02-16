@@ -1,7 +1,7 @@
 # SciOly-ID-Discord-Bots
 A template for creating Discord Bots to study for Science Olympiad ID events.
 
-# Usage
+## Usage
 To setup your own bot, follow these steps:
 
 1. Create a GitHub repository using this template. Click the green `"Use this template"` button above or click [here](https://github.com/tctree333/SciOly-ID-Discord-Bots/generate). Name your new repository something interesting that describes it's purpose.
@@ -29,29 +29,30 @@ However, for this particular purpose, editing files online will be sufficient.
 4. If some items in the list can go by a different name, you can input them in `bot/data/aliases.txt`. Delete everything there and input your aliases one per line, with the name in the other list as the first item.
 5. Now, input the links to the wikipedia pages for each item in `bot/data/wikipedia.txt`. You can manually enter them in, making sure the name matches the items in the other list. You can also run `generate_wikipedia.py` in the `scripts` folder a few times to generate the list for you. You will still have to manually go through to ensure the correct link was found. 
 6. Register a bot account on the [Discord Developers Portal](https://discordapp.com/developers/applications/). To do so, create a new application. Name your application, then navigate to the `Bot` section, and add a bot. Change your application name if necessary. Update `setup.sh` with your bot token (`Bot` section), client secret (`General Information` section), and Discord user id. You can also generate your bot invite link. Go to the `OAuth2` section and check `bot` in the `Scopes` section. In the `Bot Permissions` secion, check `Send Messages`, `Embed Links`, and `Attach Files`. Copy the URL generated and update `config.py`.
-7. Great! Now we will need to add images. Create a new GitHub repository to host your images [here](https://github.com/new).
+7. Create a Personal Access Token to access the GitHub API. Go to [Settings > Developer Settings > Personal access tokens](https://github.com/settings/tokens) and generate a new token. Give it a name so you know what it is. We don't need any scopes, so don't check any boxes and generate your token. When you're done, update `setup.sh`.
+8. Great! Now we will need to add images. Create a new GitHub repository to host your images [here](https://github.com/new).
 
-These next steps will be the most difficult to do online, though it is possible.
+This next step will be the most difficult to do online, though it is possible.
 
-8. You will need to upload at least one picture of each item on the list, but more is definitely reccomended. These will be the pictures you see when using the bot, so more variety and more pictures is better. Get some friends to help out. The repository structure should be `category_name/item_name/image_name`. Images should be smaller than 8MB and in a `.png`, `.jpg`, or `.jpeg` format. You can see examples in the [example section](#examples).
+9. You will need to upload at least one picture of each item on the list, but more is definitely reccomended. These will be the pictures you see when using the bot, so more variety and more pictures is better. Get some friends to help out. The repository structure should be `category_name/item_name/image_name`. Images should be smaller than 8MB and in a `.png`, `.jpg`, or `.jpeg` format. You can see examples in the [example section](#examples).
 
 Once you have all of this set up, it's now time to run your bot.
 
-9. Clone the code repo locally (if you haven't already) with `git clone CODE_REPO_URL`. Change into that directory with `cd REPO_NAME`.
-10. Install a local Redis server by running `chmod +x install-redis.sh && ./install-redis.sh`. Start your Redis server with `redis-server`. [Source](https://redis.io/topics/quickstart)
-11. Install any necessary packages with `pip install -r requirements.txt`. You may also want to setup a python virtual environment to avoid package conflicts before installing packages.
-12. You are now ready to run the application! Setup the environment with `source setup.sh`. Start the bot with `python3 -m bot`.
+10. Clone the code repo locally (if you haven't already) with `git clone CODE_REPO_URL`. Change into that directory with `cd REPO_NAME`.
+11. Install a local Redis server by running `chmod +x install-redis.sh && ./install-redis.sh`. Start your Redis server with `redis-server`. [Source](https://redis.io/topics/quickstart)
+12. Install any necessary packages with `pip install -r requirements.txt`. You may also want to setup a python virtual environment to avoid package conflicts before installing packages.
+13. You are now ready to run the application! Setup the environment with `source setup.sh`. Start the bot with `python3 -m bot`.
 
 **Congrats! You just created your own ID Discord bot.** Add your bot to the Discord server of your choice using the invite link generated in step 6.
 
 If there are any issues or you have any questions, let us know in the Bird-ID [Discord support server.](https://discord.gg/xDqYddK)
 
-# Examples
+## Examples
 
 * **Reach for the Stars ID Bot** - [https://github.com/tctree333/Reach-For-The-Stars-Bot]
 * **Reach for the Stars ID Bot Images** - [https://github.com/tctree333/Reach-For-The-Stars-Images]
 * **Bird-ID** - [https://github.com/tctree333/Bird-ID] (doesn't use this template, more advanced)
 
-# Hosting
+## Hosting
 
 There are many options for hosting a bot, you can run it on your own computer, run it on a Raspberry Pi, or find cloud hosting options. This repo is setup to use Heroku like Bird-ID, but there are drawbacks as Heroku is fairly underpowered and will restart your bot once a day. If you are planning to use Heroku, you will want to use their cloud Redis databases. See Bird-ID for the code.
