@@ -1,6 +1,4 @@
 discord.py==1.2.5
 redis==3.3.11
-Pillow==6.2.1
-sentry-sdk==0.13.5
 wikipedia==1.4.0
 gitpython==3.0.5
