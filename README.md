@@ -6,7 +6,7 @@ To setup your own bot, follow these steps:
 
 1. Create a GitHub repository using this template. Click the green `"Use this template"` button above or click [here](https://github.com/tctree333/SciOly-ID-Discord-Bots/generate). Name your new repository something interesting that describes it's purpose.
 
-The following steps contain code editing. While you can edit and create files directly online, it's much easier to use a proper text editor. I recommend using [VSCode](https://code.visualstudio.com/), since there's plenty of extensions that can make your life easier, though there are plenty of other alternatives. You would also have to learn Git to interact with your repository, but there are plenty of tutorials online.
+The following steps contain code editing. While you can edit and create files directly online, it's much easier to use a proper text editor. I recommend using [VSCode](https://code.visualstudio.com/), since there's plenty of extensions that can make your life easier, though there are plenty of other alternatives. You would also have to learn Git to interact with your repository, but there are plenty of tutorials online. GitHub Desktop is also an easy way to interact with GitHub repositories, see [Adding Pictures](#adding-pictures) below.
 
 However, for this particular purpose, editing files online will be sufficient.
 
