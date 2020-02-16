@@ -34,7 +34,7 @@ However, for this particular purpose, editing files online will be sufficient.
 
 This next step will be the most difficult to do online, though it is possible. See the [Adding Pictures](#adding-pictures) section below for more info.
 
-9. You will need to upload at least one picture of each item on the list, but more is definitely reccomended. These will be the pictures you see when using the bot, so more variety and more pictures is better. Get some friends to help out. The repository structure should be `category_name/item_name/image_name`. Images should be smaller than 8MB and in a `.png`, `.jpg`, or `.jpeg` format. You can see examples in the [example section](#examples).
+9. You will need to upload at least one picture of each item on the list, but more is definitely reccomended. These will be the pictures you see when using the bot, so more variety and more pictures is better. Get some friends to help out. The repository structure should be `category_name/item_name/image_name`. Images should be smaller than 8MB and in a `.png`, `.jpg`, or `.jpeg` format. You can see examples in the [example section](#examples). To quickly create the directory structure, use the `generate_file_structure.py` script.
 
 Once you have all of this set up, it's now time to run your bot.
 
