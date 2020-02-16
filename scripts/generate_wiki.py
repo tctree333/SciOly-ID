@@ -19,7 +19,7 @@ with open("data/wikipedia.txt", 'w') as f:
             url = urls[thing]
         else:
             try:
-                url = wikipedia.page(f"{thing} in space").url
+                url = wikipedia.page(f"{thing}").url
             except:
                 print('FAIL')
                 fails.append(thing)
