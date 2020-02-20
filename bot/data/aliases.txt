@@ -1,6 +1,0 @@
-Input other names for items here.
-One entry per line, with the main name first followed by other names seperated by commas, no space
-Ex:
-M42,Orion Nebula,Messier 42,NGC1976
-
-Delete all text here before using.

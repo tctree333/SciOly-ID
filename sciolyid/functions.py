@@ -20,8 +20,8 @@ import os
 
 import discord
 
-import bot.config as config
-from bot.data import GenericError, database, groups, id_list, logger
+import sciolyid.config as config
+from sciolyid.data import GenericError, database, groups, id_list, logger
 
 
 async def channel_setup(ctx):
@@ -95,12 +95,12 @@ def build_id_list(group_str: str = ""):
     id_choices = []
     category_output = ""
 
-    if not config.ID_GROUPS:
+    if not config.options["id_groups"]:
         return (id_list, "None")
 
     for group in groups.keys():
         for category in categories:
-            if category in config.CATEGORY_ALIASES[group] and group not in category_output.split(" "):
+            if category in config.options["category_aliases"][group] and group not in category_output.split(" "):
                 id_choices += groups[group]
                 category_output += f"{group} "
 

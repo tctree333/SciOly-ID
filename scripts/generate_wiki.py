@@ -1,6 +1,6 @@
 import time
 start = time.time()
-from bot.data import id_list
+from sciolyid.data import id_list
 import wikipedia
 import string
 

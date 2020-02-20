@@ -22,17 +22,17 @@ import discord
 import wikipedia
 from discord.ext import commands
 
-import bot.config as config
-from bot.data import database, get_aliases, id_list, logger, aliases, groups
-from bot.functions import channel_setup, owner_check, user_setup, build_id_list
-from bot.core import send_image
+import sciolyid.config as config
+from sciolyid.data import database, get_aliases, id_list, logger, aliases, groups
+from sciolyid.functions import channel_setup, owner_check, user_setup, build_id_list
+from sciolyid.core import send_image
 
 class Other(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     # Info - Gives image
-    @commands.command(help=f"- Gives an image of {config.ID_TYPE}", aliases=['i'])
+    @commands.command(help=f"- Gives an image of {config.options['id_type']}", aliases=['i'])
     @commands.cooldown(1, 10.0, type=commands.BucketType.user)
     async def info(self, ctx, *, arg):
         logger.info("command: info")
@@ -58,7 +58,7 @@ class Other(commands.Cog):
             await delete.delete()
 
         else:
-            await ctx.send(f"{config.ID_TYPE.title()} not found. Are you sure it's on the list?")
+            await ctx.send(f"{config.options['id_type'].title()} not found. Are you sure it's on the list?")
 
     # List command
     @commands.command(help="- DMs the user with the appropriate list.", name="list")
@@ -85,12 +85,12 @@ class Other(commands.Cog):
         if ctx.author.dm_channel is None:
             await ctx.author.create_dm()
 
-        await ctx.author.dm_channel.send(f"**{detected_groups.capitalize()} in the National {config.ID_TYPE} list:**")
+        await ctx.author.dm_channel.send(f"**{detected_groups.capitalize()} in the National {config.options['id_type']} list:**")
         for group in item_lists:
             await ctx.author.dm_channel.send(f"```{group}```")
 
         await ctx.send(
-            f"The national {config.ID_TYPE} list has **{str(len(group_list))}** {detected_groups}.\n" +
+            f"The national {config.options['id_type']} list has **{str(len(group_list))}** {detected_groups}.\n" +
             f"*A full list of {detected_groups} has been sent to you via DMs.*"
         )
 
@@ -137,12 +137,12 @@ class Other(commands.Cog):
         await user_setup(ctx)
 
         embed = discord.Embed(type="rich", colour=discord.Color.blurple())
-        embed.set_author(name=config.BOT_SIGNATURE)
+        embed.set_author(name=config.options["bot_signature"])
         embed.add_field(
             name="Bot Info",
-            value=f"This bot was created by {config.AUTHORS}" +
-            f" for helping people practice {config.ID_TYPE} identification for Science Olympiad.\n" +
-            f"The bot's source can be found here: {config.SOURCE_LINK}",
+            value=f"This bot was created by {config.options['authors']}" +
+            f" for helping people practice {config.options['id_type']} identification for Science Olympiad.\n" +
+            f"The bot's source can be found here: {config.options['source_link']}",
             inline=False
         )
         embed.add_field(
@@ -159,7 +159,7 @@ class Other(commands.Cog):
             inline=False
         )
         await ctx.send(embed=embed)
-        await ctx.send(config.SUPPORT_SERVER)
+        await ctx.send(config.options["support_server"])
 
     # invite command - sends invite link
     @commands.command(help="- Get the invite link for this bot")
@@ -171,14 +171,14 @@ class Other(commands.Cog):
         await user_setup(ctx)
 
         embed = discord.Embed(type="rich", colour=discord.Color.blurple())
-        embed.set_author(name=config.BOT_SIGNATURE)
+        embed.set_author(name=config.options["bot_signature"])
         embed.add_field(
             name="Invite",
-            value=f"To invite this bot to your own server, use the following invite links.\n {config.INVITE}",
+            value=f"To invite this bot to your own server, use the following invite links.\n {config.options['invite']}",
             inline=False
         )
         await ctx.send(embed=embed)
-        await ctx.send(config.SUPPORT_SERVER)
+        await ctx.send(config.options["support_server"])
 
     # ban command - prevents certain users from using the bot
     @commands.command(help="- ban command", hidden=True)

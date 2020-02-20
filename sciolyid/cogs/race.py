@@ -20,8 +20,8 @@ import time
 import discord
 from discord.ext import commands
 
-from bot.data import database, logger
-from bot.functions import channel_setup, user_setup
+from sciolyid.data import database, logger
+from sciolyid.functions import channel_setup, user_setup
 
 
 class Race(commands.Cog):

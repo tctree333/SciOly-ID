@@ -1,3 +1,0 @@
-Input the list of items to id here, one entry per line.
-To group certain items together, create a new text file for each group, named the group name.
-If you don't want categories, rename this file the type of object to id, such as fossils, birds, etc.

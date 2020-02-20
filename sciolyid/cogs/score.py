@@ -19,9 +19,9 @@ import typing
 import discord
 from discord.ext import commands
 
-import bot.config as config
-from bot.data import database, logger
-from bot.functions import channel_setup, user_setup
+import sciolyid.config as config
+from sciolyid.data import database, logger
+from sciolyid.functions import channel_setup, user_setup
 
 
 class Score(commands.Cog):
@@ -39,7 +39,7 @@ class Score(commands.Cog):
 
         totalCorrect = int(database.zscore("score:global", str(ctx.channel.id)))
         await ctx.send(
-            f"Wow, looks like a total of {str(totalCorrect)} {config.ID_TYPE} have been answered correctly in this channel! " +
+            f"Wow, looks like a total of {str(totalCorrect)} {config.options['id_type']} have been answered correctly in this channel! " +
             "Good job everyone!"
         )
 
@@ -79,7 +79,7 @@ class Score(commands.Cog):
                 return
 
         embed = discord.Embed(type="rich", colour=discord.Color.blurple())
-        embed.set_author(name=config.BOT_SIGNATURE)
+        embed.set_author(name=config.options["bot_signature"])
         embed.add_field(name="User Score:", value=f"{user} has answered correctly {times} times.")
         await ctx.send(embed=embed)
 
@@ -95,7 +95,7 @@ class Score(commands.Cog):
         await user_setup(ctx)
 
         embed = discord.Embed(type="rich", colour=discord.Color.blurple(), title="**User Streaks**")
-        embed.set_author(name=config.BOT_SIGNATURE)
+        embed.set_author(name=config.options["bot_signature"])
         current_streak = f"You have answered `{str(int(database.zscore('streak:global', str(ctx.author.id))))}` in a row!"
         max_streak = f"Your max was `{str(int(database.zscore('streak.max:global', str(ctx.author.id))))}` in a row!"
         embed.add_field(name=f"**Current Streak**", value=current_streak, inline=False)
@@ -165,7 +165,7 @@ class Score(commands.Cog):
 
         leaderboard_list = database.zrevrangebyscore(database_key, "+inf", "-inf", page, 10, True)
         embed = discord.Embed(type="rich", colour=discord.Color.blurple())
-        embed.set_author(name=config.BOT_SIGNATURE)
+        embed.set_author(name=config.options["bot_signature"])
         leaderboard = ""
 
         for i, stats in enumerate(leaderboard_list):
@@ -226,7 +226,7 @@ class Score(commands.Cog):
                 "*Please log this message in #support in the support server below, or try again.*\n" +
                 "**Error:** " + str(error)
             )
-            await ctx.send(config.SUPPORT_SERVER)
+            await ctx.send(config.options["support_server"])
             raise error
 
 

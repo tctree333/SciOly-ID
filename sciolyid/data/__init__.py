@@ -22,7 +22,7 @@ import sys
 import redis
 from discord.ext import commands
 
-import bot.config as config
+import sciolyid.config as config
 
 # define database for one connection
 database = redis.Redis(host='localhost', port=6379, db=0)
@@ -82,35 +82,36 @@ database = redis.Redis(host='localhost', port=6379, db=0)
 
 
 # setup logging
-logger = logging.getLogger(config.NAME)
-logger.setLevel(logging.DEBUG)
-os.makedirs("logs", exist_ok=True)
+logger = logging.getLogger(config.options["name"])
+if config.options["logs"]:
+    logger.setLevel(logging.DEBUG)
+    os.makedirs(f"{config.options['log_dir']}", exist_ok=True)
 
-file_handler = logging.handlers.TimedRotatingFileHandler(
-    "logs/log.txt", backupCount=4, when="midnight")
-file_handler.setLevel(logging.DEBUG)
-stream_handler = logging.StreamHandler()
-stream_handler.setLevel(logging.DEBUG)
+    file_handler = logging.handlers.TimedRotatingFileHandler(
+        f"{config.options['log_dir']}/log.txt", backupCount=4, when="midnight")
+    file_handler.setLevel(logging.DEBUG)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging.DEBUG)
 
-file_handler.setFormatter(logging.Formatter(
-    "{asctime} - {filename:10} -  {levelname:8} - {message}", style="{"))
-stream_handler.setFormatter(logging.Formatter(
-    "{filename:10} -  {levelname:8} - {message}", style="{"))
+    file_handler.setFormatter(logging.Formatter(
+        "{asctime} - {filename:10} -  {levelname:8} - {message}", style="{"))
+    stream_handler.setFormatter(logging.Formatter(
+        "{filename:10} -  {levelname:8} - {message}", style="{"))
 
-logger.addHandler(file_handler)
-logger.addHandler(stream_handler)
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)
 
-# log uncaught exceptions
-def handle_exception(exc_type, exc_value, exc_traceback):
-    if issubclass(exc_type, KeyboardInterrupt):
-        sys.__excepthook__(exc_type, exc_value, exc_traceback)
-        return
+    # log uncaught exceptions
+    def handle_exception(exc_type, exc_value, exc_traceback):
+        if issubclass(exc_type, KeyboardInterrupt):
+            sys.__excepthook__(exc_type, exc_value, exc_traceback)
+            return
 
-    logger.critical("Uncaught exception", exc_info=(
-        exc_type, exc_value, exc_traceback))
+        logger.critical("Uncaught exception", exc_info=(
+            exc_type, exc_value, exc_traceback))
 
 
-sys.excepthook = handle_exception
+    sys.excepthook = handle_exception
 
 
 class GenericError(commands.CommandError):
@@ -143,7 +144,7 @@ class GenericError(commands.CommandError):
 def _wiki_urls():
     logger.info("Working on wiki urls")
     urls = {}
-    with open(f'bot/data/wikipedia.txt', 'r') as f:
+    with open(f'{config.options["wikipedia_file"]}', 'r') as f:
         for line in f:
             item = line.strip().split(',')[0].lower()
             url = line.strip().split(',')[1]
@@ -160,7 +161,7 @@ def get_wiki_url(item):
 def _generate_aliases():
     logger.info("Working on aliases")
     aliases = {}
-    with open(f'bot/data/aliases.txt', 'r') as f:
+    with open(f'{config.options["alias_file"]}', 'r') as f:
         for line in f:
             raw_aliases = list(line.strip().lower().split(','))
             item = raw_aliases[0].lower()
@@ -188,12 +189,12 @@ def get_category(item: str):
 
 def _groups():
     """Converts txt files of data into lists."""
-    filenames = [name.strip(".txt") for name in os.listdir("bot/data/lists/")]
+    filenames = [name.split(".")[0] for name in os.listdir(f"{config.options['list_dir']}/")]
     # Converts txt file of data into lists
     lists = {}
     for filename in filenames:
         logger.info(f"Working on {filename}")
-        with open(f'bot/data/lists/{filename}.txt', 'r') as f:
+        with open(f'{config.options["list_dir"]}/{filename}.txt', 'r') as f:
             lists[filename] = [line.strip().lower() for line in f]
         logger.info(f"Done with {filename}")
     logger.info("Done with lists!")
@@ -205,32 +206,32 @@ def _all_lists():
     for group in groups.keys():
         for item in groups[group]:
             master.append(item)
+    master = list(set(master))
     return master
 
 def _config():
     logger.info("Reading configuration file")
     logger.info("Validating configuration file")
-    test_var = (
-        config.AUTHORS,
-        config.CATEGORY_ALIASES,
-        config.ID_TYPE,
-        config.PREFIXES,
-        config.BOT_DESCRIPTION,
-        config.GITHUB_IMAGE_REPO_URL,
-        config.INVITE,
-        config.SUPPORT_SERVER,
-        config.BOT_SIGNATURE,
-        config.ID_GROUPS,
-        config.NAME,
-        config.SOURCE_LINK,
-        config.CATEGORY_NAME
-    )
-    test_var = None
+    '''test_var = (
+        config.options["authors"],
+        config.options["category_aliases"],
+        config.options["id_type"],
+        config.options["prefixes"],
+        config.options["bot_description"],
+        config.options["github_image_repo_url"],
+        config.options["invite"],
+        config.options["support_server"],
+        config.options["bot_signature"],
+        config.options["id_groups"],
+        config.options["name"],
+        config.options["source_link"],
+        config.options["category_name"]
+    )'''
     logger.info("Done valiating configuration file")
 
     for group in groups.keys():
-        if group not in config.CATEGORY_ALIASES.keys():
-            config.CATEGORY_ALIASES[group] = [group]
+        if group not in config.options["category_aliases"].keys():
+            config.options["category_aliases"][group] = [group]
             logger.info(f"Added {group} to aliases")
 
     logger.info("Done reading configuration file!")

@@ -1,4 +1,4 @@
-# skip.py | commands for skipping images
+# hint.py | commands for giving hints
 # Copyright (C) 2019-2020  EraserBird, person_v1.32, hmmm
 
 # This program is free software: you can redistribute it and/or modify
@@ -16,34 +16,28 @@
 
 from discord.ext import commands
 
-from bot.data import database, get_wiki_url, logger
-from bot.functions import channel_setup, user_setup
+from sciolyid.data import database, logger
+from sciolyid.functions import channel_setup, user_setup
 
 
-class Skip(commands.Cog):
+class Hint(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # Skip command - no args
-    @commands.command(help="- Skip the current image to get a new one", aliases=["sk"])
-    @commands.cooldown(1, 5.0, type=commands.BucketType.channel)
-    async def skip(self, ctx):
-        logger.info("command: skip")
+    # give hint
+    @commands.command(help="- Gives first letter of current image", aliases=["h"])
+    @commands.cooldown(1, 3.0, type=commands.BucketType.channel)
+    async def hint(self, ctx):
+        logger.info("command: hint")
 
         await channel_setup(ctx)
         await user_setup(ctx)
 
         currentItem = str(database.hget(f"channel:{str(ctx.channel.id)}", "item"))[2:-1]
-        database.hset(f"channel:{str(ctx.channel.id)}", "item", "")
-        database.hset(f"channel:{str(ctx.channel.id)}", "answered", "1")
-        if currentItem != "":  # check if there is image
-            url = get_wiki_url(currentItem)
-            await ctx.send(f"Ok, skipping {currentItem.lower()}")
-            await ctx.send(url)  # sends wiki page
-            database.zadd("streak:global", {str(ctx.author.id): 0})  # end streak
+        if currentItem != "":  # check if there is item
+            await ctx.send(f"The first letter is {currentItem[0]}")
         else:
-            await ctx.send("You need to ask for an image first!")
-
+            await ctx.send("You need to ask for a image first!")
 
 def setup(bot):
-    bot.add_cog(Skip(bot))
+    bot.add_cog(Hint(bot))

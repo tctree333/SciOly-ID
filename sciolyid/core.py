@@ -24,8 +24,8 @@ import shutil
 import discord
 from git import Repo
 
-import bot.config as config
-from bot.data import GenericError, database, get_category, logger
+import sciolyid.config as config
+from sciolyid.data import GenericError, database, get_category, logger
 
 # Valid file types
 valid_image_extensions = {"jpg", "png", "jpeg", "gif"}
@@ -40,9 +40,9 @@ async def send_image(ctx, item: str, on_error=None, message=None):
     `message` (str) - text message to send before picture\n
     """
     if item == "":
-        logger.error(f"error - {config.ID_TYPE} is blank")
+        logger.error(f"error - {config.options['id_type']} is blank")
         await ctx.send(
-            f"**There was an error fetching {config.ID_TYPE}.**\n*Please try again.*"
+            f"**There was an error fetching {config.options['id_type']}.**\n*Please try again.*"
         )
         if on_error is not None:
             on_error(ctx)
@@ -164,7 +164,7 @@ async def download_github():
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
     loop = asyncio.get_event_loop()
     try:
-        os.listdir("github_download/")
+        os.listdir(f"{config.options['download_dir']}/")
     except FileNotFoundError:
         logger.info("doesn't exist, cloning")
         await loop.run_in_executor(executor, _clone)
@@ -176,8 +176,8 @@ async def download_github():
 
 
 def _clone():
-    Repo.clone_from(config.GITHUB_IMAGE_REPO_URL, "github_download/")
+    Repo.clone_from(config.options["github_image_repo_url"], f"{config.options['download_dir']}/")
 
 
 def _pull():
-    Repo("github_download/").remote("origin").pull()
+    Repo(f"{config.options['download_dir']}/").remote("origin").pull()

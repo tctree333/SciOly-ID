@@ -19,17 +19,17 @@ import random
 
 from discord.ext import commands
 
-import bot.config as config
-from bot.core import send_image
-from bot.data import database, id_list, logger, groups
-from bot.functions import channel_setup, error_skip, user_setup, build_id_list
+import sciolyid.config as config
+from sciolyid.core import send_image
+from sciolyid.data import database, id_list, logger, groups
+from sciolyid.functions import channel_setup, error_skip, user_setup, build_id_list
 
-ARG_MESSAGE = f"**Recongnized arguments:** *{config.CATEGORY_NAME}*: `"+"{category}`"
+ARG_MESSAGE = f"**Recongnized arguments:** *{config.options['category_name']}*: `"+"{category}`"
 
 IMAGE_MESSAGE = (
-    f"*Here you go!* \n**Use `{config.PREFIXES[0]}pic` again to get a new image of the same {config.ID_TYPE}, " +
-    f"or `{config.PREFIXES[0]}skip` to get a new {config.ID_TYPE}. Use `{config.PREFIXES[0]}check [guess]` to check your answer. " +
-    f"Use `{config.PREFIXES[0]}hint` for a hint.**"
+    f"*Here you go!* \n**Use `{config.options['prefixes'][0]}pic` again to get a new image of the same {config.options['id_type']}, " +
+    f"or `{config.options['prefixes'][0]}skip` to get a new {config.options['id_type']}. Use `{config.options['prefixes'][0]}check [guess]` to check your answer. " +
+    f"Use `{config.options['prefixes'][0]}hint` for a hint.**"
 )
 
 class Media(commands.Cog):
@@ -38,13 +38,13 @@ class Media(commands.Cog):
 
     async def send_pic_(self, ctx, args):
 
-        logger.info(f"{config.ID_TYPE}: " + str(database.hget(f"channel:{str(ctx.channel.id)}", "item"))[2:-1])
+        logger.info(f"{config.options['id_type']}: " + str(database.hget(f"channel:{str(ctx.channel.id)}", "item"))[2:-1])
 
         answered = int(database.hget(f"channel:{str(ctx.channel.id)}", "answered"))
         logger.info(f"answered: {answered}")
         # check to see if previous item was answered
         if answered:  # if yes, give a new item
-            if config.ID_GROUPS:
+            if config.options["id_groups"]:
                 build = build_id_list(args)
                 choices = build[0]
                 await ctx.send(ARG_MESSAGE.format(category=build[1]))
@@ -79,7 +79,7 @@ class Media(commands.Cog):
         await channel_setup(ctx)
         await user_setup(ctx)
 
-        if not config.ID_GROUPS:
+        if not config.options["id_groups"]:
             args_str = ""
 
         await self.send_pic_(ctx, args_str)
