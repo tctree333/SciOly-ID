@@ -18,6 +18,7 @@ import typing
 
 import discord
 from discord.ext import commands
+from sentry_sdk import capture_exception
 
 import sciolyid.config as config
 from sciolyid.data import database, logger
@@ -221,6 +222,7 @@ class Score(commands.Cog):
 *Please try again once the correct permissions are set.*"""
             )
         else:
+            capture_exception(error)
             await ctx.send(
                 "**An uncaught leaderboard error has occurred.**\n" +
                 "*Please log this message in #support in the support server below, or try again.*\n" +

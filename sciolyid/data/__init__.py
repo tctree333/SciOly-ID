@@ -20,13 +20,34 @@ import os
 import sys
 
 import redis
+import sentry_sdk
 from discord.ext import commands
+from sentry_sdk.integrations.aiohttp import AioHttpIntegration
+from sentry_sdk.integrations.redis import RedisIntegration
 
 import sciolyid.config as config
 
 # define database for one connection
 database = redis.Redis(host='localhost', port=6379, db=0)
 
+def before_sentry_send(event, hint):
+    """Fingerprint certain events before sending to Sentry."""
+    if 'exc_info' in hint:
+        error = hint['exc_info'][1]
+        if isinstance(error, commands.CommandNotFound):
+            event['fingerprint'] = ['command-not-found']
+        elif isinstance(error, commands.CommandOnCooldown):
+            event['fingerprint'] = ['command-cooldown']
+    return event
+
+# add sentry logging
+if config.options["sentry"]:
+    sentry_sdk.init(
+        release=f"Heroku Release {os.getenv('HEROKU_RELEASE_VERSION')}:{os.getenv('HEROKU_SLUG_DESCRIPTION')}",
+        dsn=os.getenv("SENTRY_DISCORD_DSN"),
+        integrations=[RedisIntegration(), AioHttpIntegration()],
+        before_send=before_sentry_send
+    )
 
 # Database Format Definitions
 

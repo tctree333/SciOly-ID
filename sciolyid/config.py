@@ -28,6 +28,7 @@ optional = {
     "category_aliases": {},  # aliases for categories
     "disable_extensions": [],
     "custom_extensions": [],
+    "sentry": False,
 }
 
 options = {
