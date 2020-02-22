@@ -138,7 +138,7 @@ async def get_files(item, retries=0):
     logger.info(f"get_files retries: {retries}")
     item = str(item).lower()
     category = get_category(item)
-    directory = f"github_download/{category}/{item}/"
+    directory = f"{config.options['download_dir']}/{category}/{item}/"
     try:
         logger.info("trying")
         files_dir = os.listdir(directory)
