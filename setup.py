@@ -8,12 +8,14 @@ def readme():
 
 setuptools.setup(
     name="sciolyid",
-    version="0.0.6",
+    version="0.0.7",
     description="Create ID Discord bots for SciOly studying.",
     long_description=readme(),
     long_description_content_type="text/markdown",
+    keywords="science_olympiad discord_bot discord studying",
+    license="GPLv3+",
     classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Programming Language :: Python :: 3.7",
     ],
@@ -22,11 +24,13 @@ setuptools.setup(
     author_email="tomichen33@gmail.com",
     packages=setuptools.find_packages(),
     install_requires=[
-        "discord.py",
-        "redis",
-        "sentry-sdk",
-        "Pillow",
-        "wikipedia",
-        "gitpython",
+        "discord.py>=1.2.3, <2.0.0",
+        "redis>=3.3.5, <4.0.0",
+        "sentry-sdk>=0.13.5, <1.0.0",
+        "Pillow>=6.1.0, <7.0.0",
+        "wikipedia>=1.4.0, <2.0.0",
+        "gitpython>=3.0.5, <4.0.0",
     ],
+    py_modules=["config", "core", "functions", "start_bot"],
+    python_requires="~=3.7",
 )
