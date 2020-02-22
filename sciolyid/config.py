@@ -29,6 +29,10 @@ optional = {
     "disable_extensions": [],
     "custom_extensions": [],
     "sentry": False,
+    "local_redis": True,
+    "bot_token_env": "token",
+    "sentry_dsn_env": "SENTRY_DISCORD_DSN",
+    "redis_env": "REDIS_URL",
 }
 
 options = {
@@ -37,6 +41,7 @@ options = {
     + list(id_required.items())
     + list(optional.items())
 }
+
 
 class BotConfigError(Exception):
     def __init__(self, message="An error occurred in the config process."):

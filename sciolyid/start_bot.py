@@ -273,5 +273,5 @@ async def update_images():
 
 
 # Actually run the bot
-token = os.getenv("token")
+token = os.getenv(config.options["bot_token_env"])
 bot.run(token)

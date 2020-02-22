@@ -28,7 +28,10 @@ from sentry_sdk.integrations.redis import RedisIntegration
 import sciolyid.config as config
 
 # define database for one connection
-database = redis.Redis(host='localhost', port=6379, db=0)
+if config.options["local_redis"]:
+    database = redis.Redis(host='localhost', port=6379, db=0)
+else:
+    database = redis.from_url(os.getenv(config.options["redis_env"]))
 
 def before_sentry_send(event, hint):
     """Fingerprint certain events before sending to Sentry."""
@@ -44,7 +47,7 @@ def before_sentry_send(event, hint):
 if config.options["sentry"]:
     sentry_sdk.init(
         release=f"Heroku Release {os.getenv('HEROKU_RELEASE_VERSION')}:{os.getenv('HEROKU_SLUG_DESCRIPTION')}",
-        dsn=os.getenv("SENTRY_DISCORD_DSN"),
+        dsn=os.getenv(config.options["sentry_dsn_env"]),
         integrations=[RedisIntegration(), AioHttpIntegration()],
         before_send=before_sentry_send
     )
