@@ -24,13 +24,16 @@ from sciolyid.core import send_image
 from sciolyid.data import database, id_list, logger, groups
 from sciolyid.functions import channel_setup, error_skip, user_setup, build_id_list
 
-ARG_MESSAGE = f"**Recongnized arguments:** *{config.options['category_name']}*: `"+"{category}`"
+ARG_MESSAGE = (
+    f"**Recongnized arguments:** *{config.options['category_name']}*: `" + "{category}`"
+)
 
 IMAGE_MESSAGE = (
-    f"*Here you go!* \n**Use `{config.options['prefixes'][0]}pic` again to get a new image of the same {config.options['id_type']}, " +
-    f"or `{config.options['prefixes'][0]}skip` to get a new {config.options['id_type']}. Use `{config.options['prefixes'][0]}check [guess]` to check your answer. " +
-    f"Use `{config.options['prefixes'][0]}hint` for a hint.**"
+    f"*Here you go!* \n**Use `{config.options['prefixes'][0]}pic` again to get a new image of the same {config.options['id_type']}, "
+    + f"or `{config.options['prefixes'][0]}skip` to get a new {config.options['id_type']}. Use `{config.options['prefixes'][0]}check [guess]` to check your answer. "
+    + f"Use `{config.options['prefixes'][0]}hint` for a hint.**"
 )
+
 
 class Media(commands.Cog):
     def __init__(self, bot):
@@ -38,7 +41,10 @@ class Media(commands.Cog):
 
     async def send_pic_(self, ctx, args):
 
-        logger.info(f"{config.options['id_type']}: " + str(database.hget(f"channel:{str(ctx.channel.id)}", "item"))[2:-1])
+        logger.info(
+            f"{config.options['id_type']}: "
+            + str(database.hget(f"channel:{str(ctx.channel.id)}", "item"))[2:-1]
+        )
 
         answered = int(database.hget(f"channel:{str(ctx.channel.id)}", "answered"))
         logger.info(f"answered: {answered}")
@@ -58,19 +64,23 @@ class Media(commands.Cog):
             database.hset(f"channel:{str(ctx.channel.id)}", "item", str(currentItem))
             logger.info("currentItem: " + str(currentItem))
             database.hset(f"channel:{str(ctx.channel.id)}", "answered", "0")
-            await send_image(ctx, currentItem, on_error=error_skip, message=IMAGE_MESSAGE)
+            await send_image(
+                ctx, currentItem, on_error=error_skip, message=IMAGE_MESSAGE
+            )
         else:  # if no, give the same item
             await send_image(
                 ctx,
                 str(database.hget(f"channel:{str(ctx.channel.id)}", "item"))[2:-1],
                 on_error=error_skip,
-                message=IMAGE_MESSAGE
+                message=IMAGE_MESSAGE,
             )
-
 
     # Pic command - no args
     # help text
-    @commands.command(help='- Sends a random image for you to ID', aliases=["p"])
+    @commands.command(
+        help="- Sends a random image for you to ID",
+        aliases=["p", config.options["id_type"], config.options["id_type"][0]],
+    )
     # 5 second cooldown
     @commands.cooldown(1, 5.0, type=commands.BucketType.channel)
     async def pic(self, ctx, *, args_str: str = ""):
