@@ -92,7 +92,7 @@ class Other(commands.Cog):
             f"**{detected_groups.capitalize()} in the National {config.options['id_type']} list:**"
         )
         for group in item_lists:
-            await ctx.author.dm_channel.send(f"```{group}```")
+            await ctx.author.dm_channel.send(f"```\n{group}```")
 
         await ctx.send(
             f"The national {config.options['id_type']} list has **{str(len(group_list))}** {detected_groups}.\n"

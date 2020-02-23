@@ -114,13 +114,10 @@ def build_id_list(group_str: str = ""):
     if not config.options["id_groups"]:
         return (id_list, "None")
 
-    for group in groups.keys():
-        for category in categories:
-            if category in config.options["category_aliases"][
-                group
-            ] and group not in category_output.split(" "):
-                id_choices += groups[group]
-                category_output += f"{group} "
+    group_args = set(groups.keys()).intersection({category.lower() for category in categories})
+    category_output = " ".join(group_args).strip()
+    for group in group_args:
+        id_choices += groups[group]
 
     if not id_choices:
         id_choices += id_list

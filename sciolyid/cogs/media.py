@@ -17,16 +17,11 @@
 import itertools
 import random
 
-from discord.ext import commands
-
 import sciolyid.config as config
+from discord.ext import commands
 from sciolyid.core import send_image
-from sciolyid.data import database, id_list, logger, groups
-from sciolyid.functions import channel_setup, error_skip, user_setup, build_id_list
-
-ARG_MESSAGE = (
-    f"**Recongnized arguments:** *{config.options['category_name']}*: `" + "{category}`"
-)
+from sciolyid.data import database, groups, id_list, logger
+from sciolyid.functions import build_id_list, channel_setup, error_skip, user_setup
 
 IMAGE_MESSAGE = (
     f"*Here you go!* \n**Use `{config.options['prefixes'][0]}pic` again to get a new image of the same {config.options['id_type']}, "
@@ -39,7 +34,7 @@ class Media(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def send_pic_(self, ctx, group_str:str, bw:bool=False):
+    async def send_pic_(self, ctx, group_str: str, bw: bool = False):
 
         logger.info(
             f"{config.options['id_type']}: "
@@ -53,9 +48,9 @@ class Media(commands.Cog):
             if config.options["id_groups"]:
                 build = build_id_list(group_str)
                 choices = build[0]
-                await ctx.send(ARG_MESSAGE.format(category=build[1]))
             else:
                 choices = id_list
+
             currentItem = random.choice(choices)
             prevB = str(database.hget(f"channel:{str(ctx.channel.id)}", "prevI"))[2:-1]
             while currentItem == prevB:
@@ -73,7 +68,7 @@ class Media(commands.Cog):
                 str(database.hget(f"channel:{str(ctx.channel.id)}", "item"))[2:-1],
                 on_error=error_skip,
                 message=IMAGE_MESSAGE,
-                bw=bw
+                bw=bw,
             )
 
     # Pic command - no args
@@ -102,6 +97,18 @@ class Media(commands.Cog):
 
         if not config.options["id_groups"]:
             group = ""
+
+        logger.info(f"args: bw: {bw}; group: {group}")
+        if (
+            int(database.hget(f"channel:{ctx.channel.id}", "answered"))
+            and config.options["id_groups"]
+        ):
+            await ctx.send(
+                f"**Recognized arguments:** *Black & White*: `{bw}`, "
+                + f"*{config.options['category_name']}*: `{'None' if group == '' else group}`"
+            )
+        else:
+            await ctx.send(f"**Recognized arguments:** *Black & White*: `{bw}`")
 
         await self.send_pic_(ctx, group, bw)
 
