@@ -39,7 +39,7 @@ class Media(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def send_pic_(self, ctx, args):
+    async def send_pic_(self, ctx, group_str:str, bw:bool=False):
 
         logger.info(
             f"{config.options['id_type']}: "
@@ -51,7 +51,7 @@ class Media(commands.Cog):
         # check to see if previous item was answered
         if answered:  # if yes, give a new item
             if config.options["id_groups"]:
-                build = build_id_list(args)
+                build = build_id_list(group_str)
                 choices = build[0]
                 await ctx.send(ARG_MESSAGE.format(category=build[1]))
             else:
@@ -65,7 +65,7 @@ class Media(commands.Cog):
             logger.info("currentItem: " + str(currentItem))
             database.hset(f"channel:{str(ctx.channel.id)}", "answered", "0")
             await send_image(
-                ctx, currentItem, on_error=error_skip, message=IMAGE_MESSAGE
+                ctx, currentItem, on_error=error_skip, message=IMAGE_MESSAGE, bw=bw
             )
         else:  # if no, give the same item
             await send_image(
@@ -73,6 +73,7 @@ class Media(commands.Cog):
                 str(database.hget(f"channel:{str(ctx.channel.id)}", "item"))[2:-1],
                 on_error=error_skip,
                 message=IMAGE_MESSAGE,
+                bw=bw
             )
 
     # Pic command - no args
@@ -89,10 +90,20 @@ class Media(commands.Cog):
         await channel_setup(ctx)
         await user_setup(ctx)
 
-        if not config.options["id_groups"]:
-            args_str = ""
+        args = args_str.split(" ")
+        logger.info(f"args: {args}")
 
-        await self.send_pic_(ctx, args_str)
+        bw = "bw" in args
+        group_args = set(groups.keys()).intersection({arg.lower() for arg in args})
+        if group_args:
+            group = " ".join(group_args).strip()
+        else:
+            group = ""
+
+        if not config.options["id_groups"]:
+            group = ""
+
+        await self.send_pic_(ctx, group, bw)
 
 
 def setup(bot):

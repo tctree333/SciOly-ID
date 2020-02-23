@@ -17,8 +17,10 @@
 import difflib
 import math
 import os
+from io import BytesIO
 
 import discord
+from PIL import Image
 
 import sciolyid.config as config
 from sciolyid.data import GenericError, database, groups, id_list, logger
@@ -34,12 +36,8 @@ async def channel_setup(ctx):
         logger.info("channel data ok")
     else:
         database.hmset(
-            f"channel:{str(ctx.channel.id)}", {
-                "item": "",
-                "answered": 1,
-                "prevJ": 20,
-                "prevB": ""
-            }
+            f"channel:{str(ctx.channel.id)}",
+            {"item": "", "answered": 1, "prevJ": 20, "prevB": ""},
         )
         # true = 1, false = 0, prevJ is 20 to define as integer
         logger.info("channel data added")
@@ -59,13 +57,14 @@ async def user_setup(ctx):
         logger.info("user global added")
         await ctx.send("Welcome <@" + str(ctx.author.id) + ">!")
 
-    #Add streak
+    # Add streak
     if (database.zscore("streak:global", str(ctx.author.id)) is not None) and (
-            database.zscore("streak.max:global", str(ctx.author.id)) is not None):
+        database.zscore("streak.max:global", str(ctx.author.id)) is not None
+    ):
         logger.info("user streak in already")
     else:
         database.zadd("streak:global", {str(ctx.author.id): 0})
-        database.zadd("streak.max:global",{str(ctx.author.id): 0})
+        database.zadd("streak.max:global", {str(ctx.author.id): 0})
         logger.info("added streak")
 
 
@@ -89,6 +88,23 @@ def score_increment(ctx, amount: int):
     database.zincrby("score:global", amount, str(ctx.channel.id))
     database.zincrby("users:global", amount, str(ctx.author.id))
 
+
+def black_and_white(input_image_path) -> BytesIO:
+    """Returns a black and white version of an image.
+
+    Output type is a file object (BytesIO).
+
+    `input_image_path` - path to image (string) or file object
+    """
+    logger.info("black and white")
+    with Image.open(input_image_path) as color_image:
+        bw = color_image.convert("L")
+        final_buffer = BytesIO()
+        bw.save(final_buffer, "png")
+    final_buffer.seek(0)
+    return final_buffer
+
+
 def build_id_list(group_str: str = ""):
     categories = group_str.split(" ")
 
@@ -100,7 +116,9 @@ def build_id_list(group_str: str = ""):
 
     for group in groups.keys():
         for category in categories:
-            if category in config.options["category_aliases"][group] and group not in category_output.split(" "):
+            if category in config.options["category_aliases"][
+                group
+            ] and group not in category_output.split(" "):
                 id_choices += groups[group]
                 category_output += f"{group} "
 
@@ -110,18 +128,21 @@ def build_id_list(group_str: str = ""):
 
     return (id_choices, category_output.strip())
 
+
 def owner_check(ctx) -> bool:
     """Check to see if the user is the owner of the bot."""
     owners = set(str(os.getenv("ids")).split(","))
     return str(ctx.author.id) in owners
 
+
 def spellcheck_list(word_to_check, correct_list, abs_cutoff=None):
     for correct_word in correct_list:
         if abs_cutoff is None:
-            relative_cutoff = math.floor(len(correct_word)/3)
+            relative_cutoff = math.floor(len(correct_word) / 3)
         if spellcheck(word_to_check, correct_word, relative_cutoff) is True:
             return True
     return False
+
 
 def spellcheck(worda, wordb, cutoff=3):
     """Checks if two words are close to each other.
@@ -134,6 +155,9 @@ def spellcheck(worda, wordb, cutoff=3):
     wordb = wordb.lower()
     shorterword = min(worda, wordb, key=len)
     if worda != wordb:
-        if len(list(difflib.Differ().compare(worda, wordb))) - len(shorterword) >= cutoff:
+        if (
+            len(list(difflib.Differ().compare(worda, wordb))) - len(shorterword)
+            >= cutoff
+        ):
             return False
     return True

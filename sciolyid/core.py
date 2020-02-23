@@ -20,18 +20,20 @@ import concurrent.futures
 import os
 import random
 import shutil
+from functools import partial
 
 import discord
 from git import Repo
 
 import sciolyid.config as config
 from sciolyid.data import GenericError, database, get_category, logger
+from sciolyid.functions import black_and_white
 
 # Valid file types
 valid_image_extensions = {"jpg", "png", "jpeg", "gif"}
 
 
-async def send_image(ctx, item: str, on_error=None, message=None):
+async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
     """Gets a picture and sends it to the user.
 
     `ctx` - Discord context object\n
@@ -71,12 +73,19 @@ async def send_image(ctx, item: str, on_error=None, message=None):
         await delete.delete()
         await ctx.send("**Oops! File too large :(**\n*Please try again.*")
     else:
+        if bw:
+            # prevent the black and white conversion from blocking
+            loop = asyncio.get_running_loop()
+            fn = partial(black_and_white, filename)
+            file_stream = await loop.run_in_executor(None, fn)
+        else:
+            file_stream = filename
 
         if message is not None:
             await ctx.send(message)
 
         # change filename to avoid spoilers
-        file_obj = discord.File(filename, filename=f"image.{extension}")
+        file_obj = discord.File(file_stream, filename=f"image.{extension}")
         await ctx.send(file=file_obj)
         await delete.delete()
 

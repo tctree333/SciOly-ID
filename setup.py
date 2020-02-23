@@ -8,7 +8,7 @@ def readme():
 
 setuptools.setup(
     name="sciolyid",
-    version="0.0.7",
+    version="0.0.8",
     description="Create ID Discord bots for SciOly studying.",
     long_description=readme(),
     long_description_content_type="text/markdown",
@@ -19,15 +19,15 @@ setuptools.setup(
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Programming Language :: Python :: 3.7",
     ],
-    url="https://github.com/tctree333/SciOly-ID-Discord-Bots",
+    url="https://github.com/tctree333/SciOly-ID",
     author="Tomi Chen",
     author_email="tomichen33@gmail.com",
     packages=setuptools.find_packages(),
     install_requires=[
-        "discord.py>=1.2.3, <2.0.0",
+        "discord.py>=1.3.2, <2.0.0",
         "redis>=3.3.5, <4.0.0",
         "sentry-sdk>=0.13.5, <1.0.0",
-        "Pillow>=6.1.0, <7.0.0",
+        "Pillow>=6.1.0, <8.0.0",
         "wikipedia>=1.4.0, <2.0.0",
         "gitpython>=3.0.5, <4.0.0",
     ],
