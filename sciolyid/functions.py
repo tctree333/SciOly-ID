@@ -68,6 +68,22 @@ async def user_setup(ctx):
 		database.zadd("streak:global", {str(ctx.author.id): 0})
 		database.zadd("streak.max:global", {str(ctx.author.id): 0})
 		logger.info("added streak")
+	
+	if ctx.guild is not None:
+		logger.info("no dm")
+		if (database.zscore(f"users.server:{ctx.guild.id}", str(ctx.author.id)) is not None):
+			server_score = database.zscore(f"users.server:{ctx.guild.id}", str(ctx.author.id))
+			global_score = database.zscore("users:global", str(ctx.author.id))
+			if server_score is global_score:
+				logger.info("user server ok")
+			else:
+				database.zadd(f"users.server:{ctx.guild.id}", {str(ctx.author.id): global_score})
+		else:
+			score = int(database.zscore("users:global", str(ctx.author.id)))
+			database.zadd(f"users.server:{ctx.guild.id}", {str(ctx.author.id): score})
+			logger.info("user server added")
+	else:
+		logger.info("dm context")
 
 def error_skip(ctx):
 	"""Skips the current item.
