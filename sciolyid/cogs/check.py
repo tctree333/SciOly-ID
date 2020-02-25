@@ -17,8 +17,10 @@
 import discord
 from discord.ext import commands
 
-from sciolyid.data import database, get_wiki_url, logger, get_aliases
-from sciolyid.functions import channel_setup, score_increment, spellcheck_list, user_setup
+from sciolyid.data import database, get_aliases, get_wiki_url, logger
+from sciolyid.functions import (channel_setup, incorrect_increment, item_setup,
+                                score_increment, session_increment,
+                                spellcheck_list, user_setup)
 
 
 class Check(commands.Cog):
@@ -26,7 +28,9 @@ class Check(commands.Cog):
         self.bot = bot
 
     # Check command - argument is the guess
-    @commands.command(help='- Checks your answer.', usage="guess", aliases=["guess", "c"])
+    @commands.command(
+        help="- Checks your answer.", usage="guess", aliases=["guess", "c"]
+    )
     @commands.cooldown(1, 3.0, type=commands.BucketType.user)
     async def check(self, ctx, *, arg):
         logger.info("command: check")
@@ -41,17 +45,30 @@ class Check(commands.Cog):
             logger.info("currentItem: " + str(currentItem.lower().replace("-", " ")))
             logger.info("args: " + str(arg.lower().replace("-", " ")))
 
+            await item_setup(ctx, currentItem)
             if spellcheck_list(arg, get_aliases(currentItem.lower())) is True:
                 logger.info("correct")
 
                 database.hset(f"channel:{str(ctx.channel.id)}", "item", "")
                 database.hset(f"channel:{str(ctx.channel.id)}", "answered", "1")
 
-                
+                if database.exists(f"session.data:{ctx.author.id}"):
+                    logger.info("session active")
+                    session_increment(ctx, "correct", 1)
+
                 database.zincrby("streak:global", 1, str(ctx.author.id))
                 # check if streak is greater than max, if so, increases max
-                if database.zscore("streak:global", str(ctx.author.id))> database.zscore("streak.max:global", str(ctx.author.id)):
-                    database.zadd("streak.max:global", {str(ctx.author.id): database.zscore("streak:global", str(ctx.author.id))})
+                if database.zscore(
+                    "streak:global", str(ctx.author.id)
+                ) > database.zscore("streak.max:global", str(ctx.author.id)):
+                    database.zadd(
+                        "streak.max:global",
+                        {
+                            str(ctx.author.id): database.zscore(
+                                "streak:global", str(ctx.author.id)
+                            )
+                        },
+                    )
 
                 await ctx.send("Correct! Good job!")
                 url = get_wiki_url(currentItem)
@@ -60,12 +77,20 @@ class Check(commands.Cog):
 
             else:
                 logger.info("incorrect")
-                
+
                 database.zadd("streak:global", {str(ctx.author.id): 0})
+
+                if database.exists(f"session.data:{ctx.author.id}"):
+                    logger.info("session active")
+                    session_increment(ctx, "incorrect", 1)
+
+                incorrect_increment(ctx, str(currentItem), 1)
 
                 database.hset(f"channel:{str(ctx.channel.id)}", "item", "")
                 database.hset(f"channel:{str(ctx.channel.id)}", "answered", "1")
-                await ctx.send("Sorry, the image was actually " + currentItem.lower() + ".")
+                await ctx.send(
+                    "Sorry, the image was actually " + currentItem.lower() + "."
+                )
                 url = get_wiki_url(currentItem)
                 await ctx.send(url)
 

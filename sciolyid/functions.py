@@ -17,6 +17,7 @@
 import difflib
 import math
 import os
+import string
 from io import BytesIO
 
 import discord
@@ -91,6 +92,65 @@ async def user_setup(ctx):
         logger.info("dm context")
 
 
+async def item_setup(ctx, item: str):
+    """Sets up a new item for incorrect tracking.
+    
+    `ctx` - Discord context object
+    `item` - item to setup
+    """
+    logger.info("checking item data")
+    if database.zscore("incorrect:global", string.capwords(item)) is not None:
+        logger.info("item global ok")
+    else:
+        database.zadd("incorrect:global", {string.capwords(item): 0})
+        logger.info("item global added")
+
+    if (
+        database.zscore(f"incorrect.user:{ctx.author.id}", string.capwords(item))
+        is not None
+    ):
+        logger.info("item user ok")
+    else:
+        database.zadd(
+            f"incorrect.user:{ctx.author.id}", {string.capwords(item): 0}
+        )
+        logger.info("item user added")
+
+    if ctx.guild is not None:
+        logger.info("no dm")
+        if (
+            database.zscore(
+                f"incorrect.server:{ctx.guild.id}", string.capwords(item)
+            )
+            is not None
+        ):
+            logger.info("item server ok")
+        else:
+            database.zadd(
+                f"incorrect.server:{ctx.guild.id}", {string.capwords(item): 0}
+            )
+            logger.info("item server added")
+    else:
+        logger.info("dm context")
+
+    if database.exists(f"session.data:{ctx.author.id}"):
+        logger.info("session in session")
+        if (
+            database.zscore(
+                f"session.incorrect:{ctx.author.id}", string.capwords(item)
+            )
+            is not None
+        ):
+            logger.info("item session ok")
+        else:
+            database.zadd(
+                f"session.incorrect:{ctx.author.id}", {string.capwords(item): 0}
+            )
+            logger.info("item session added")
+    else:
+        logger.info("no session")
+
+
 def error_skip(ctx):
     """Skips the current item.
     
@@ -101,7 +161,43 @@ def error_skip(ctx):
     database.hset(f"channel:{str(ctx.channel.id)}", "answered", "1")
 
 
-def score_increment(ctx, amount: int):
+def session_increment(ctx, item: str, amount: int = 1):
+    """Increments the value of a database hash field by `amount`.
+
+    `ctx` - Discord context object\n
+    `item` - hash field to increment (see data.py for details,
+    possible values include correct, incorrect, total)\n
+    `amount` (int) - amount to increment by, usually 1
+    """
+    logger.info(f"incrementing {item} by {amount}")
+    value = int(database.hget(f"session.data:{ctx.author.id}", item))
+    value += int(amount)
+    database.hset(f"session.data:{ctx.author.id}", item, str(value))
+
+
+def incorrect_increment(ctx, item: str, amount: int = 1):
+    """Increments the value of an incorrect item by `amount`.
+
+    `ctx` - Discord context object\n
+    `item` - item that was incorrect\n
+    `amount` (int) - amount to increment by, usually 1
+    """
+    logger.info(f"incrementing incorrect {item} by {amount}")
+    database.zincrby("incorrect:global", amount, string.capwords(item))
+    database.zincrby(f"incorrect.user:{ctx.author.id}", amount, string.capwords(item))
+    if ctx.guild is not None:
+        logger.info("no dm")
+        database.zincrby(f"incorrect.server:{ctx.guild.id}", amount, string.capwords(item))
+    else:
+        logger.info("dm context")
+    if database.exists(f"session.data:{ctx.author.id}"):
+        logger.info("session in session")
+        database.zincrby(f"session.incorrect:{ctx.author.id}", amount, string.capwords(item))
+    else:
+        logger.info("no session")
+
+
+def score_increment(ctx, amount: int = 1):
     """Increments the score of a user by `amount`.
 
     `ctx` - Discord context object\n

@@ -40,20 +40,22 @@ class Score(commands.Cog):
 
         totalCorrect = int(database.zscore("score:global", str(ctx.channel.id)))
         await ctx.send(
-            f"Wow, looks like a total of {str(totalCorrect)} {config.options['id_type']} have been answered correctly in this channel! " +
-            "Good job everyone!"
+            f"Wow, looks like a total of {str(totalCorrect)} {config.options['id_type']} have been answered correctly in this channel! "
+            + "Good job everyone!"
         )
 
     # sends correct answers by a user
     @commands.command(
         brief="- How many correct answers given by a user",
-        help="- Gives the amount of correct answers by a user.\n" +
-             "Mention someone to get their score," +
-             "Don't mention anyone to get your score.",
-        aliases=["us"]
+        help="- Gives the amount of correct answers by a user.\n"
+        + "Mention someone to get their score,"
+        + "Don't mention anyone to get your score.",
+        aliases=["us"],
     )
     @commands.cooldown(1, 5.0, type=commands.BucketType.user)
-    async def userscore(self, ctx, *, user: typing.Optional[typing.Union[discord.Member, str]] = None):
+    async def userscore(
+        self, ctx, *, user: typing.Optional[typing.Union[discord.Member, str]] = None
+    ):
         logger.info("command: userscore")
 
         await channel_setup(ctx)
@@ -81,13 +83,14 @@ class Score(commands.Cog):
 
         embed = discord.Embed(type="rich", colour=discord.Color.blurple())
         embed.set_author(name=config.options["bot_signature"])
-        embed.add_field(name="User Score:", value=f"{user} has answered correctly {times} times.")
+        embed.add_field(
+            name="User Score:", value=f"{user} has answered correctly {times} times."
+        )
         await ctx.send(embed=embed)
 
     # gives streak of a user
     @commands.command(
-        help='- Gives your current/max streak',
-        aliases=["streaks", "stk"]
+        help="- Gives your current/max streak", aliases=["streaks", "stk"]
     )
     @commands.cooldown(1, 5.0, type=commands.BucketType.user)
     async def streak(self, ctx):
@@ -95,7 +98,9 @@ class Score(commands.Cog):
         await channel_setup(ctx)
         await user_setup(ctx)
 
-        embed = discord.Embed(type="rich", colour=discord.Color.blurple(), title="**User Streaks**")
+        embed = discord.Embed(
+            type="rich", colour=discord.Color.blurple(), title="**User Streaks**"
+        )
         embed.set_author(name=config.options["bot_signature"])
         current_streak = f"You have answered `{str(int(database.zscore('streak:global', str(ctx.author.id))))}` in a row!"
         max_streak = f"Your max was `{str(int(database.zscore('streak.max:global', str(ctx.author.id))))}` in a row!"
@@ -108,7 +113,7 @@ class Score(commands.Cog):
     @commands.command(
         brief="- Top scores",
         help="- Top scores, scope is either global or server. (g, s)",
-        aliases=["lb"]
+        aliases=["lb"],
     )
     @commands.cooldown(1, 5.0, type=commands.BucketType.user)
     async def leaderboard(self, ctx, scope="", page=1):
@@ -131,7 +136,9 @@ class Score(commands.Cog):
 
         if not scope in ("global", "server", "g", "s"):
             logger.info("invalid scope")
-            await ctx.send(f"**{scope} is not a valid scope!**\n*Valid Scopes:* `global, server`")
+            await ctx.send(
+                f"**{scope} is not a valid scope!**\n*Valid Scopes:* `global, server`"
+            )
             return
 
         if page < 1:
@@ -146,7 +153,9 @@ class Score(commands.Cog):
                 scope = "server"
             else:
                 logger.info("dm context")
-                await ctx.send("**Server scopes are not avaliable in DMs.**\n*Showing global leaderboard instead.*")
+                await ctx.send(
+                    "**Server scopes are not avaliable in DMs.**\n*Showing global leaderboard instead.*"
+                )
                 scope = "global"
                 database_key = "users:global"
         else:
@@ -164,7 +173,9 @@ class Score(commands.Cog):
         if page > user_amount:
             page = user_amount - (user_amount % 10)
 
-        leaderboard_list = database.zrevrangebyscore(database_key, "+inf", "-inf", page, 10, True)
+        leaderboard_list = database.zrevrangebyscore(
+            database_key, "+inf", "-inf", page, 10, True
+        )
         embed = discord.Embed(type="rich", colour=discord.Color.blurple())
         embed.set_author(name=config.options["bot_signature"])
         leaderboard = ""
@@ -190,31 +201,136 @@ class Score(commands.Cog):
 
         if database.zscore(database_key, str(ctx.author.id)) is not None:
             placement = int(database.zrevrank(database_key, str(ctx.author.id))) + 1
-            distance = (int(database.zrevrange(database_key, placement-2, placement-2, True)[0][1]) - 
-                        int(database.zscore(database_key, str(ctx.author.id))))
+            distance = int(
+                database.zrevrange(database_key, placement - 2, placement - 2, True)[0][
+                    1
+                ]
+            ) - int(database.zscore(database_key, str(ctx.author.id)))
             if placement == 1:
-                embed.add_field(name="You:", value=f"You are #{str(placement)} on the leaderboard.\n" +
-                                                   f"You are in first place.", inline=False)
+                embed.add_field(
+                    name="You:",
+                    value=f"You are #{str(placement)} on the leaderboard.\n"
+                    + f"You are in first place.",
+                    inline=False,
+                )
             elif distance == 0:
-                embed.add_field(name="You:", value=f"You are #{str(placement)} on the leaderboard.\n" +
-                                                   f"You are tied with #{str(placement-1)}", inline=False)
+                embed.add_field(
+                    name="You:",
+                    value=f"You are #{str(placement)} on the leaderboard.\n"
+                    + f"You are tied with #{str(placement-1)}",
+                    inline=False,
+                )
             else:
-                embed.add_field(name="You:", value=f"You are #{str(placement)} on the leaderboard.\n" +
-                                                   f"You are {str(distance)} away from #{str(placement-1)}", inline=False)
+                embed.add_field(
+                    name="You:",
+                    value=f"You are #{str(placement)} on the leaderboard.\n"
+                    + f"You are {str(distance)} away from #{str(placement-1)}",
+                    inline=False,
+                )
         else:
             embed.add_field(name="You:", value="You haven't answered any correctly.")
 
         await ctx.send(embed=embed)
 
+    # missed - returns top 1-10 missed items
+    @commands.command(
+        brief=f"- Top incorrect {config.options['id_type']}",
+        help=f"- Top incorrect {config.options['id_type']}, scope is either global, server, or me. (g, s, m)",
+        aliases=["m"],
+    )
+    @commands.cooldown(1, 5.0, type=commands.BucketType.user)
+    async def missed(self, ctx, scope="", page=1):
+        logger.info("command: missed")
+
+        await channel_setup(ctx)
+        await user_setup(ctx)
+
+        try:
+            page = int(scope)
+        except ValueError:
+            if scope == "":
+                scope = "global"
+                scope = scope.lower()
+        else:
+            scope = "global"
+
+        logger.info(f"scope: {scope}")
+        logger.info(f"page: {page}")
+
+        if not scope in ("global", "server", "me", "g", "s", "m"):
+            logger.info("invalid scope")
+            await ctx.send(
+                f"**{scope} is not a valid scope!**\n*Valid Scopes:* `global, server, me`"
+            )
+            return
+
+        if page < 1:
+            logger.info("invalid page")
+            await ctx.send("Not a valid number. Pick a positive integer!")
+            return
+
+        database_key = ""
+        if scope in ("server", "s"):
+            if ctx.guild is not None:
+                database_key = f"incorrect.server:{ctx.guild.id}"
+                scope = "server"
+            else:
+                logger.info("dm context")
+                await ctx.send(
+                    "**Server scopes are not avaliable in DMs.**\n*Showing global leaderboard instead.*"
+                )
+                scope = "global"
+                database_key = "incorrect:global"
+        elif scope in ("me", "m"):
+            database_key = f"incorrect.user:{ctx.author.id}"
+            scope = "me"
+        else:
+            database_key = "incorrect:global"
+            scope = "global"
+
+        user_amount = int(database.zcard(database_key))
+        page = (page * 10) - 10
+
+        if user_amount == 0:
+            logger.info(f"no users in {database_key}")
+            await ctx.send(f"There are no {config.options['id_type']} in the database.")
+            return
+
+        if page > user_amount:
+            page = user_amount - (user_amount % 10)
+
+        leaderboard_list = database.zrevrangebyscore(
+            database_key, "+inf", "-inf", page, 10, True
+        )
+        embed = discord.Embed(type="rich", colour=discord.Color.blurple())
+        embed.set_author(name=config.options["bot_signature"])
+        leaderboard = ""
+
+        for i, stats in enumerate(leaderboard_list):
+            leaderboard += (
+                f"{i+1+page}. **{stats[0].decode('utf-8')}** - {int(stats[1])}\n"
+            )
+        embed.add_field(
+            name=f"Top Missed {config.options['id_type']} ({scope})",
+            value=leaderboard,
+            inline=False,
+        )
+
+        await ctx.send(embed=embed)
 
     # Command-specific error checking
     @leaderboard.error
     async def leader_error(self, ctx, error):
         logger.info("leaderboard error")
         if isinstance(error, commands.BadArgument):
-            await ctx.send('Not an integer!')
+            await ctx.send("Not an integer!")
         elif isinstance(error, commands.CommandOnCooldown):  # send cooldown
-            await ctx.send("**Cooldown.** Try again after " + str(round(error.retry_after)) + " s.", delete_after=5.0)
+            await ctx.send(
+                "**Cooldown.** Try again after "
+                + str(round(error.retry_after))
+                + " s.",
+                delete_after=5.0,
+            )
         elif isinstance(error, commands.BotMissingPermissions):
             await ctx.send(
                 f"""**The bot does not have enough permissions to fully function.**
@@ -224,9 +340,10 @@ class Score(commands.Cog):
         else:
             capture_exception(error)
             await ctx.send(
-                "**An uncaught leaderboard error has occurred.**\n" +
-                "*Please log this message in #support in the support server below, or try again.*\n" +
-                "**Error:** " + str(error)
+                "**An uncaught leaderboard error has occurred.**\n"
+                + "*Please log this message in #support in the support server below, or try again.*\n"
+                + "**Error:** "
+                + str(error)
             )
             await ctx.send(config.options["support_server"])
             raise error

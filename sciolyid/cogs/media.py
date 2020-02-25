@@ -21,7 +21,7 @@ import sciolyid.config as config
 from discord.ext import commands
 from sciolyid.core import send_image
 from sciolyid.data import database, groups, id_list, logger
-from sciolyid.functions import build_id_list, channel_setup, error_skip, user_setup
+from sciolyid.functions import build_id_list, channel_setup, error_skip, user_setup, session_increment
 
 IMAGE_MESSAGE = (
     f"*Here you go!* \n**Use `{config.options['prefixes'][0]}pic` again to get a new image of the same {config.options['id_type']}, "
@@ -45,6 +45,10 @@ class Media(commands.Cog):
         logger.info(f"answered: {answered}")
         # check to see if previous item was answered
         if answered:  # if yes, give a new item
+            if database.exists(f"session.data:{ctx.author.id}"):
+                logger.info("session active")
+                session_increment(ctx, "total", 1)
+
             if config.options["id_groups"]:
                 build = build_id_list(group_str)
                 choices = build[0]
@@ -90,9 +94,31 @@ class Media(commands.Cog):
 
         bw = "bw" in args
         group_args = set(groups.keys()).intersection({arg.lower() for arg in args})
-        if group_args and config.options["id_groups"]:
+        if group_args:
             group = " ".join(group_args).strip()
         else:
+            group = ""
+
+        if database.exists(f"session.data:{ctx.author.id}"):
+            logger.info("session parameters")
+
+            if group_args:
+                toggle_groups = list(group_args)
+                current_groups = database.hget(f"session.data:{ctx.author.id}", "group").decode("utf-8").split(" ")
+                add_groups = []
+                logger.info(f"toggle group: {toggle_groups}")
+                logger.info(f"current group: {current_groups}")
+                for o in set(toggle_groups).symmetric_difference(set(current_groups)):
+                    add_groups.append(o)
+                logger.info(f"adding groups: {add_groups}")
+                group = " ".join(add_groups).strip()
+            else:
+                group = database.hget(f"session.data:{ctx.author.id}", "group").decode("utf-8")
+
+            if database.hget(f"session.data:{ctx.author.id}", "bw").decode("utf-8"):
+                bw = not bw
+
+        if not config.options["id_groups"]:
             group = ""
 
         logger.info(f"args: bw: {bw}; group: {group}")
