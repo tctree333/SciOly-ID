@@ -20,23 +20,23 @@ from sciolyid.data import database, logger
 from sciolyid.functions import channel_setup, user_setup
 
 class Hint(commands.Cog):
-	def __init__(self, bot):
-		self.bot = bot
-	
-	# give hint
-	@commands.command(help="- Gives first letter of current image", aliases=["h"])
-	@commands.cooldown(1, 3.0, type=commands.BucketType.channel)
-	async def hint(self, ctx):
-		logger.info("command: hint")
-		
-		await channel_setup(ctx)
-		await user_setup(ctx)
-		
-		current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8")
-		if current_item != "":  # check if there is item
-			await ctx.send(f"The first letter is {current_item[0]}")
-		else:
-			await ctx.send("You need to ask for a image first!")
+    def __init__(self, bot):
+        self.bot = bot
+
+    # give hint
+    @commands.command(help="- Gives first letter of current image", aliases=["h"])
+    @commands.cooldown(1, 3.0, type=commands.BucketType.channel)
+    async def hint(self, ctx):
+        logger.info("command: hint")
+
+        await channel_setup(ctx)
+        await user_setup(ctx)
+
+        current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8")
+        if current_item != "":  # check if there is item
+            await ctx.send(f"The first letter is {current_item[0]}")
+        else:
+            await ctx.send("You need to ask for a image first!")
 
 def setup(bot):
-	bot.add_cog(Hint(bot))
+    bot.add_cog(Hint(bot))

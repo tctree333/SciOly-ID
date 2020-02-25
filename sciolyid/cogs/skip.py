@@ -20,28 +20,28 @@ from sciolyid.data import database, get_wiki_url, logger
 from sciolyid.functions import channel_setup, user_setup
 
 class Skip(commands.Cog):
-	def __init__(self, bot):
-		self.bot = bot
-	
-	# Skip command - no args
-	@commands.command(help="- Skip the current image to get a new one", aliases=["sk", "s"])
-	@commands.cooldown(1, 5.0, type=commands.BucketType.channel)
-	async def skip(self, ctx):
-		logger.info("command: skip")
-		
-		await channel_setup(ctx)
-		await user_setup(ctx)
-		
-		current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode('utf-8')
-		database.hset(f"channel:{ctx.channel.id}", "item", "")
-		database.hset(f"channel:{ctx.channel.id}", "answered", "1")
-		if current_item:  # check if there is image
-			url = get_wiki_url(current_item)
-			await ctx.send(f"Ok, skipping {current_item.lower()}")
-			await ctx.send(url)  # sends wiki page
-			database.zadd("streak:global", {str(ctx.author.id): 0})  # end streak
-		else:
-			await ctx.send("You need to ask for an image first!")
+    def __init__(self, bot):
+        self.bot = bot
+
+    # Skip command - no args
+    @commands.command(help="- Skip the current image to get a new one", aliases=["sk", "s"])
+    @commands.cooldown(1, 5.0, type=commands.BucketType.channel)
+    async def skip(self, ctx):
+        logger.info("command: skip")
+
+        await channel_setup(ctx)
+        await user_setup(ctx)
+
+        current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode('utf-8')
+        database.hset(f"channel:{ctx.channel.id}", "item", "")
+        database.hset(f"channel:{ctx.channel.id}", "answered", "1")
+        if current_item:  # check if there is image
+            url = get_wiki_url(current_item)
+            await ctx.send(f"Ok, skipping {current_item.lower()}")
+            await ctx.send(url)  # sends wiki page
+            database.zadd("streak:global", {str(ctx.author.id): 0})  # end streak
+        else:
+            await ctx.send("You need to ask for an image first!")
 
 def setup(bot):
-	bot.add_cog(Skip(bot))
+    bot.add_cog(Skip(bot))
