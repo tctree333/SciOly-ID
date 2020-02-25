@@ -101,7 +101,8 @@ class Sessions(commands.Cog):
         help="- Starts session.\n" +
         f"Arguments passed will become the default arguments to '{config.options['prefixes'][0]}{config.options['id_type']}', "
         + "but can be manually overwritten during use.\n" +
-        f"These settings can be changed at any time with '{config.options['prefixes'][0]}session edit', and arguments can be passed in any order.\n",
+        f"These settings can be changed at any time with '{config.options['prefixes'][0]}session edit', " +
+        "and arguments can be passed in any order.\n",
         aliases=["st"],
         usage=("[bw] [category]" if config.options["id_groups"] else "[bw]"),
     )
@@ -115,7 +116,8 @@ class Sessions(commands.Cog):
         if database.exists(f"session.data:{ctx.author.id}"):
             logger.info("already session")
             await ctx.send(
-                f"**There is already a session running.** *Change settings/view stats with `{config.options['prefixes'][0]}session edit`*"
+                "**There is already a session running.**" +
+                f"*Change settings/view stats with `{config.options['prefixes'][0]}session edit`*"
             )
             return
         else:
@@ -179,8 +181,8 @@ class Sessions(commands.Cog):
                 add_group = []
                 logger.info(f"toggle group: {toggle_group}")
                 logger.info(f"current group: {current_group}")
-                for o in set(toggle_group).symmetric_difference(set(current_group)):
-                    add_group.append(o)
+                for group in set(toggle_group).symmetric_difference(set(current_group)):
+                    add_group.append(group)
                 logger.info(f"adding groups: {add_group}")
                 database.hset(
                     f"session.data:{ctx.author.id}",

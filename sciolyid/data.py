@@ -30,8 +30,10 @@ import sciolyid.config as config
 # define database for one connection
 if config.options["local_redis"]:
     database = redis.Redis(host='localhost', port=6379, db=0)
-else:
+elif config.options["redis_env"] is not None:
     database = redis.from_url(os.getenv(config.options["redis_env"]))
+else:
+    raise ValueError("redis_env must be set if local_redis is False")
 
 def before_sentry_send(event, hint):
     """Fingerprint certain events before sending to Sentry."""
@@ -45,6 +47,8 @@ def before_sentry_send(event, hint):
 
 # add sentry logging
 if config.options["sentry"]:
+    if config.options["sentry_dsn_env"] is None:
+        raise ValueError("sentry_dsn_env must be set if sentry is True")
     sentry_sdk.init(
         release=f"Heroku Release {os.getenv('HEROKU_RELEASE_VERSION')}:{os.getenv('HEROKU_SLUG_DESCRIPTION')}",
         dsn=os.getenv(config.options["sentry_dsn_env"]),
@@ -53,7 +57,6 @@ if config.options["sentry"]:
     )
 
 # Database Format Definitions
-
 
 # prevJ - makes sure it sends a diff image
 # prevB - makes sure it sends a diff item (img)
@@ -70,7 +73,7 @@ if config.options["sentry"]:
 # session.incorrect:user_id : [item name, # incorrect]
 
 # race format:
-# race.data:ctx.channel.id : { 
+# race.data:ctx.channel.id : {
 #                    "start": 0
 #                    "stop": 0,
 #                    "limit": 10,
@@ -104,7 +107,6 @@ if config.options["sentry"]:
 # ban format:
 #   banned:global : [user id, 0]
 
-
 # setup logging
 logger = logging.getLogger(config.options["name"])
 if config.options["logs"]:
@@ -112,15 +114,14 @@ if config.options["logs"]:
     os.makedirs(f"{config.options['log_dir']}", exist_ok=True)
 
     file_handler = logging.handlers.TimedRotatingFileHandler(
-        f"{config.options['log_dir']}/log.txt", backupCount=4, when="midnight")
+        f"{config.options['log_dir']}/log.txt", backupCount=4, when="midnight"
+    )
     file_handler.setLevel(logging.DEBUG)
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(logging.DEBUG)
 
-    file_handler.setFormatter(logging.Formatter(
-        "{asctime} - {filename:10} -  {levelname:8} - {message}", style="{"))
-    stream_handler.setFormatter(logging.Formatter(
-        "{filename:10} -  {levelname:8} - {message}", style="{"))
+    file_handler.setFormatter(logging.Formatter("{asctime} - {filename:10} -  {levelname:8} - {message}", style="{"))
+    stream_handler.setFormatter(logging.Formatter("{filename:10} -  {levelname:8} - {message}", style="{"))
 
     logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
@@ -131,12 +132,9 @@ if config.options["logs"]:
             sys.__excepthook__(exc_type, exc_value, exc_traceback)
             return
 
-        logger.critical("Uncaught exception", exc_info=(
-            exc_type, exc_value, exc_traceback))
-
+        logger.critical("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
 
     sys.excepthook = handle_exception
-
 
 class GenericError(commands.CommandError):
     """A custom error class.
@@ -176,11 +174,9 @@ def _wiki_urls():
     logger.info("Done with wiki urls")
     return urls
 
-
 def get_wiki_url(item):
     item = item.lower()
     return wikipedia_urls[item]
-
 
 def _generate_aliases():
     logger.info("Working on aliases")
@@ -193,7 +189,6 @@ def _generate_aliases():
     logger.info("Done with aliases")
     return aliases
 
-
 def get_aliases(item):
     item = item.lower()
     try:
@@ -202,14 +197,12 @@ def get_aliases(item):
         alias_list = [item]
     return alias_list
 
-
 def get_category(item: str):
     item = item.lower()
-    for group in groups.keys():
+    for group in groups:
         if item in groups[group]:
             return group.lower()
     return None
-
 
 def _groups():
     """Converts txt files of data into lists."""
@@ -227,7 +220,7 @@ def _groups():
 def _all_lists():
     """Compiles lists into master lists."""
     master = []
-    for group in groups.keys():
+    for group in groups:
         for item in groups[group]:
             master.append(item)
     master = list(set(master))
@@ -253,7 +246,7 @@ def _config():
     )'''
     logger.info("Done valiating configuration file")
 
-    for group in groups.keys():
+    for group in groups:
         if group not in config.options["category_aliases"].keys():
             config.options["category_aliases"][group] = [group]
             logger.info(f"Added {group} to aliases")
@@ -265,7 +258,6 @@ id_list = _all_lists()
 wikipedia_urls = _wiki_urls()
 aliases = _generate_aliases()
 _config()
-logger.info(
-    f"List Lengths: {len(id_list)}")
+logger.info(f"List Lengths: {len(id_list)}")
 
 logger.info("Done importing data!")

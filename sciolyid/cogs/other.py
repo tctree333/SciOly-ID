@@ -15,7 +15,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import itertools
-import random
 import typing
 from difflib import get_close_matches
 
@@ -184,7 +183,7 @@ class Other(commands.Cog):
     @commands.check(owner_check)
     async def ban(self, ctx, *, user: discord.Member = None):
         logger.info("command: ban")
-        if user is None:
+        if user is None or isinstance(user, str):
             logger.info("no args")
             await ctx.send("Invalid User!")
             return
@@ -197,7 +196,7 @@ class Other(commands.Cog):
     @commands.check(owner_check)
     async def unban(self, ctx, *, user: typing.Optional[typing.Union[discord.Member, str]] = None):
         logger.info("command: unban")
-        if user is None:
+        if user is None or isinstance(user, str):
             logger.info("no args")
             await ctx.send("Invalid User!")
             return
@@ -208,11 +207,15 @@ class Other(commands.Cog):
     # Send command - for testing purposes only
     @commands.command(help="- send command", hidden=True, aliases=["sendas"])
     @commands.check(owner_check)
-    async def send_as_bot(self, ctx, *, args):
+    async def send_as_bot(self, ctx, *, args_str):
         logger.info("command: send")
-        logger.info(f"args: {args}")
-        channel_id = int(args.split(" ")[0])
-        message = args.strip(str(channel_id))
+        logger.info(f"args: {args_str}")
+        args = args_str.split(" ")
+        channel_id = int(args[0])
+        try:
+            message = args[1:]
+        except IndexError:
+            await ctx.send("No message provided!")
         channel = self.bot.get_channel(channel_id)
         await channel.send(message)
         await ctx.send("Ok, sent!")
@@ -221,8 +224,7 @@ class Other(commands.Cog):
     @commands.command(help="- test command", hidden=True)
     async def test(self, ctx, *, item):
         logger.info("command: test")
-        aliases = await get_aliases(item)
-        await ctx.send(aliases)
+        await ctx.send(await get_aliases(item))
 
     # Test command - for testing purposes only
     @commands.command(help="- test command", hidden=True)

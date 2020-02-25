@@ -15,18 +15,14 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
-import concurrent.futures
-import errno
 import os
-import shutil
 import sys
-import time
 
 import discord
 import redis
 import wikipedia
 from discord.ext import commands, tasks
-from sentry_sdk import capture_exception, configure_scope
+from sentry_sdk import capture_exception
 
 from sciolyid.data import GenericError, database, logger
 from sciolyid.functions import channel_setup

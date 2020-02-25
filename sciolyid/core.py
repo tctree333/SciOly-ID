@@ -60,8 +60,8 @@ async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
 
     filename = str(response[0])
     extension = str(response[1])
-    statInfo = os.stat(filename)
-    if statInfo.st_size > 4000000:  # another filesize check (4mb)
+    stat_info = os.stat(filename)
+    if stat_info.st_size > 4000000:  # another filesize check (4mb)
         await delete.delete()
         await ctx.send("**Oops! File too large :(**\n*Please try again.*")
     else:
@@ -107,10 +107,10 @@ async def get_image(ctx, item):
             image_link = images[y]
             extension = image_link.split(".")[-1]
             logger.info("extension: " + str(extension))
-            statInfo = os.stat(image_link)
-            logger.info("size: " + str(statInfo.st_size))
+            stat_info = os.stat(image_link)
+            logger.info("size: " + str(stat_info.st_size))
             if (
-                extension.lower() in valid_image_extensions and statInfo.st_size < 4000000  # keep files less than 4mb
+                extension.lower() in valid_image_extensions and stat_info.st_size < 4000000  # keep files less than 4mb
             ):
                 logger.info("found one!")
                 break
@@ -141,7 +141,7 @@ async def get_files(item, retries=0):
         logger.info("trying")
         files_dir = os.listdir(directory)
         logger.info(directory)
-        if len(files_dir) == 0:
+        if not files_dir:
             raise GenericError("No Files", code=100)
         return [f"{directory}{path}" for path in files_dir]
     except (FileNotFoundError, GenericError):

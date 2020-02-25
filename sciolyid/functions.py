@@ -20,11 +20,10 @@ import os
 import string
 from io import BytesIO
 
-import discord
 from PIL import Image
 
 import sciolyid.config as config
-from sciolyid.data import GenericError, database, groups, id_list, logger
+from sciolyid.data import database, groups, id_list, logger
 
 async def channel_setup(ctx):
     """Sets up a new discord channel.
@@ -72,7 +71,7 @@ async def user_setup(ctx):
 
     if ctx.guild is not None:
         logger.info("no dm")
-        if (database.zscore(f"users.server:{ctx.guild.id}", str(ctx.author.id)) is not None):
+        if database.zscore(f"users.server:{ctx.guild.id}", str(ctx.author.id)) is not None:
             server_score = database.zscore(f"users.server:{ctx.guild.id}", str(ctx.author.id))
             global_score = database.zscore("users:global", str(ctx.author.id))
             if server_score is global_score:
@@ -99,7 +98,7 @@ async def item_setup(ctx, item: str):
         database.zadd("incorrect:global", {string.capwords(item): 0})
         logger.info("item global added")
 
-    if (database.zscore(f"incorrect.user:{ctx.author.id}", string.capwords(item)) is not None):
+    if database.zscore(f"incorrect.user:{ctx.author.id}", string.capwords(item)) is not None:
         logger.info("item user ok")
     else:
         database.zadd(f"incorrect.user:{ctx.author.id}", {string.capwords(item): 0})
@@ -107,7 +106,7 @@ async def item_setup(ctx, item: str):
 
     if ctx.guild is not None:
         logger.info("no dm")
-        if (database.zscore(f"incorrect.server:{ctx.guild.id}", string.capwords(item)) is not None):
+        if database.zscore(f"incorrect.server:{ctx.guild.id}", string.capwords(item)) is not None:
             logger.info("item server ok")
         else:
             database.zadd(f"incorrect.server:{ctx.guild.id}", {string.capwords(item): 0})
@@ -117,7 +116,7 @@ async def item_setup(ctx, item: str):
 
     if database.exists(f"session.data:{ctx.author.id}"):
         logger.info("session in session")
-        if (database.zscore(f"session.incorrect:{ctx.author.id}", string.capwords(item)) is not None):
+        if database.zscore(f"session.incorrect:{ctx.author.id}", string.capwords(item)) is not None:
             logger.info("item session ok")
         else:
             database.zadd(f"session.incorrect:{ctx.author.id}", {string.capwords(item): 0})
@@ -237,6 +236,6 @@ def spellcheck(worda, wordb, cutoff=3):
     wordb = wordb.lower()
     shorterword = min(worda, wordb, key=len)
     if worda != wordb:
-        if (len(list(difflib.Differ().compare(worda, wordb))) - len(shorterword) >= cutoff):
+        if len(list(difflib.Differ().compare(worda, wordb))) - len(shorterword) >= cutoff:
             return False
     return True

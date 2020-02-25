@@ -14,14 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import itertools
 import random
 
 import sciolyid.config as config
 from discord.ext import commands
 from sciolyid.core import send_image
 from sciolyid.data import database, groups, id_list, logger
-from sciolyid.functions import build_id_list, channel_setup, error_skip, user_setup, session_increment
+from sciolyid.functions import (build_id_list, channel_setup, error_skip, session_increment, user_setup)
 
 IMAGE_MESSAGE = (
     f"*Here you go!* \n**Use `{config.options['prefixes'][0]}pic` again to get a new image of the same {config.options['id_type']}, "
