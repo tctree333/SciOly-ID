@@ -35,7 +35,7 @@ class Other(commands.Cog):
 
     # Info - Gives image
     @commands.command(
-        help=f"- Gives an image of {config.options['id_type']}", aliases=["i"]
+        help=f"- Gives images of {config.options['id_type']}", aliases=["i"]
     )
     @commands.cooldown(1, 10.0, type=commands.BucketType.user)
     async def info(self, ctx, *, arg):

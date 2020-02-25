@@ -25,7 +25,7 @@ from sciolyid.functions import build_id_list, channel_setup, error_skip, user_se
 
 IMAGE_MESSAGE = (
     f"*Here you go!* \n**Use `{config.options['prefixes'][0]}pic` again to get a new image of the same {config.options['id_type']}, "
-    + f"or `{config.options['prefixes'][0]}skip` to get a new {config.options['id_type']}. Use `{config.options['prefixes'][0]}check [guess]` to check your answer. "
+    + f"or `{config.options['prefixes'][0]}skip` to get new {config.options['id_type']}. Use `{config.options['prefixes'][0]}check [guess]` to check your answer. "
     + f"Use `{config.options['prefixes'][0]}hint` for a hint.**"
 )
 
@@ -90,12 +90,9 @@ class Media(commands.Cog):
 
         bw = "bw" in args
         group_args = set(groups.keys()).intersection({arg.lower() for arg in args})
-        if group_args:
+        if group_args and config.options["id_groups"]:
             group = " ".join(group_args).strip()
         else:
-            group = ""
-
-        if not config.options["id_groups"]:
             group = ""
 
         logger.info(f"args: bw: {bw}; group: {group}")
