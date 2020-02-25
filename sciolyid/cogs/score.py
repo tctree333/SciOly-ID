@@ -183,10 +183,8 @@ class Score(commands.Cog):
 
         if database.zscore(database_key, str(ctx.author.id)) is not None:
             placement = int(database.zrevrank(database_key, str(ctx.author.id))) + 1
-            distance = (
-                int(database.zrevrange(database_key, placement - 2, placement - 2, True)[0][1]) -
-                int(database.zscore(database_key, str(ctx.author.id)))
-            )
+            distance = int(database.zrevrange(database_key, placement - 2, placement - 2, True)[0][1]
+                          ) - int(database.zscore(database_key, str(ctx.author.id)))
             if placement == 1:
                 embed.add_field(
                     name="You:",
@@ -211,14 +209,95 @@ class Score(commands.Cog):
 
         await ctx.send(embed=embed)
 
+    # missed - returns top 1-10 missed items
+    @commands.command(
+        brief=f"- Top incorrect {config.options['id_type']}",
+        help=f"- Top incorrect {config.options['id_type']}, scope is either global, server, or me. (g, s, m)",
+        aliases=["m"],
+    )
+    @commands.cooldown(1, 5.0, type=commands.BucketType.user)
+    async def missed(self, ctx, scope="", page=1):
+        logger.info("command: missed")
+
+        await channel_setup(ctx)
+        await user_setup(ctx)
+
+        try:
+            page = int(scope)
+        except ValueError:
+            if scope == "":
+                scope = "global"
+                scope = scope.lower()
+        else:
+            scope = "global"
+
+        logger.info(f"scope: {scope}")
+        logger.info(f"page: {page}")
+
+        if not scope in ("global", "server", "me", "g", "s", "m"):
+            logger.info("invalid scope")
+            await ctx.send(f"**{scope} is not a valid scope!**\n*Valid Scopes:* `global, server, me`")
+            return
+
+        if page < 1:
+            logger.info("invalid page")
+            await ctx.send("Not a valid number. Pick a positive integer!")
+            return
+
+        database_key = ""
+        if scope in ("server", "s"):
+            if ctx.guild is not None:
+                database_key = f"incorrect.server:{ctx.guild.id}"
+                scope = "server"
+            else:
+                logger.info("dm context")
+                await ctx.send("**Server scopes are not avaliable in DMs.**\n*Showing global leaderboard instead.*")
+                scope = "global"
+                database_key = "incorrect:global"
+        elif scope in ("me", "m"):
+            database_key = f"incorrect.user:{ctx.author.id}"
+            scope = "me"
+        else:
+            database_key = "incorrect:global"
+            scope = "global"
+
+        user_amount = int(database.zcard(database_key))
+        page = (page * 10) - 10
+
+        if user_amount == 0:
+            logger.info(f"no users in {database_key}")
+            await ctx.send(f"There are no {config.options['id_type']} in the database.")
+            return
+
+        if page > user_amount:
+            page = user_amount - (user_amount % 10)
+
+        leaderboard_list = database.zrevrangebyscore(database_key, "+inf", "-inf", page, 10, True)
+        embed = discord.Embed(type="rich", colour=discord.Color.blurple())
+        embed.set_author(name=config.options["bot_signature"])
+        leaderboard = ""
+
+        for i, stats in enumerate(leaderboard_list):
+            leaderboard += (f"{i+1+page}. **{stats[0].decode('utf-8')}** - {int(stats[1])}\n")
+        embed.add_field(
+            name=f"Top Missed {config.options['id_type']} ({scope})",
+            value=leaderboard,
+            inline=False,
+        )
+
+        await ctx.send(embed=embed)
+
     # Command-specific error checking
     @leaderboard.error
     async def leader_error(self, ctx, error):
         logger.info("leaderboard error")
         if isinstance(error, commands.BadArgument):
-            await ctx.send('Not an integer!')
+            await ctx.send("Not an integer!")
         elif isinstance(error, commands.CommandOnCooldown):  # send cooldown
-            await ctx.send("**Cooldown.** Try again after " + str(round(error.retry_after)) + " s.", delete_after=5.0)
+            await ctx.send(
+                "**Cooldown.** Try again after " + str(round(error.retry_after)) + " s.",
+                delete_after=5.0,
+            )
         elif isinstance(error, commands.BotMissingPermissions):
             await ctx.send(
                 f"""**The bot does not have enough permissions to fully function.**

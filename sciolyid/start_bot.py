@@ -59,6 +59,7 @@ initial_extensions = [
     "sciolyid.cogs.skip",
     "sciolyid.cogs.hint",
     "sciolyid.cogs.score",
+    "sciolyid.cogs.sessions",
     "sciolyid.cogs.other",
 ]
 for extension in config.options["disable_extensions"]:

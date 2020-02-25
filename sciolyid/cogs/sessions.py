@@ -20,7 +20,8 @@ import time
 import discord
 from discord.ext import commands
 
-from sciolyid.data import database, logger
+import sciolyid.config as config
+from sciolyid.data import database, logger, groups
 from sciolyid.functions import channel_setup, user_setup
 
 class Sessions(commands.Cog):
@@ -28,19 +29,24 @@ class Sessions(commands.Cog):
         self.bot = bot
 
     async def _get_options(self, ctx):
-        bw, addon, state, order = database.hmget(f"session.data:{ctx.author.id}", ["bw", "addon", "state", "order"])
+        bw, group = database.hmget(f"session.data:{ctx.author.id}", ["bw", "group"])
         options = str(
-            f"**Age/Sex:** {str(addon)[2:-1] if addon else 'default'}\n" + f"**Black & White:** {bw==b'bw'}\n" +
-            f"**State bird list:** {str(state)[2:-1] if state else 'None'}\n" +
-            f"**Bird Order:** {str(order)[2:-1] if order else 'None'}\n"
+            f"**Black & White:** {bw==b'bw'}" + (
+                f"\n**{config.options['category_name']}:** {group.decode('utf-8') if group else 'None'}" if config.
+                options["id_groups"] else ""
+            )
         )
         return options
 
     async def _get_stats(self, ctx):
         start, correct, incorrect, total = map(
-            int, database.hmget(f"session.data:{ctx.author.id}", ["start", "correct", "incorrect", "total"])
+            int,
+            database.hmget(
+                f"session.data:{ctx.author.id}",
+                ["start", "correct", "incorrect", "total"],
+            ),
         )
-        elapsed = str(datetime.timedelta(seconds=round(time.time()) - start))
+        elapsed = datetime.timedelta(seconds=round(time.time()) - start)
         try:
             accuracy = round(100 * (correct / (correct + incorrect)), 2)
         except ZeroDivisionError:
@@ -48,7 +54,7 @@ class Sessions(commands.Cog):
 
         stats = str(
             f"**Duration:** `{elapsed}`\n" + f"**# Correct:** {correct}\n" + f"**# Incorrect:** {incorrect}\n" +
-            f"**Total Birds:** {total}\n" + f"**Accuracy:** {accuracy}%\n"
+            f"**Total:** {total}\n" + f"**Accuracy:** {accuracy}%\n"
         )
         return stats
 
@@ -56,44 +62,48 @@ class Sessions(commands.Cog):
         database_key = f"session.incorrect:{ctx.author.id}"
 
         embed = discord.Embed(type="rich", colour=discord.Color.blurple(), title=preamble)
-        embed.set_author(name="Bird ID - An Ornithology Bot")
+        embed.set_author(name=config.options["bot_signature"])
 
         if database.zcard(database_key) != 0:
             leaderboard_list = database.zrevrangebyscore(database_key, "+inf", "-inf", 0, 5, True)
             leaderboard = ""
 
             for i, stats in enumerate(leaderboard_list):
-                leaderboard += f"{i+1}. **{stats[0].decode('utf-8')}** - {int(stats[1])}\n"
+                leaderboard += (f"{i+1}. **{stats[0].decode('utf-8')}** - {int(stats[1])}\n")
         else:
-            logger.info(f"no birds in {database_key}")
-            leaderboard = "**There are no missed birds.**"
+            logger.info(f"no items in {database_key}")
+            leaderboard = f"**There are no missed {config.options['id_type']}.**"
 
         embed.add_field(name="Options", value=await self._get_options(ctx), inline=False)
         embed.add_field(name="Stats", value=await self._get_stats(ctx), inline=False)
-        embed.add_field(name=f"Top Missed Birds", value=leaderboard, inline=False)
+        embed.add_field(
+            name=f"Top Missed {config.options['id_type'].title()}",
+            value=leaderboard,
+            inline=False,
+        )
 
         await ctx.send(embed=embed)
 
     @commands.group(
         brief="- Base session command",
-        help="- Base session command\n" + "Sessions will record your activity for an amount of time and " +
-        "will give you stats on how your performance and " + "also set global variables such as black and white, " +
-        "state specific bird lists, specific bird orders, or bird age/sex. ",
+        help="- Base session command\nSessions will record your activity for an amount of time and " +
+        "will give you stats on how your performance and also set global variables such as black and white" +
+        (" or specific categories." if config.options["id_groups"] else "."),
         aliases=["ses", "sesh"]
     )
     async def session(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.send('**Invalid subcommand passed.**\n*Valid Subcommands:* `start, view, stop`')
+            await ctx.send("**Invalid subcommand passed.**\n*Valid Subcommands:* `start, view, stop`")
 
     # starts session
     @session.command(
         brief="- Starts session",
-        help="""- Starts session.
-        Arguments passed will become the default arguments to 'b!bird', but can be manually overwritten during use. 
-        These settings can be changed at any time with 'b!session edit', and arguments can be passed in any order. 
-        However, having both females and juveniles are not supported.""",
+        help="- Starts session.\n" +
+        f"Arguments passed will become the default arguments to '{config.options['prefixes'][0]}{config.options['id_type']}', "
+        + "but can be manually overwritten during use.\n" +
+        f"These settings can be changed at any time with '{config.options['prefixes'][0]}session edit', and arguments can be passed in any order.\n",
         aliases=["st"],
-        usage="[bw] [state] [female|juvenile] [order]"
+        usage=("[bw] [category]" if config.options["id_groups"] else "[bw]"),
     )
     @commands.cooldown(1, 3.0, type=commands.BucketType.user)
     async def start(self, ctx, *, args_str: str = ""):
@@ -104,7 +114,9 @@ class Sessions(commands.Cog):
 
         if database.exists(f"session.data:{ctx.author.id}"):
             logger.info("already session")
-            await ctx.send("**There is already a session running.** *Change settings/view stats with `b!session edit`*")
+            await ctx.send(
+                f"**There is already a session running.** *Change settings/view stats with `{config.options['prefixes'][0]}session edit`*"
+            )
             return
         else:
             args = args_str.split(" ")
@@ -113,41 +125,24 @@ class Sessions(commands.Cog):
                 bw = "bw"
             else:
                 bw = ""
-            states_args = set(states.keys()).intersection({arg.upper() for arg in args})
-            if states_args:
-                state = " ".join(states_args).strip()
+            group_args = set(groups.keys()).intersection({arg.lower() for arg in args})
+            if group_args and config.options["id_groups"]:
+                group = " ".join(group_args).strip()
             else:
-                state = " ".join(check_state_role(ctx))
-            order_args = set(orders["orders"]).intersection({arg.lower() for arg in args})
-            if order_args:
-                order = " ".join(order_args).strip()
-            else:
-                order = ""
-            female = "female" in args or "f" in args
-            juvenile = "juvenile" in args or "j" in args
-            if female and juvenile:
-                await ctx.send("**Juvenile females are not yet supported.**\n*Please try again*")
-                return
-            elif female:
-                addon = "female"
-            elif juvenile:
-                addon = "juvenile"
-            else:
-                addon = ""
-            logger.info(f"adding bw: {bw}; addon: {addon}; state: {state}")
+                group = ""
+            logger.info(f"adding bw: {bw}; group: {group}")
 
             database.hmset(
-                f"session.data:{ctx.author.id}", {
+                f"session.data:{ctx.author.id}",
+                {
                     "start": round(time.time()),
                     "stop": 0,
                     "correct": 0,
                     "incorrect": 0,
                     "total": 0,
                     "bw": bw,
-                    "state": state,
-                    "addon": addon,
-                    "order": order
-                }
+                    "group": group,
+                },
             )
             await ctx.send(f"**Session started with options:**\n{await self._get_options(ctx)}")
 
@@ -155,10 +150,10 @@ class Sessions(commands.Cog):
     @session.command(
         brief="- Views session",
         help="- Views session\nSessions will record your activity for an amount of time and " +
-        "will give you stats on how your performance and also set global variables such as black and white, " +
-        "state specific bird lists, specific bird orders, or bird age/sex. ",
+        "will give you stats on how your performance and also set global variables such as black and white" +
+        (" or specific categories." if config.options["id_groups"] else "."),
         aliases=["view"],
-        usage="[bw] [state] [female|juvenile]"
+        usage=("[bw] [category]" if config.options["id_groups"] else "[bw]"),
     )
     @commands.cooldown(1, 3.0, type=commands.BucketType.user)
     async def edit(self, ctx, *, args_str: str = ""):
@@ -171,61 +166,35 @@ class Sessions(commands.Cog):
             args = args_str.split(" ")
             logger.info(f"args: {args}")
             if "bw" in args:
-                if len(database.hget(f"session.data:{ctx.author.id}", "bw")) == 0:
+                if not database.hget(f"session.data:{ctx.author.id}", "bw"):
                     logger.info("adding bw")
                     database.hset(f"session.data:{ctx.author.id}", "bw", "bw")
                 else:
                     logger.info("removing bw")
                     database.hset(f"session.data:{ctx.author.id}", "bw", "")
-            states_args = set(states.keys()).intersection({arg.upper() for arg in args})
-            if states_args:
-                toggle_states = list(states_args)
-                current_states = str(database.hget(f"session.data:{ctx.author.id}", "state"))[2:-1].split(" ")
-                add_states = []
-                logger.info(f"toggle states: {toggle_states}")
-                logger.info(f"current states: {current_states}")
-                for state in set(toggle_states).symmetric_difference(set(current_states)):
-                    add_states.append(state)
-                logger.info(f"adding states: {add_states}")
-                database.hset(f"session.data:{ctx.author.id}", "state", " ".join(add_states).strip())
-            order_args = set(orders["orders"]).intersection({arg.lower() for arg in args})
-            if order_args:
-                toggle_order = list(order_args)
-                current_orders = str(database.hget(f"session.data:{ctx.author.id}", "order"))[2:-1].split(" ")
-                add_orders = []
-                logger.info(f"toggle orders: {toggle_order}")
-                logger.info(f"current orders: {current_orders}")
-                for o in set(toggle_order).symmetric_difference(set(current_orders)):
-                    add_orders.append(o)
-                logger.info(f"adding orders: {add_orders}")
-                database.hset(f"session.data:{ctx.author.id}", "order", " ".join(add_orders).strip())
-            female = "female" in args or "f" in args
-            juvenile = "juvenile" in args or "j" in args
-            if female and juvenile:
-                await ctx.send("**Juvenile females are not yet supported.**\n*Please try again*")
-                return
-            elif female:
-                addon = "female"
-                if len(database.hget(f"session.data:{ctx.author.id}", "addon")) == 0:
-                    logger.info("adding female")
-                    database.hset(f"session.data:{ctx.author.id}", "addon", addon)
-                else:
-                    logger.info("removing female")
-                    database.hset(f"session.data:{ctx.author.id}", "addon", "")
-            elif juvenile:
-                addon = "juvenile"
-                if len(database.hget(f"session.data:{ctx.author.id}", "addon")) == 0:
-                    logger.info("adding juvenile")
-                    database.hset(f"session.data:{ctx.author.id}", "addon", addon)
-                else:
-                    logger.info("removing juvenile")
-                    database.hset(f"session.data:{ctx.author.id}", "addon", "")
+            group_args = set(groups.keys()).intersection({arg.lower() for arg in args})
+            if group_args and config.options["id_groups"]:
+                toggle_group = list(group_args)
+                current_group = (database.hget(f"session.data:{ctx.author.id}", "group").decode("utf-8").split(" "))
+                add_group = []
+                logger.info(f"toggle group: {toggle_group}")
+                logger.info(f"current group: {current_group}")
+                for o in set(toggle_group).symmetric_difference(set(current_group)):
+                    add_group.append(o)
+                logger.info(f"adding groups: {add_group}")
+                database.hset(
+                    f"session.data:{ctx.author.id}",
+                    "group",
+                    " ".join(add_group).strip(),
+                )
             await self._send_stats(ctx, f"**Session started previously.**\n")
         else:
-            await ctx.send("**There is no session running.** *You can start one with `b!session start`*")
+            await ctx.send(
+                f"**There is no session running.** *You can start one with `{config.options['prefixes'][0]}session start`*"
+            )
 
     # stops session
-    @session.command(help="- Stops session", aliases=["stp"])
+    @session.command(help="- Stops session", aliases=["stp", "end"])
     @commands.cooldown(1, 3.0, type=commands.BucketType.user)
     async def stop(self, ctx):
         logger.info("command: stop session")
@@ -240,7 +209,9 @@ class Sessions(commands.Cog):
             database.delete(f"session.data:{ctx.author.id}")
             database.delete(f"session.incorrect:{ctx.author.id}")
         else:
-            await ctx.send("**There is no session running.** *You can start one with `b!session start`*")
+            await ctx.send(
+                f"**There is no session running.** *You can start one with `{config.options['prefixes'][0]}session start`*"
+            )
 
 def setup(bot):
     bot.add_cog(Sessions(bot))

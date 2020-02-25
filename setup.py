@@ -6,14 +6,14 @@ def readme():
 
 setuptools.setup(
     name="sciolyid",
-    version="0.0.10",
+    version="0.1.0",
     description="Create ID Discord bots for SciOly studying.",
     long_description=readme(),
     long_description_content_type="text/markdown",
     keywords="science_olympiad discord_bot discord studying",
     license="GPLv3+",
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Programming Language :: Python :: 3.7",
     ],
