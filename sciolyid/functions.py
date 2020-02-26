@@ -20,12 +20,10 @@ import os
 import string
 from io import BytesIO
 
-import discord
 from PIL import Image
 
 import sciolyid.config as config
-from sciolyid.data import GenericError, database, groups, id_list, logger
-
+from sciolyid.data import database, groups, id_list, logger
 
 async def channel_setup(ctx):
     """Sets up a new discord channel.
@@ -33,17 +31,21 @@ async def channel_setup(ctx):
     `ctx` - Discord context object
     """
     logger.info("checking channel setup")
-    if database.exists(f"channel:{str(ctx.channel.id)}"):
+    if database.exists(f"channel:{ctx.channel.id}"):
         logger.info("channel data ok")
     else:
         database.hmset(
-            f"channel:{str(ctx.channel.id)}",
-            {"item": "", "answered": 1, "prevJ": 20, "prevB": ""},
+            f"channel:{ctx.channel.id}",
+            {
+                "item": "",
+                "answered": 1,
+                "prevJ": 20,
+                "prevB": ""
+            },
         )
         # true = 1, false = 0, prevJ is 20 to define as integer
         logger.info("channel data added")
         await ctx.send("Ok, setup! I'm all ready to use!")
-
 
 async def user_setup(ctx):
     """Sets up a new discord user for score tracking.
@@ -59,9 +61,8 @@ async def user_setup(ctx):
         await ctx.send("Welcome <@" + str(ctx.author.id) + ">!")
 
     # Add streak
-    if (database.zscore("streak:global", str(ctx.author.id)) is not None) and (
-        database.zscore("streak.max:global", str(ctx.author.id)) is not None
-    ):
+    if (database.zscore("streak:global", str(ctx.author.id)) is
+        not None) and (database.zscore("streak.max:global", str(ctx.author.id)) is not None):
         logger.info("user streak in already")
     else:
         database.zadd("streak:global", {str(ctx.author.id): 0})
@@ -70,27 +71,19 @@ async def user_setup(ctx):
 
     if ctx.guild is not None:
         logger.info("no dm")
-        if (
-            database.zscore(f"users.server:{ctx.guild.id}", str(ctx.author.id))
-            is not None
-        ):
-            server_score = database.zscore(
-                f"users.server:{ctx.guild.id}", str(ctx.author.id)
-            )
+        if database.zscore(f"users.server:{ctx.guild.id}", str(ctx.author.id)) is not None:
+            server_score = database.zscore(f"users.server:{ctx.guild.id}", str(ctx.author.id))
             global_score = database.zscore("users:global", str(ctx.author.id))
             if server_score is global_score:
                 logger.info("user server ok")
             else:
-                database.zadd(
-                    f"users.server:{ctx.guild.id}", {str(ctx.author.id): global_score}
-                )
+                database.zadd(f"users.server:{ctx.guild.id}", {str(ctx.author.id): global_score})
         else:
             score = int(database.zscore("users:global", str(ctx.author.id)))
             database.zadd(f"users.server:{ctx.guild.id}", {str(ctx.author.id): score})
             logger.info("user server added")
     else:
         logger.info("dm context")
-
 
 async def item_setup(ctx, item: str):
     """Sets up a new item for incorrect tracking.
@@ -105,51 +98,31 @@ async def item_setup(ctx, item: str):
         database.zadd("incorrect:global", {string.capwords(item): 0})
         logger.info("item global added")
 
-    if (
-        database.zscore(f"incorrect.user:{ctx.author.id}", string.capwords(item))
-        is not None
-    ):
+    if database.zscore(f"incorrect.user:{ctx.author.id}", string.capwords(item)) is not None:
         logger.info("item user ok")
     else:
-        database.zadd(
-            f"incorrect.user:{ctx.author.id}", {string.capwords(item): 0}
-        )
+        database.zadd(f"incorrect.user:{ctx.author.id}", {string.capwords(item): 0})
         logger.info("item user added")
 
     if ctx.guild is not None:
         logger.info("no dm")
-        if (
-            database.zscore(
-                f"incorrect.server:{ctx.guild.id}", string.capwords(item)
-            )
-            is not None
-        ):
+        if database.zscore(f"incorrect.server:{ctx.guild.id}", string.capwords(item)) is not None:
             logger.info("item server ok")
         else:
-            database.zadd(
-                f"incorrect.server:{ctx.guild.id}", {string.capwords(item): 0}
-            )
+            database.zadd(f"incorrect.server:{ctx.guild.id}", {string.capwords(item): 0})
             logger.info("item server added")
     else:
         logger.info("dm context")
 
     if database.exists(f"session.data:{ctx.author.id}"):
         logger.info("session in session")
-        if (
-            database.zscore(
-                f"session.incorrect:{ctx.author.id}", string.capwords(item)
-            )
-            is not None
-        ):
+        if database.zscore(f"session.incorrect:{ctx.author.id}", string.capwords(item)) is not None:
             logger.info("item session ok")
         else:
-            database.zadd(
-                f"session.incorrect:{ctx.author.id}", {string.capwords(item): 0}
-            )
+            database.zadd(f"session.incorrect:{ctx.author.id}", {string.capwords(item): 0})
             logger.info("item session added")
     else:
         logger.info("no session")
-
 
 def error_skip(ctx):
     """Skips the current item.
@@ -157,9 +130,8 @@ def error_skip(ctx):
     Passed to send_image() as on_error to skip the item when an error occurs to prevent error loops.
     """
     logger.info("ok")
-    database.hset(f"channel:{str(ctx.channel.id)}", "item", "")
-    database.hset(f"channel:{str(ctx.channel.id)}", "answered", "1")
-
+    database.hset(f"channel:{ctx.channel.id}", "item", "")
+    database.hset(f"channel:{ctx.channel.id}", "answered", "1")
 
 def session_increment(ctx, item: str, amount: int = 1):
     """Increments the value of a database hash field by `amount`.
@@ -173,7 +145,6 @@ def session_increment(ctx, item: str, amount: int = 1):
     value = int(database.hget(f"session.data:{ctx.author.id}", item))
     value += int(amount)
     database.hset(f"session.data:{ctx.author.id}", item, str(value))
-
 
 def incorrect_increment(ctx, item: str, amount: int = 1):
     """Increments the value of an incorrect item by `amount`.
@@ -196,7 +167,6 @@ def incorrect_increment(ctx, item: str, amount: int = 1):
     else:
         logger.info("no session")
 
-
 def score_increment(ctx, amount: int = 1):
     """Increments the score of a user by `amount`.
 
@@ -206,7 +176,6 @@ def score_increment(ctx, amount: int = 1):
     logger.info(f"incrementing score by {amount}")
     database.zincrby("score:global", amount, str(ctx.channel.id))
     database.zincrby("users:global", amount, str(ctx.author.id))
-
 
 def black_and_white(input_image_path) -> BytesIO:
     """Returns a black and white version of an image.
@@ -223,7 +192,6 @@ def black_and_white(input_image_path) -> BytesIO:
     final_buffer.seek(0)
     return final_buffer
 
-
 def build_id_list(group_str: str = ""):
     categories = group_str.split(" ")
 
@@ -233,9 +201,7 @@ def build_id_list(group_str: str = ""):
     if not config.options["id_groups"]:
         return (id_list, "None")
 
-    group_args = set(groups.keys()).intersection(
-        {category.lower() for category in categories}
-    )
+    group_args = set(groups.keys()).intersection({category.lower() for category in categories})
     category_output = " ".join(group_args).strip()
     for group in group_args:
         id_choices += groups[group]
@@ -246,12 +212,10 @@ def build_id_list(group_str: str = ""):
 
     return (id_choices, category_output.strip())
 
-
 def owner_check(ctx) -> bool:
     """Check to see if the user is the owner of the bot."""
     owners = set(str(os.getenv("ids")).split(","))
     return str(ctx.author.id) in owners
-
 
 def spellcheck_list(word_to_check, correct_list, abs_cutoff=None):
     for correct_word in correct_list:
@@ -260,7 +224,6 @@ def spellcheck_list(word_to_check, correct_list, abs_cutoff=None):
         if spellcheck(word_to_check, correct_word, relative_cutoff) is True:
             return True
     return False
-
 
 def spellcheck(worda, wordb, cutoff=3):
     """Checks if two words are close to each other.
@@ -273,9 +236,6 @@ def spellcheck(worda, wordb, cutoff=3):
     wordb = wordb.lower()
     shorterword = min(worda, wordb, key=len)
     if worda != wordb:
-        if (
-            len(list(difflib.Differ().compare(worda, wordb))) - len(shorterword)
-            >= cutoff
-        ):
+        if len(list(difflib.Differ().compare(worda, wordb))) - len(shorterword) >= cutoff:
             return False
     return True

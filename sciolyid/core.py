@@ -15,11 +15,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
-import base64
 import concurrent.futures
 import os
-import random
-import shutil
 from functools import partial
 
 import discord
@@ -32,7 +29,6 @@ from sciolyid.functions import black_and_white
 # Valid file types
 valid_image_extensions = {"jpg", "png", "jpeg", "gif"}
 
-
 async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
     """Gets a picture and sends it to the user.
 
@@ -43,9 +39,7 @@ async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
     """
     if item == "":
         logger.error(f"error - {config.options['id_type']} is blank")
-        await ctx.send(
-            f"**There was an error fetching {config.options['id_type']}.**\n*Please try again.*"
-        )
+        await ctx.send(f"**There was an error fetching {config.options['id_type']}.**\n*Please try again.*")
         if on_error is not None:
             on_error(ctx)
         return
@@ -58,9 +52,7 @@ async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
         response = await get_image(ctx, item)
     except GenericError as e:
         await delete.delete()
-        await ctx.send(
-            f"**An error has occurred while fetching images.**\n*Please try again.*\n**Reason:** {str(e)}"
-        )
+        await ctx.send(f"**An error has occurred while fetching images.**\n*Please try again.*\n**Reason:** {e}")
         logger.exception(e)
         if on_error is not None:
             on_error(ctx)
@@ -68,8 +60,8 @@ async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
 
     filename = str(response[0])
     extension = str(response[1])
-    statInfo = os.stat(filename)
-    if statInfo.st_size > 4000000:  # another filesize check (4mb)
+    stat_info = os.stat(filename)
+    if stat_info.st_size > 4000000:  # another filesize check (4mb)
         await delete.delete()
         await ctx.send("**Oops! File too large :(**\n*Please try again.*")
     else:
@@ -89,7 +81,6 @@ async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
         await ctx.send(file=file_obj)
         await delete.delete()
 
-
 async def get_image(ctx, item):
     """Chooses an image from a list of images.
 
@@ -104,7 +95,7 @@ async def get_image(ctx, item):
 
     images = await get_files(item)
     logger.info("images: " + str(images))
-    prevJ = int(str(database.hget(f"channel:{str(ctx.channel.id)}", "prevJ"))[2:-1])
+    prevJ = int(database.hget(f"channel:{ctx.channel.id}", "prevJ").decode("utf-8"))
     # Randomize start (choose beginning 4/5ths in case it fails checks)
     if images:
         j = (prevJ + 1) % len(images)
@@ -116,23 +107,21 @@ async def get_image(ctx, item):
             image_link = images[y]
             extension = image_link.split(".")[-1]
             logger.info("extension: " + str(extension))
-            statInfo = os.stat(image_link)
-            logger.info("size: " + str(statInfo.st_size))
+            stat_info = os.stat(image_link)
+            logger.info("size: " + str(stat_info.st_size))
             if (
-                extension.lower() in valid_image_extensions
-                and statInfo.st_size < 4000000  # keep files less than 4mb
+                extension.lower() in valid_image_extensions and stat_info.st_size < 4000000  # keep files less than 4mb
             ):
                 logger.info("found one!")
                 break
             elif y == prevJ:
                 raise GenericError("No Valid Images Found", code=999)
 
-        database.hset(f"channel:{str(ctx.channel.id)}", "prevJ", str(j))
+        database.hset(f"channel:{ctx.channel.id}", "prevJ", str(j))
     else:
         raise GenericError("No Images Found", code=100)
 
     return [image_link, extension]
-
 
 async def get_files(item, retries=0):
     """Returns a list of image/song filenames.
@@ -152,7 +141,7 @@ async def get_files(item, retries=0):
         logger.info("trying")
         files_dir = os.listdir(directory)
         logger.info(directory)
-        if len(files_dir) == 0:
+        if not files_dir:
             raise GenericError("No Files", code=100)
         return [f"{directory}{path}" for path in files_dir]
     except (FileNotFoundError, GenericError):
@@ -166,7 +155,6 @@ async def get_files(item, retries=0):
         else:
             logger.info("More than 3 retries")
             return []
-
 
 async def download_github():
     logger.info("syncing github")
@@ -183,10 +171,8 @@ async def download_github():
         await loop.run_in_executor(executor, _pull)
         logger.info("done pulling")
 
-
 def _clone():
     Repo.clone_from(config.options["github_image_repo_url"], f"{config.options['download_dir']}/")
-
 
 def _pull():
     Repo(f"{config.options['download_dir']}/").remote("origin").pull()

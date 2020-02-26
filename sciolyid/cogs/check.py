@@ -14,23 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import discord
 from discord.ext import commands
 
 from sciolyid.data import database, get_aliases, get_wiki_url, logger
-from sciolyid.functions import (channel_setup, incorrect_increment, item_setup,
-                                score_increment, session_increment,
-                                spellcheck_list, user_setup)
-
+from sciolyid.functions import (
+    channel_setup, incorrect_increment, item_setup, score_increment, session_increment, spellcheck_list, user_setup
+)
 
 class Check(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     # Check command - argument is the guess
-    @commands.command(
-        help="- Checks your answer.", usage="guess", aliases=["guess", "c"]
-    )
+    @commands.command(help="- Checks your answer.", usage="guess", aliases=["guess", "c"])
     @commands.cooldown(1, 3.0, type=commands.BucketType.user)
     async def check(self, ctx, *, arg):
         logger.info("command: check")
@@ -38,19 +34,19 @@ class Check(commands.Cog):
         await channel_setup(ctx)
         await user_setup(ctx)
 
-        currentItem = str(database.hget(f"channel:{str(ctx.channel.id)}", "item"))[2:-1]
-        if currentItem == "":  # no image
+        current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8")
+        if current_item == "":  # no image
             await ctx.send("You must ask for a image first!")
         else:  # if there is a image, it checks answer
-            logger.info("currentItem: " + str(currentItem.lower().replace("-", " ")))
+            logger.info("currentItem: " + str(current_item.lower().replace("-", " ")))
             logger.info("args: " + str(arg.lower().replace("-", " ")))
 
-            await item_setup(ctx, currentItem)
-            if spellcheck_list(arg, get_aliases(currentItem.lower())) is True:
+            await item_setup(ctx, current_item)
+            if spellcheck_list(arg, get_aliases(current_item.lower())):
                 logger.info("correct")
 
-                database.hset(f"channel:{str(ctx.channel.id)}", "item", "")
-                database.hset(f"channel:{str(ctx.channel.id)}", "answered", "1")
+                database.hset(f"channel:{ctx.channel.id}", "item", "")
+                database.hset(f"channel:{ctx.channel.id}", "answered", "1")
 
                 if database.exists(f"session.data:{ctx.author.id}"):
                     logger.info("session active")
@@ -58,20 +54,15 @@ class Check(commands.Cog):
 
                 database.zincrby("streak:global", 1, str(ctx.author.id))
                 # check if streak is greater than max, if so, increases max
-                if database.zscore(
-                    "streak:global", str(ctx.author.id)
-                ) > database.zscore("streak.max:global", str(ctx.author.id)):
+                if database.zscore("streak:global", str(ctx.author.id
+                                                       )) > database.zscore("streak.max:global", str(ctx.author.id)):
                     database.zadd(
                         "streak.max:global",
-                        {
-                            str(ctx.author.id): database.zscore(
-                                "streak:global", str(ctx.author.id)
-                            )
-                        },
+                        {str(ctx.author.id): database.zscore("streak:global", str(ctx.author.id))},
                     )
 
                 await ctx.send("Correct! Good job!")
-                url = get_wiki_url(currentItem)
+                url = get_wiki_url(current_item)
                 await ctx.send(url)
                 score_increment(ctx, 1)
 
@@ -84,16 +75,13 @@ class Check(commands.Cog):
                     logger.info("session active")
                     session_increment(ctx, "incorrect", 1)
 
-                incorrect_increment(ctx, str(currentItem), 1)
+                incorrect_increment(ctx, str(current_item), 1)
 
-                database.hset(f"channel:{str(ctx.channel.id)}", "item", "")
-                database.hset(f"channel:{str(ctx.channel.id)}", "answered", "1")
-                await ctx.send(
-                    "Sorry, the image was actually " + currentItem.lower() + "."
-                )
-                url = get_wiki_url(currentItem)
+                database.hset(f"channel:{ctx.channel.id}", "item", "")
+                database.hset(f"channel:{ctx.channel.id}", "answered", "1")
+                await ctx.send("Sorry, the image was actually " + current_item.lower() + ".")
+                url = get_wiki_url(current_item)
                 await ctx.send(url)
-
 
 def setup(bot):
     bot.add_cog(Check(bot))

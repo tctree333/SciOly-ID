@@ -24,7 +24,6 @@ import sciolyid.config as config
 from sciolyid.data import database, logger, groups
 from sciolyid.functions import channel_setup, user_setup
 
-
 class Sessions(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -32,11 +31,9 @@ class Sessions(commands.Cog):
     async def _get_options(self, ctx):
         bw, group = database.hmget(f"session.data:{ctx.author.id}", ["bw", "group"])
         options = str(
-            f"**Black & White:** {bw==b'bw'}"
-            + (
-                f"\n**{config.options['category_name']}:** {group.decode('utf-8') if group else 'None'}"
-                if config.options["id_groups"]
-                else ""
+            f"**Black & White:** {bw==b'bw'}" + (
+                f"\n**{config.options['category_name']}:** {group.decode('utf-8') if group else 'None'}" if config.
+                options["id_groups"] else ""
             )
         )
         return options
@@ -49,46 +46,35 @@ class Sessions(commands.Cog):
                 ["start", "correct", "incorrect", "total"],
             ),
         )
-        elapsed = str(datetime.timedelta(seconds=round(time.time()) - start))
+        elapsed = datetime.timedelta(seconds=round(time.time()) - start)
         try:
             accuracy = round(100 * (correct / (correct + incorrect)), 2)
         except ZeroDivisionError:
             accuracy = 0
 
         stats = str(
-            f"**Duration:** `{elapsed}`\n"
-            + f"**# Correct:** {correct}\n"
-            + f"**# Incorrect:** {incorrect}\n"
-            + f"**Total:** {total}\n"
-            + f"**Accuracy:** {accuracy}%\n"
+            f"**Duration:** `{elapsed}`\n" + f"**# Correct:** {correct}\n" + f"**# Incorrect:** {incorrect}\n" +
+            f"**Total:** {total}\n" + f"**Accuracy:** {accuracy}%\n"
         )
         return stats
 
     async def _send_stats(self, ctx, preamble):
         database_key = f"session.incorrect:{ctx.author.id}"
 
-        embed = discord.Embed(
-            type="rich", colour=discord.Color.blurple(), title=preamble
-        )
+        embed = discord.Embed(type="rich", colour=discord.Color.blurple(), title=preamble)
         embed.set_author(name=config.options["bot_signature"])
 
         if database.zcard(database_key) != 0:
-            leaderboard_list = database.zrevrangebyscore(
-                database_key, "+inf", "-inf", 0, 5, True
-            )
+            leaderboard_list = database.zrevrangebyscore(database_key, "+inf", "-inf", 0, 5, True)
             leaderboard = ""
 
             for i, stats in enumerate(leaderboard_list):
-                leaderboard += (
-                    f"{i+1}. **{stats[0].decode('utf-8')}** - {int(stats[1])}\n"
-                )
+                leaderboard += (f"{i+1}. **{stats[0].decode('utf-8')}** - {int(stats[1])}\n")
         else:
             logger.info(f"no items in {database_key}")
             leaderboard = f"**There are no missed {config.options['id_type']}.**"
 
-        embed.add_field(
-            name="Options", value=await self._get_options(ctx), inline=False
-        )
+        embed.add_field(name="Options", value=await self._get_options(ctx), inline=False)
         embed.add_field(name="Stats", value=await self._get_stats(ctx), inline=False)
         embed.add_field(
             name=f"Top Missed {config.options['id_type'].title()}",
@@ -100,26 +86,23 @@ class Sessions(commands.Cog):
 
     @commands.group(
         brief="- Base session command",
-        help="- Base session command\n"
-        + "Sessions will record your activity for an amount of time and "
-        + "will give you stats on how your performance and "
-        + "also set global variables such as black and white"
-        + (" or specific categories." if config.options["id_groups"] else "."),
-        aliases=["ses", "sesh"],
+        help="- Base session command\nSessions will record your activity for an amount of time and " +
+        "will give you stats on how your performance and also set global variables such as black and white" +
+        (" or specific categories." if config.options["id_groups"] else "."),
+        aliases=["ses", "sesh"]
     )
     async def session(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.send(
-                "**Invalid subcommand passed.**\n*Valid Subcommands:* `start, view, stop`"
-            )
+            await ctx.send("**Invalid subcommand passed.**\n*Valid Subcommands:* `start, view, stop`")
 
     # starts session
     @session.command(
         brief="- Starts session",
-        help="- Starts session.\n"
-        + f"Arguments passed will become the default arguments to '{config.options['prefixes'][0]}{config.options['id_type']}', "
-        + "but can be manually overwritten during use.\n"
-        + f"These settings can be changed at any time with '{config.options['prefixes'][0]}session edit', and arguments can be passed in any order.\n",
+        help="- Starts session.\n" +
+        f"Arguments passed will become the default arguments to '{config.options['prefixes'][0]}{config.options['id_type']}', "
+        + "but can be manually overwritten during use.\n" +
+        f"These settings can be changed at any time with '{config.options['prefixes'][0]}session edit', " +
+        "and arguments can be passed in any order.\n",
         aliases=["st"],
         usage=("[bw] [category]" if config.options["id_groups"] else "[bw]"),
     )
@@ -133,7 +116,8 @@ class Sessions(commands.Cog):
         if database.exists(f"session.data:{ctx.author.id}"):
             logger.info("already session")
             await ctx.send(
-                f"**There is already a session running.** *Change settings/view stats with `{config.options['prefixes'][0]}session edit`*"
+                "**There is already a session running.**" +
+                f"*Change settings/view stats with `{config.options['prefixes'][0]}session edit`*"
             )
             return
         else:
@@ -162,18 +146,14 @@ class Sessions(commands.Cog):
                     "group": group,
                 },
             )
-            await ctx.send(
-                f"**Session started with options:**\n{await self._get_options(ctx)}"
-            )
+            await ctx.send(f"**Session started with options:**\n{await self._get_options(ctx)}")
 
     # views session
     @session.command(
         brief="- Views session",
-        help="- Views session\n"
-        + "Sessions will record your activity for an amount of time and "
-        + "will give you stats on how your performance and "
-        + "also set global variables such as black and white"
-        + (" or specific categories." if config.options["id_groups"] else "."),
+        help="- Views session\nSessions will record your activity for an amount of time and " +
+        "will give you stats on how your performance and also set global variables such as black and white" +
+        (" or specific categories." if config.options["id_groups"] else "."),
         aliases=["view"],
         usage=("[bw] [category]" if config.options["id_groups"] else "[bw]"),
     )
@@ -197,16 +177,12 @@ class Sessions(commands.Cog):
             group_args = set(groups.keys()).intersection({arg.lower() for arg in args})
             if group_args and config.options["id_groups"]:
                 toggle_group = list(group_args)
-                current_group = (
-                    database.hget(f"session.data:{ctx.author.id}", "group")
-                    .decode("utf-8")
-                    .split(" ")
-                )
+                current_group = (database.hget(f"session.data:{ctx.author.id}", "group").decode("utf-8").split(" "))
                 add_group = []
                 logger.info(f"toggle group: {toggle_group}")
                 logger.info(f"current group: {current_group}")
-                for o in set(toggle_group).symmetric_difference(set(current_group)):
-                    add_group.append(o)
+                for group in set(toggle_group).symmetric_difference(set(current_group)):
+                    add_group.append(group)
                 logger.info(f"adding groups: {add_group}")
                 database.hset(
                     f"session.data:{ctx.author.id}",
@@ -238,7 +214,6 @@ class Sessions(commands.Cog):
             await ctx.send(
                 f"**There is no session running.** *You can start one with `{config.options['prefixes'][0]}session start`*"
             )
-
 
 def setup(bot):
     bot.add_cog(Sessions(bot))

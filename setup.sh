@@ -1,4 +1,4 @@
-echo Exporting Enviornment Variables
+echo Exporting Environment Variables
 export token="YOUR BOT TOKEN"
 echo Exported token as $token
 

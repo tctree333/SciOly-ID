@@ -35,14 +35,8 @@ optional = {
     "redis_env": "REDIS_URL",
 }
 
-options = {
-    d: e
-    for d, e in list(required.items())
-    + list(id_required.items())
-    + list(optional.items())
-}
-
+options = {d: e for d, e in list(required.items()) + list(id_required.items()) + list(optional.items())}
 
 class BotConfigError(Exception):
-    def __init__(self, message="An error occurred in the config process."):
+    def __init__(self, message="An error occurred in the config process."):  # pylint: disable=useless-super-delegation
         super().__init__(message)

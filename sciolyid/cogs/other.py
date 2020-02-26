@@ -15,7 +15,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import itertools
-import random
 import typing
 from difflib import get_close_matches
 
@@ -28,15 +27,12 @@ from sciolyid.data import database, get_aliases, id_list, logger, aliases, group
 from sciolyid.functions import channel_setup, owner_check, user_setup, build_id_list
 from sciolyid.core import send_image
 
-
 class Other(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     # Info - Gives image
-    @commands.command(
-        help=f"- Gives images of {config.options['id_type']}", aliases=["i"]
-    )
+    @commands.command(help=f"- Gives an image of {config.options['id_type']}", aliases=["i"])
     @commands.cooldown(1, 10.0, type=commands.BucketType.user)
     async def info(self, ctx, *, arg):
         logger.info("command: info")
@@ -53,15 +49,11 @@ class Other(commands.Cog):
             item = matches[0]
 
             delete = await ctx.send("Please wait a moment.")
-            await send_image(
-                ctx, str(item), message=f"Here's a *{item.lower()}* image!"
-            )
+            await send_image(ctx, str(item), message=f"Here's a *{item.lower()}* image!")
             await delete.delete()
 
         else:
-            await ctx.send(
-                f"{config.options['id_type'].title()} not found. Are you sure it's on the list?"
-            )
+            await ctx.send(f"{config.options['id_type'].title()} not found. Are you sure it's on the list?")
 
     # List command
     @commands.command(help="- DMs the user with the appropriate list.", name="list")
@@ -79,7 +71,7 @@ class Other(commands.Cog):
         item_lists = []
         temp = ""
         for item in group_list:
-            temp += f"{str(item)}\n"
+            temp += f"{item}\n"
             if len(temp) > 1950:
                 item_lists.append(temp)
                 temp = ""
@@ -95,8 +87,8 @@ class Other(commands.Cog):
             await ctx.author.dm_channel.send(f"```\n{group}```")
 
         await ctx.send(
-            f"The national {config.options['id_type']} list has **{str(len(group_list))}** {detected_groups}.\n"
-            + f"*A full list of {detected_groups} has been sent to you via DMs.*"
+            f"The national {config.options['id_type']} list has **{len(group_list)}** {detected_groups}.\n" +
+            f"*A full list of {detected_groups} has been sent to you via DMs.*"
         )
 
     # Group command - lists groups
@@ -111,9 +103,7 @@ class Other(commands.Cog):
         await channel_setup(ctx)
         await user_setup(ctx)
 
-        await ctx.send(
-            f"**Valid Groups**: `{', '.join(map(str, list(groups.keys())))}`"
-        )
+        await ctx.send(f"**Valid Groups**: `{', '.join(map(str, list(groups.keys())))}`")
 
     # Wiki command - argument is the wiki page
     @commands.command(help="- Fetch the wikipedia page for any given argument")
@@ -148,22 +138,22 @@ class Other(commands.Cog):
         embed.set_author(name=config.options["bot_signature"])
         embed.add_field(
             name="Bot Info",
-            value=f"This bot was created by {config.options['authors']}"
-            + f" for helping people practice {config.options['id_type']} identification for Science Olympiad.\n"
-            + f"The bot's source can be found here: {config.options['source_link']}",
+            value=f"This bot was created by {config.options['authors']}" +
+            f" for helping people practice {config.options['id_type']} identification for Science Olympiad.\n" +
+            f"The bot's source can be found here: {config.options['source_link']}",
             inline=False,
         )
         embed.add_field(
             name="Support",
-            value="If you are experiencing any issues, have feature requests, "
-            + "or want to get updates on bot status, join our support server below.",
+            value="If you are experiencing any issues, have feature requests, " +
+            "or want to get updates on bot status, join our support server below.",
             inline=False,
         )
         embed.add_field(
             name="Stats",
-            value=f"This bot can see {len(self.bot.users)} users and is in {len(self.bot.guilds)} servers. "
-            + f"There are {int(database.zcard('users:global'))} active users in {int(database.zcard('score:global'))} channels. "
-            + f"The WebSocket latency is {str(round((self.bot.latency*1000)))} ms.",
+            value=f"This bot can see {len(self.bot.users)} users and is in {len(self.bot.guilds)} servers. " +
+            f"There are {int(database.zcard('users:global'))} active users in {int(database.zcard('score:global'))} channels. "
+            + f"The WebSocket latency is {round(self.bot.latency*1000)} ms.",
             inline=False,
         )
         await ctx.send(embed=embed)
@@ -193,7 +183,7 @@ class Other(commands.Cog):
     @commands.check(owner_check)
     async def ban(self, ctx, *, user: discord.Member = None):
         logger.info("command: ban")
-        if user is None:
+        if user is None or isinstance(user, str):
             logger.info("no args")
             await ctx.send("Invalid User!")
             return
@@ -204,11 +194,9 @@ class Other(commands.Cog):
     # unban command - prevents certain users from using the bot
     @commands.command(help="- unban command", hidden=True)
     @commands.check(owner_check)
-    async def unban(
-        self, ctx, *, user: typing.Optional[typing.Union[discord.Member, str]] = None
-    ):
+    async def unban(self, ctx, *, user: typing.Optional[typing.Union[discord.Member, str]] = None):
         logger.info("command: unban")
-        if user is None:
+        if user is None or isinstance(user, str):
             logger.info("no args")
             await ctx.send("Invalid User!")
             return
@@ -219,11 +207,15 @@ class Other(commands.Cog):
     # Send command - for testing purposes only
     @commands.command(help="- send command", hidden=True, aliases=["sendas"])
     @commands.check(owner_check)
-    async def send_as_bot(self, ctx, *, args):
+    async def send_as_bot(self, ctx, *, args_str):
         logger.info("command: send")
-        logger.info(f"args: {args}")
-        channel_id = int(args.split(" ")[0])
-        message = args.strip(str(channel_id))
+        logger.info(f"args: {args_str}")
+        args = args_str.split(" ")
+        channel_id = int(args[0])
+        try:
+            message = args[1:]
+        except IndexError:
+            await ctx.send("No message provided!")
         channel = self.bot.get_channel(channel_id)
         await channel.send(message)
         await ctx.send("Ok, sent!")
@@ -232,15 +224,13 @@ class Other(commands.Cog):
     @commands.command(help="- test command", hidden=True)
     async def test(self, ctx, *, item):
         logger.info("command: test")
-        aliases = await get_aliases(item)
-        await ctx.send(aliases)
+        await ctx.send(await get_aliases(item))
 
     # Test command - for testing purposes only
     @commands.command(help="- test command", hidden=True)
     async def error(self, ctx):
         logger.info("command: error")
         await ctx.send(1 / 0)
-
 
 def setup(bot):
     bot.add_cog(Other(bot))

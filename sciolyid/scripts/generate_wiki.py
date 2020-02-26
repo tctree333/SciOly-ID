@@ -1,8 +1,5 @@
-import time
-start = time.time()
-from sciolyid.data import id_list
 import wikipedia
-import string
+from sciolyid.data import id_list
 
 urls = {}
 with open(f'data/wikipedia.txt', 'r') as f:
@@ -20,12 +17,10 @@ with open("data/wikipedia.txt", 'w') as f:
         else:
             try:
                 url = wikipedia.page(f"{thing}").url
-            except:
+            except Exception:
                 print('FAIL')
                 fails.append(thing)
                 continue
         f.write(f"{thing},{url}\n")
 
-end = time.time()
 print(fails)
-print(end-start)

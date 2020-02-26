@@ -1,10 +1,8 @@
 import setuptools
 
-
 def readme():
     with open("README.md", "r") as f:
         return f.read()
-
 
 setuptools.setup(
     name="sciolyid",
@@ -31,6 +29,6 @@ setuptools.setup(
         "wikipedia>=1.4.0, <2.0.0",
         "gitpython>=3.0.5, <4.0.0",
     ],
-    py_modules=["config", "core", "functions", "start_bot"],
+    py_modules=["config", "core", "data", "functions", "start_bot"],
     python_requires="~=3.7",
 )
