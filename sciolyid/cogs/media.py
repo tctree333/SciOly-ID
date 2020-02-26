@@ -54,8 +54,8 @@ class Media(commands.Cog):
                 choices = id_list
 
             current_item = random.choice(choices)
-            prevB = database.hget(f"channel:{ctx.channel.id}", "prevI").decode("utf-8")
-            while current_item == prevB:
+            prevI = database.hget(f"channel:{ctx.channel.id}", "prevI").decode("utf-8")
+            while current_item == prevI:
                 current_item = random.choice(choices)
             database.hset(f"channel:{ctx.channel.id}", "prevI", str(current_item))
             database.hset(f"channel:{ctx.channel.id}", "item", str(current_item))

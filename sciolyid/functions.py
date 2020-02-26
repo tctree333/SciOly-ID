@@ -40,7 +40,7 @@ async def channel_setup(ctx):
                 "item": "",
                 "answered": 1,
                 "prevJ": 20,
-                "prevB": ""
+                "prevI": ""
             },
         )
         # true = 1, false = 0, prevJ is 20 to define as integer

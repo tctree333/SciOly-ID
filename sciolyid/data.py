@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import csv
 import logging
 import logging.handlers
 import os
@@ -59,17 +60,17 @@ if config.options["sentry"]:
 # Database Format Definitions
 
 # prevJ - makes sure it sends a diff image
-# prevB - makes sure it sends a diff item (img)
+# prevI - makes sure it sends a diff item (img)
 
 # server format = {
 # channel:channel_id : { "item", "answered",
-#                     "prevJ", "prevB" }
+#                     "prevJ", "prevI" }
 # }
 
 # session format:
 # session.data:user_id : {"start": 0, "stop": 0,
 #                         "correct": 0, "incorrect": 0, "total": 0,
-#                         "bw": bw, "state": state, "addon": addon}
+#                         "bw": bw, "group": group}
 # session.incorrect:user_id : [item name, # incorrect]
 
 # race format:
@@ -78,9 +79,7 @@ if config.options["sentry"]:
 #                    "stop": 0,
 #                    "limit": 10,
 #                    "bw": bw,
-#                    "state": state,
-#                    "addon": addon,
-#                    "media": media
+#                    "group": group
 # }
 # race.scores:ctx.channel.id : [ctx.author.id, #correct]
 
@@ -120,7 +119,9 @@ if config.options["logs"]:
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(logging.DEBUG)
 
-    file_handler.setFormatter(logging.Formatter("{asctime} - {filename:10} -  {levelname:8} - {message}", style="{"))
+    file_handler.setFormatter(
+        logging.Formatter("{asctime} - {filename:10} -  {levelname:8} - {message}", style="{")
+    )
     stream_handler.setFormatter(logging.Formatter("{filename:10} -  {levelname:8} - {message}", style="{"))
 
     logger.addHandler(file_handler)
@@ -167,35 +168,33 @@ def _wiki_urls():
     logger.info("Working on wiki urls")
     urls = {}
     with open(f'{config.options["wikipedia_file"]}', 'r') as f:
-        for line in f:
-            item = line.strip().split(',')[0].lower()
-            url = line.strip().split(',')[1]
-            urls[item] = url
+        reader = csv.reader(f)
+        for item, url in reader:
+            urls[item.lower()] = url
     logger.info("Done with wiki urls")
     return urls
 
-def get_wiki_url(item):
-    item = item.lower()
-    return wikipedia_urls[item]
+def get_wiki_url(item: str):
+    return wikipedia_urls[item.lower()]
 
 def _generate_aliases():
     logger.info("Working on aliases")
     aliases = {}
     with open(f'{config.options["alias_file"]}', 'r') as f:
-        for line in f:
-            raw_aliases = list(line.strip().lower().split(','))
-            item = raw_aliases[0].lower()
+        reader = csv.reader(f)
+        for raw_aliases in reader:
+            raw_aliases = list(map(str.lower, raw_aliases))
+            item = raw_aliases[0]
             aliases[item] = raw_aliases
     logger.info("Done with aliases")
     return aliases
 
-def get_aliases(item):
+def get_aliases(item: str):
     item = item.lower()
     try:
-        alias_list = aliases[item]
+        return aliases[item]
     except KeyError:
-        alias_list = [item]
-    return alias_list
+        return [item]
 
 def get_category(item: str):
     item = item.lower()

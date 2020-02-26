@@ -43,7 +43,7 @@ async def on_ready():
     logger.info(bot.user.name)
     logger.info(bot.user.id)
     # Change discord activity
-    await bot.change_presence(activity=discord.Activity(type=3, name=config.options["id_type"]))
+    await bot.change_presence(activity=discord.Activity(type=3, name=config.options["id_type"]+"s"))
 
     # start tasks
     update_images.start()
@@ -56,6 +56,7 @@ initial_extensions = [
     "sciolyid.cogs.hint",
     "sciolyid.cogs.score",
     "sciolyid.cogs.sessions",
+    "sciolyid.cogs.race",
     "sciolyid.cogs.other",
 ]
 for extension in config.options["disable_extensions"]:
@@ -164,8 +165,8 @@ async def on_command_error(ctx, error):
             capture_exception(error)
             await ctx.send(
                 "**An uncaught generic error has occurred.**\n" +
-                "*Please log this message in #support in the support server below, or try again.*\n" + "**Error:** " +
-                str(error)
+                "*Please log this message in #support in the support server below, or try again.*\n" +
+                "**Error:** " + str(error)
             )
             await ctx.send(config.options["support_server"])
             raise error
@@ -222,8 +223,8 @@ async def on_command_error(ctx, error):
             capture_exception(error.original)
             await ctx.send(
                 "**An uncaught command error has occurred.**\n" +
-                "*Please log this message in #support in the support server below, or try again.*\n" + "**Error:**  " +
-                str(error)
+                "*Please log this message in #support in the support server below, or try again.*\n" +
+                "**Error:**  " + str(error)
             )
             await ctx.send(config.options["support_server"])
             raise error
@@ -233,8 +234,8 @@ async def on_command_error(ctx, error):
         capture_exception(error)
         await ctx.send(
             "**An uncaught non-command error has occurred.**\n" +
-            "*Please log this message in #support in the support server below, or try again.*\n" + "**Error:** " +
-            str(error)
+            "*Please log this message in #support in the support server below, or try again.*\n" +
+            "**Error:** " + str(error)
         )
         await ctx.send(config.options["support_server"])
         raise error

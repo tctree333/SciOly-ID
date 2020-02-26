@@ -28,17 +28,15 @@ class Sessions(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def _get_options(self, ctx):
+    def _get_options(self, ctx):
         bw, group = database.hmget(f"session.data:{ctx.author.id}", ["bw", "group"])
-        options = str(
-            f"**Black & White:** {bw==b'bw'}" + (
-                f"\n**{config.options['category_name']}:** {group.decode('utf-8') if group else 'None'}" if config.
-                options["id_groups"] else ""
-            )
+        options = f"**Black & White:** {bw==b'bw'}" + (
+            f"\n**{config.options['category_name']}:** {group.decode('utf-8') if group else 'None'}"
+            if config.options["id_groups"] else ""
         )
         return options
 
-    async def _get_stats(self, ctx):
+    def _get_stats(self, ctx):
         start, correct, incorrect, total = map(
             int,
             database.hmget(
@@ -52,9 +50,10 @@ class Sessions(commands.Cog):
         except ZeroDivisionError:
             accuracy = 0
 
-        stats = str(
-            f"**Duration:** `{elapsed}`\n" + f"**# Correct:** {correct}\n" + f"**# Incorrect:** {incorrect}\n" +
-            f"**Total:** {total}\n" + f"**Accuracy:** {accuracy}%\n"
+        stats = (
+            f"**Duration:** `{elapsed}`\n" + f"**# Correct:** {correct}\n" +
+            f"**# Incorrect:** {incorrect}\n" + f"**Total:** {total}\n" +
+            f"**Accuracy:** {accuracy}%\n"
         )
         return stats
 
@@ -74,8 +73,8 @@ class Sessions(commands.Cog):
             logger.info(f"no items in {database_key}")
             leaderboard = f"**There are no missed {config.options['id_type']}.**"
 
-        embed.add_field(name="Options", value=await self._get_options(ctx), inline=False)
-        embed.add_field(name="Stats", value=await self._get_stats(ctx), inline=False)
+        embed.add_field(name="Options", value=self._get_options(ctx), inline=False)
+        embed.add_field(name="Stats", value=self._get_stats(ctx), inline=False)
         embed.add_field(
             name=f"Top Missed {config.options['id_type'].title()}",
             value=leaderboard,
@@ -86,14 +85,17 @@ class Sessions(commands.Cog):
 
     @commands.group(
         brief="- Base session command",
-        help="- Base session command\nSessions will record your activity for an amount of time and " +
-        "will give you stats on how your performance and also set global variables such as black and white" +
-        (" or specific categories." if config.options["id_groups"] else "."),
+        help="- Base session command\nSessions will record your activity for an amount of time and "
+        +
+        "will give you stats on how your performance and also set global variables such as black and white"
+        + (" or specific categories." if config.options["id_groups"] else "."),
         aliases=["ses", "sesh"]
     )
     async def session(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.send("**Invalid subcommand passed.**\n*Valid Subcommands:* `start, view, stop`")
+            await ctx.send(
+                "**Invalid subcommand passed.**\n*Valid Subcommands:* `start, view, stop`"
+            )
 
     # starts session
     @session.command(
@@ -101,8 +103,8 @@ class Sessions(commands.Cog):
         help="- Starts session.\n" +
         f"Arguments passed will become the default arguments to '{config.options['prefixes'][0]}{config.options['id_type']}', "
         + "but can be manually overwritten during use.\n" +
-        f"These settings can be changed at any time with '{config.options['prefixes'][0]}session edit', " +
-        "and arguments can be passed in any order.\n",
+        f"These settings can be changed at any time with '{config.options['prefixes'][0]}session edit', "
+        + "and arguments can be passed in any order.\n",
         aliases=["st"],
         usage=("[bw] [category]" if config.options["id_groups"] else "[bw]"),
     )
@@ -146,14 +148,14 @@ class Sessions(commands.Cog):
                     "group": group,
                 },
             )
-            await ctx.send(f"**Session started with options:**\n{await self._get_options(ctx)}")
+            await ctx.send(f"**Session started with options:**\n{self._get_options(ctx)}")
 
     # views session
     @session.command(
         brief="- Views session",
         help="- Views session\nSessions will record your activity for an amount of time and " +
-        "will give you stats on how your performance and also set global variables such as black and white" +
-        (" or specific categories." if config.options["id_groups"] else "."),
+        "will give you stats on how your performance and also set global variables such as black and white"
+        + (" or specific categories." if config.options["id_groups"] else "."),
         aliases=["view"],
         usage=("[bw] [category]" if config.options["id_groups"] else "[bw]"),
     )
@@ -177,7 +179,10 @@ class Sessions(commands.Cog):
             group_args = set(groups.keys()).intersection({arg.lower() for arg in args})
             if group_args and config.options["id_groups"]:
                 toggle_group = list(group_args)
-                current_group = (database.hget(f"session.data:{ctx.author.id}", "group").decode("utf-8").split(" "))
+                current_group = (
+                    database.hget(f"session.data:{ctx.author.id}",
+                                  "group").decode("utf-8").split(" ")
+                )
                 add_group = []
                 logger.info(f"toggle group: {toggle_group}")
                 logger.info(f"current group: {current_group}")
