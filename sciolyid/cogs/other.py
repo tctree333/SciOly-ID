@@ -32,7 +32,7 @@ class Other(commands.Cog):
         self.bot = bot
 
     # Info - Gives image
-    @commands.command(help=f"- Gives an image of a {config.options['id_type'][:-1]}", aliases=["i"])
+    @commands.command(help=f"- Gives images of specific {config.options['id_type']}", aliases=["i"])
     @commands.cooldown(1, 10.0, type=commands.BucketType.user)
     async def info(self, ctx, *, arg):
         logger.info("command: info")

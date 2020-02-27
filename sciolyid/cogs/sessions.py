@@ -44,7 +44,7 @@ class Sessions(commands.Cog):
                 ["start", "correct", "incorrect", "total"],
             ),
         )
-        elapsed = datetime.timedelta(seconds=round(time.time()) - start)
+        elapsed = str(datetime.timedelta(seconds=round(time.time()) - start))
         try:
             accuracy = round(100 * (correct / (correct + incorrect)), 2)
         except ZeroDivisionError:
@@ -83,11 +83,12 @@ class Sessions(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.group(
-        brief="- Base session command",
-        help="- Base session command\nSessions will record your activity for an amount of time and " +
-        "will give you stats on how your performance and also set global variables such as black and white" +
+        brief=f"- Base session command. Use '{config.options['prefixes'][0]}help session' for more info.",
+        help="- Base session command\n" + "Sessions will record your activity for an amount of time and " +
+        "will give you stats on how your performance and " +
+        "also set global variables such as black and white" +
         (" or specific categories." if config.options["id_groups"] else "."),
-        aliases=["ses", "sesh"]
+        aliases=["ses", "sesh"],
     )
     async def session(self, ctx):
         if ctx.invoked_subcommand is None:
@@ -114,8 +115,7 @@ class Sessions(commands.Cog):
         if database.exists(f"session.data:{ctx.author.id}"):
             logger.info("already session")
             await ctx.send(
-                "**There is already a session running.**" +
-                f"*Change settings/view stats with `{config.options['prefixes'][0]}session edit`*"
+                f"**There is already a session running.** *Change settings/view stats with `{config.options['prefixes'][0]}session edit`*"
             )
             return
         else:
@@ -159,8 +159,9 @@ class Sessions(commands.Cog):
     # views session
     @session.command(
         brief="- Views session",
-        help="- Views session\nSessions will record your activity for an amount of time and " +
-        "will give you stats on how your performance and also set global variables such as black and white" +
+        help="- Views session\n" + "Sessions will record your activity for an amount of time and " +
+        "will give you stats on how your performance and " +
+        "also set global variables such as black and white" +
         (" or specific categories." if config.options["id_groups"] else "."),
         aliases=["view"],
         usage=("[bw] [category]" if config.options["id_groups"] else "[bw]"),
@@ -201,8 +202,8 @@ class Sessions(commands.Cog):
                 add_group = []
                 logger.info(f"toggle group: {toggle_group}")
                 logger.info(f"current group: {current_group}")
-                for group in set(toggle_group).symmetric_difference(set(current_group)):
-                    add_group.append(group)
+                for o in set(toggle_group).symmetric_difference(set(current_group)):
+                    add_group.append(o)
                 logger.info(f"adding groups: {add_group}")
                 database.hset(
                     f"session.data:{ctx.author.id}",

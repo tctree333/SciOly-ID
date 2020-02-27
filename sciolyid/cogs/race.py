@@ -114,7 +114,7 @@ class Race(commands.Cog):
         database.delete(f"race.scores:{ctx.channel.id}")
 
     @commands.group(
-        brief="- Base race command",
+        brief="- Base race command. Use '{config.options['prefixes'][0]}help race' for more info.",
         help="- Base race command\n" +
         f"Races allow you to compete with others to see who can ID {config.options['id_type']} first. " +
         "Starting a race will automatically run " +
@@ -169,21 +169,16 @@ class Race(commands.Cog):
             else:
                 bw = ""
             group_args = []
-                for category in set(
-                    list(groups.keys())
-                    + [
-                        item
-                        for group in groups.keys()
-                        for item in config.options["category_aliases"][group]
-                    ]
-                ).intersection({arg.lower() for arg in args}):
-                    if category not in groups.keys():
-                        category = next(
-                            key
-                            for key, value in config.options["category_aliases"].items()
-                            if category in value
-                        )
-                    group_args.append(category)
+            for category in set(
+                list(groups.keys()) +
+                [item for group in groups.keys() for item in config.options["category_aliases"][group]]
+            ).intersection({arg.lower()
+                            for arg in args}):
+                if category not in groups.keys():
+                    category = next(
+                        key for key, value in config.options["category_aliases"].items() if category in value
+                    )
+                group_args.append(category)
             group = " ".join(group_args).strip()
             for arg in args:
                 try:
@@ -231,7 +226,9 @@ class Race(commands.Cog):
         if database.exists(f"race.data:{ctx.channel.id}"):
             await self._send_stats(ctx, f"**Race In Progress**")
         else:
-            await ctx.send(f"**There is no race in session.** *You can start one with `{config.options['prefixes'][0]}race start`*")
+            await ctx.send(
+                f"**There is no race in session.** *You can start one with `{config.options['prefixes'][0]}race start`*"
+            )
 
     @race.command(help="- Stops race", aliases=["stp", "end"])
     @commands.cooldown(1, 3.0, type=commands.BucketType.channel)
@@ -244,7 +241,9 @@ class Race(commands.Cog):
         if database.exists(f"race.data:{ctx.channel.id}"):
             await self.stop_race_(ctx)
         else:
-            await ctx.send(f"**There is no race in session.** *You can start one with `{config.options['prefixes'][0]}race start`*")
+            await ctx.send(
+                f"**There is no race in session.** *You can start one with `{config.options['prefixes'][0]}race start`*"
+            )
 
 def setup(bot):
     bot.add_cog(Race(bot))
