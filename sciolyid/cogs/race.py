@@ -114,7 +114,7 @@ class Race(commands.Cog):
         database.delete(f"race.scores:{ctx.channel.id}")
 
     @commands.group(
-        brief="- Base race command",
+        brief=f"- Base race command. Use '{config.options['prefixes'][0]}help race' for more info.",
         help="- Base race command\n" + "Races allow you to compete with others to see who can ID a bird first. " +
         "Starting a race will keep all cooldowns the same, but automatically run " +
         "'b!bird' (or 'b!song') after every check. You will still need to use 'b!check' " +
