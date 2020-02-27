@@ -52,8 +52,7 @@ class Sessions(commands.Cog):
 
         stats = (
             f"**Duration:** `{elapsed}`\n" + f"**# Correct:** {correct}\n" +
-            f"**# Incorrect:** {incorrect}\n" + f"**Total:** {total}\n" +
-            f"**Accuracy:** {accuracy}%\n"
+            f"**# Incorrect:** {incorrect}\n" + f"**Total:** {total}\n" + f"**Accuracy:** {accuracy}%\n"
         )
         return stats
 
@@ -85,26 +84,23 @@ class Sessions(commands.Cog):
 
     @commands.group(
         brief="- Base session command",
-        help="- Base session command\nSessions will record your activity for an amount of time and "
-        +
-        "will give you stats on how your performance and also set global variables such as black and white"
-        + (" or specific categories." if config.options["id_groups"] else "."),
+        help="- Base session command\nSessions will record your activity for an amount of time and " +
+        "will give you stats on how your performance and also set global variables such as black and white" +
+        (" or specific categories." if config.options["id_groups"] else "."),
         aliases=["ses", "sesh"]
     )
     async def session(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.send(
-                "**Invalid subcommand passed.**\n*Valid Subcommands:* `start, view, stop`"
-            )
+            await ctx.send("**Invalid subcommand passed.**\n*Valid Subcommands:* `start, view, stop`")
 
     # starts session
     @session.command(
         brief="- Starts session",
         help="- Starts session.\n" +
-        f"Arguments passed will become the default arguments to '{config.options['prefixes'][0]}{config.options['id_type']}', "
+        f"Arguments passed will become the default arguments to '{config.options['prefixes'][0]}{config.options['id_type'][:-1]}', "
         + "but can be manually overwritten during use.\n" +
-        f"These settings can be changed at any time with '{config.options['prefixes'][0]}session edit', "
-        + "and arguments can be passed in any order.\n",
+        f"These settings can be changed at any time with '{config.options['prefixes'][0]}session edit', " +
+        "and arguments can be passed in any order.\n",
         aliases=["st"],
         usage=("[bw] [category]" if config.options["id_groups"] else "[bw]"),
     )
@@ -129,7 +125,17 @@ class Sessions(commands.Cog):
                 bw = "bw"
             else:
                 bw = ""
-            group_args = set(groups.keys()).intersection({arg.lower() for arg in args})
+            group_args = []
+            for category in set(
+                list(groups.keys()) +
+                [item for group in groups.keys() for item in config.options["category_aliases"][group]]
+            ).intersection({arg.lower()
+                            for arg in args}):
+                if category not in groups.keys():
+                    category = next(
+                        key for key, value in config.options["category_aliases"].items() if category in value
+                    )
+                group_args.append(category)
             if group_args and config.options["id_groups"]:
                 group = " ".join(group_args).strip()
             else:
@@ -154,8 +160,8 @@ class Sessions(commands.Cog):
     @session.command(
         brief="- Views session",
         help="- Views session\nSessions will record your activity for an amount of time and " +
-        "will give you stats on how your performance and also set global variables such as black and white"
-        + (" or specific categories." if config.options["id_groups"] else "."),
+        "will give you stats on how your performance and also set global variables such as black and white" +
+        (" or specific categories." if config.options["id_groups"] else "."),
         aliases=["view"],
         usage=("[bw] [category]" if config.options["id_groups"] else "[bw]"),
     )
@@ -176,12 +182,21 @@ class Sessions(commands.Cog):
                 else:
                     logger.info("removing bw")
                     database.hset(f"session.data:{ctx.author.id}", "bw", "")
-            group_args = set(groups.keys()).intersection({arg.lower() for arg in args})
+            group_args = []
+            for category in set(
+                list(groups.keys()) +
+                [item for group in groups.keys() for item in config.options["category_aliases"][group]]
+            ).intersection({arg.lower()
+                            for arg in args}):
+                if category not in groups.keys():
+                    category = next(
+                        key for key, value in config.options["category_aliases"].items() if category in value
+                    )
+                group_args.append(category)
             if group_args and config.options["id_groups"]:
                 toggle_group = list(group_args)
                 current_group = (
-                    database.hget(f"session.data:{ctx.author.id}",
-                                  "group").decode("utf-8").split(" ")
+                    database.hget(f"session.data:{ctx.author.id}", "group").decode("utf-8").split(" ")
                 )
                 add_group = []
                 logger.info(f"toggle group: {toggle_group}")

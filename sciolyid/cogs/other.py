@@ -32,7 +32,7 @@ class Other(commands.Cog):
         self.bot = bot
 
     # Info - Gives image
-    @commands.command(help=f"- Gives an image of {config.options['id_type']}", aliases=["i"])
+    @commands.command(help=f"- Gives an image of a {config.options['id_type'][:-1]}", aliases=["i"])
     @commands.cooldown(1, 10.0, type=commands.BucketType.user)
     async def info(self, ctx, *, arg):
         logger.info("command: info")
@@ -53,7 +53,9 @@ class Other(commands.Cog):
             await delete.delete()
 
         else:
-            await ctx.send(f"{config.options['id_type'].title()} not found. Are you sure it's on the list?")
+            await ctx.send(
+                f"{config.options['id_type'][:-1].title()} not found. Are you sure it's on the list?"
+            )
 
     # List command
     @commands.command(help="- DMs the user with the appropriate list.", name="list")
@@ -81,14 +83,14 @@ class Other(commands.Cog):
             await ctx.author.create_dm()
 
         await ctx.author.dm_channel.send(
-            f"**{detected_groups.capitalize()} in the National {config.options['id_type']} list:**"
+            f"**{detected_groups.capitalize()} in the National {config.options['id_type'][:-1].title()} list:**"
         )
         for group in item_lists:
             await ctx.author.dm_channel.send(f"```\n{group}```")
 
         await ctx.send(
-            f"The national {config.options['id_type']} list has **{len(group_list)}** {detected_groups}.\n" +
-            f"*A full list of {detected_groups} has been sent to you via DMs.*"
+            f"The National {config.options['id_type'][:-1].title()} list has **{len(group_list)}** {detected_groups}.\n"
+            + f"*A full list of {detected_groups} has been sent to you via DMs.*"
         )
 
     # Group command - lists groups
@@ -142,7 +144,7 @@ class Other(commands.Cog):
         embed.add_field(
             name="Bot Info",
             value=f"This bot was created by {config.options['authors']}" +
-            f" for helping people practice {config.options['id_type']} identification for Science Olympiad.\n"
+            f" for helping people practice {config.options['id_type'][:-1]} identification for Science Olympiad.\n"
             + f"The bot's source can be found here: {config.options['source_link']}",
             inline=False,
         )

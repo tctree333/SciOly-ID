@@ -29,12 +29,11 @@ from sciolyid.functions import (
 )
 
 IMAGE_MESSAGE = (
-    f"*Here you go!* \n**Use `{config.options['prefixes'][0]}pic` again to get a new image of the same {config.options['id_type']}, "
-    + f"or `{config.options['prefixes'][0]}skip` to get new {config.options['id_type']}."
-    + f"Use `{config.options['prefixes'][0]}check [guess]` to check your answer. "
-    + f"Use `{config.options['prefixes'][0]}hint` for a hint.**"
+    f"*Here you go!* \n**Use `{config.options['prefixes'][0]}pic` again to get a new image of the same {config.options['id_type'][:-1]}, "
+    + f"or `{config.options['prefixes'][0]}skip` to get a new {config.options['id_type'][:-1]}." +
+    f"Use `{config.options['prefixes'][0]}check [guess]` to check your answer. " +
+    f"Use `{config.options['prefixes'][0]}hint` for a hint.**"
 )
-
 
 class Media(commands.Cog):
     def __init__(self, bot):
@@ -43,8 +42,8 @@ class Media(commands.Cog):
     async def send_pic_(self, ctx, group_str: str, bw: bool = False):
 
         logger.info(
-            f"{config.options['id_type']}: "
-            + database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8")
+            f"{config.options['id_type'][:-1]}: " +
+            database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8")
         )
 
         answered = int(database.hget(f"channel:{ctx.channel.id}", "answered"))
@@ -69,9 +68,7 @@ class Media(commands.Cog):
             database.hset(f"channel:{ctx.channel.id}", "item", str(current_item))
             logger.info("currentItem: " + str(current_item))
             database.hset(f"channel:{ctx.channel.id}", "answered", "0")
-            await send_image(
-                ctx, current_item, on_error=error_skip, message=IMAGE_MESSAGE, bw=bw
-            )
+            await send_image(ctx, current_item, on_error=error_skip, message=IMAGE_MESSAGE, bw=bw)
         else:  # if no, give the same item
             await send_image(
                 ctx,
@@ -85,7 +82,7 @@ class Media(commands.Cog):
     # help text
     @commands.command(
         help="- Sends a random image for you to ID",
-        aliases=["p", config.options["id_type"], config.options["id_type"][0]],
+        aliases=["p", config.options["id_type"][:-1], config.options["id_type"][0]],
     )
     # 5 second cooldown
     @commands.cooldown(1, 5.0, type=commands.BucketType.channel)
@@ -100,20 +97,15 @@ class Media(commands.Cog):
 
         bw = "bw" in args
 
-        group_args = list()
+        group_args = []
         for category in set(
-            list(groups.keys())
-            + [
-                item
-                for group in groups.keys()
-                for item in config.options["category_aliases"][group]
-            ]
-        ).intersection({arg.lower() for arg in args}):
+            list(groups.keys()) +
+            [item for group in groups.keys() for item in config.options["category_aliases"][group]]
+        ).intersection({arg.lower()
+                        for arg in args}):
             if category not in groups.keys():
                 category = next(
-                    key
-                    for key, value in config.options["category_aliases"].items()
-                    if category in value
+                    key for key, value in config.options["category_aliases"].items() if category in value
                 )
             group_args.append(category)
         logger.info(f"group_args: {group_args}")
@@ -128,9 +120,7 @@ class Media(commands.Cog):
             if group_args:
                 toggle_groups = list(group_args)
                 current_groups = (
-                    database.hget(f"session.data:{ctx.author.id}", "group")
-                    .decode("utf-8")
-                    .split(" ")
+                    database.hget(f"session.data:{ctx.author.id}", "group").decode("utf-8").split(" ")
                 )
                 add_groups = []
                 logger.info(f"toggle group: {toggle_groups}")
@@ -140,9 +130,7 @@ class Media(commands.Cog):
                 logger.info(f"adding groups: {add_groups}")
                 group = " ".join(add_groups).strip()
             else:
-                group = database.hget(f"session.data:{ctx.author.id}", "group").decode(
-                    "utf-8"
-                )
+                group = database.hget(f"session.data:{ctx.author.id}", "group").decode("utf-8")
 
             if database.hget(f"session.data:{ctx.author.id}", "bw").decode("utf-8"):
                 bw = not bw
@@ -151,19 +139,15 @@ class Media(commands.Cog):
             group = ""
 
         logger.info(f"args: bw: {bw}; group: {group}")
-        if (
-            int(database.hget(f"channel:{ctx.channel.id}", "answered"))
-            and config.options["id_groups"]
-        ):
+        if (int(database.hget(f"channel:{ctx.channel.id}", "answered")) and config.options["id_groups"]):
             await ctx.send(
-                f"**Recognized arguments:** *Black & White*: `{bw}`, "
-                + f"*{config.options['category_name']}*: `{'None' if group == '' else group}`"
+                f"**Recognized arguments:** *Black & White*: `{bw}`, " +
+                f"*{config.options['category_name']}*: `{'None' if group == '' else group}`"
             )
         else:
             await ctx.send(f"**Recognized arguments:** *Black & White*: `{bw}`")
 
         await self.send_pic_(ctx, group, bw)
-
 
 def setup(bot):
     bot.add_cog(Media(bot))

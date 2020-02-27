@@ -212,21 +212,14 @@ def build_id_list(group_str: str = ""):
         logger.info("no groups allowed")
         return (id_list, "None")
 
-    group_args = list()
+    group_args = []
     for group in set(
-        list(groups.keys())
-        + [
-            item
-            for group in groups.keys()
-            for item in config.options["category_aliases"][group]
-        ]
-    ).intersection({category.lower() for category in categories}):
+        list(groups.keys()) +
+        [item for group in groups.keys() for item in config.options["category_aliases"][group]]
+    ).intersection({category.lower()
+                    for category in categories}):
         if group not in groups.keys():
-            group = next(
-                key
-                for key, value in config.options["category_aliases"].items()
-                if value == group
-            )
+            group = next(key for key, value in config.options["category_aliases"].items() if value == group)
         group_args.append(group)
     logger.info(f"group_args: {group_args}")
 

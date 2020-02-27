@@ -43,7 +43,7 @@ async def on_ready():
     logger.info(bot.user.name)
     logger.info(bot.user.id)
     # Change discord activity
-    await bot.change_presence(activity=discord.Activity(type=3, name=config.options["id_type"]+"s"))
+    await bot.change_presence(activity=discord.Activity(type=3, name=config.options["id_type"]))
 
     # start tasks
     update_images.start()

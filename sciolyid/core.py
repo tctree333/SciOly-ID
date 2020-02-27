@@ -38,7 +38,7 @@ async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
     `message` (str) - text message to send before picture\n
     """
     if item == "":
-        logger.error(f"error - {config.options['id_type']} is blank")
+        logger.error(f"error - {config.options['id_type'][:-1]} is blank")
         await ctx.send(f"**There was an error fetching {config.options['id_type']}.**\n*Please try again.*")
         if on_error is not None:
             on_error(ctx)

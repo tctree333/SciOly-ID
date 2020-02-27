@@ -103,7 +103,7 @@ class Race(commands.Cog):
 
         await ctx.send(
             f"**Congratulations, {user}!**\n" +
-            f"You have won the race by correctly identifying `{int(first[1])}` {config.options['id_type']}s. "
+            f"You have won the race by correctly identifying `{int(first[1])}` {config.options['id_type']}. "
             + "*Way to go!*"
         )
 
@@ -116,12 +116,12 @@ class Race(commands.Cog):
     @commands.group(
         brief="- Base race command",
         help="- Base race command\n" +
-        f"Races allow you to compete with others to see who can ID a {config.options['id_type']} first. " +
-        "Starting a race will keep all cooldowns the same, but automatically run " +
+        f"Races allow you to compete with others to see who can ID {config.options['id_type']} first. " +
+        "Starting a race will automatically run " +
         f"'{config.options['prefixes'][0]}pic' after every check. " +
         f"You will still need to use '{config.options['prefixes'][0]}check' to check your answer. " +
         f"Races are channel-specific, and anyone in that channel can play." +
-        f"Races end when a player is the first to correctly ID a set amount of {config.options['id_type']}s. (default 10)"
+        f"Races end when a player is the first to correctly ID a set amount of {config.options['id_type']}. (default 10)"
     )
     async def race(self, ctx):
         if ctx.invoked_subcommand is None:
@@ -133,7 +133,7 @@ class Race(commands.Cog):
         Arguments passed will become the default arguments to '{config.options['prefixes'][0]}pic', but can be manually overwritten during use.
         Arguments can be passed in any order.""",
         aliases=["st"],
-        usage="[bw] [group] [amount to win (default 10)]"
+        usage=f"[bw]{' [group]' if config.options.id_groups else ''} [amount to win (default 10)]"
     )
     @commands.cooldown(1, 3.0, type=commands.BucketType.channel)
     async def start(self, ctx, *, args_str: str = ""):
@@ -158,7 +158,7 @@ class Race(commands.Cog):
         if database.exists(f"race.data:{ctx.channel.id}"):
             logger.info("already race")
             await ctx.send(
-                f"**There is already a race in session.** *Change settings/view stats with `{config.options['prefixes'][0]}race view`*"
+                f"**There is already a race in session.** *View stats with `{config.options['prefixes'][0]}race view`*"
             )
             return
         else:
@@ -168,8 +168,23 @@ class Race(commands.Cog):
                 bw = "bw"
             else:
                 bw = ""
-            groups_args = set(groups.keys()).intersection({arg.lower() for arg in args})
-            group = " ".join(groups_args).strip()
+            group_args = []
+                for category in set(
+                    list(groups.keys())
+                    + [
+                        item
+                        for group in groups.keys()
+                        for item in config.options["category_aliases"][group]
+                    ]
+                ).intersection({arg.lower() for arg in args}):
+                    if category not in groups.keys():
+                        category = next(
+                            key
+                            for key, value in config.options["category_aliases"].items()
+                            if category in value
+                        )
+                    group_args.append(category)
+            group = " ".join(group_args).strip()
             for arg in args:
                 try:
                     limit = int(arg)
@@ -204,7 +219,7 @@ class Race(commands.Cog):
     @race.command(
         brief="- Views race",
         help="- Views race.\n" +
-        f"Races allow you to compete with your friends to ID a certain {config.options['id_type']} first."
+        f"Races allow you to compete with your friends to ID {config.options['id_type']} first."
     )
     @commands.cooldown(1, 3.0, type=commands.BucketType.channel)
     async def view(self, ctx):
@@ -216,7 +231,7 @@ class Race(commands.Cog):
         if database.exists(f"race.data:{ctx.channel.id}"):
             await self._send_stats(ctx, f"**Race In Progress**")
         else:
-            await ctx.send("**There is no race in session.** *You can start one with `b!race start`*")
+            await ctx.send(f"**There is no race in session.** *You can start one with `{config.options['prefixes'][0]}race start`*")
 
     @race.command(help="- Stops race", aliases=["stp", "end"])
     @commands.cooldown(1, 3.0, type=commands.BucketType.channel)
@@ -229,7 +244,7 @@ class Race(commands.Cog):
         if database.exists(f"race.data:{ctx.channel.id}"):
             await self.stop_race_(ctx)
         else:
-            await ctx.send("**There is no race in session.** *You can start one with `b!race start`*")
+            await ctx.send(f"**There is no race in session.** *You can start one with `{config.options['prefixes'][0]}race start`*")
 
 def setup(bot):
     bot.add_cog(Race(bot))

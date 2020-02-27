@@ -31,7 +31,7 @@ To setup your own bot, follow these steps:
     - `bot_description` - This is a description of the Discord bot.
     - `bot_signature` - This is what is displayed at the top of an embed. This is also a short description of the bot.
     - `prefixes` - This is what is used to call your bot. The first item of the list will be used when giving example commands. Having different cased versions of your prefix may be helpful to mobile users, along with having a prefix with only letters and periods.
-    - `id_type` - This is a singular noun that describes what you are IDing.
+    - `id_type` - This is a plural noun that describes what you are IDing.
     - `github_image_repo_url` - This is a link to the GitHub repo hosting your images, which we will create later.
     - `support_server` - This is the link to the Discord server that will act as a support server.
     - `source_link` - This is the link to the GitHub repo hosting your code.
