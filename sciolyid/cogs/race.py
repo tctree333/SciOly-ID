@@ -29,7 +29,7 @@ class Race(commands.Cog):
         self.bot = bot
 
     def _get_options(self, ctx):
-        bw, group = database.hmget(f"race.data:{ctx.author.id}", ["bw", "group"])
+        bw, group = database.hmget(f"race.data:{ctx.channel.id}", ["bw", "group"])
         options = f"**Black & White:** {bw==b'bw'}" + (
             f"\n**{config.options['category_name']}:** {group.decode('utf-8') if group else 'None'}"
             if config.options["id_groups"] else ""
@@ -168,12 +168,8 @@ class Race(commands.Cog):
                 bw = "bw"
             else:
                 bw = ""
-
             groups_args = set(groups.keys()).intersection({arg.lower() for arg in args})
-            if groups_args:
-                group = " ".join(groups_args).strip()
-            else:
-                group = ""
+            group = " ".join(groups_args).strip()
             for arg in args:
                 try:
                     limit = int(arg)
@@ -198,12 +194,10 @@ class Race(commands.Cog):
                     "group": group,
                 }
             )
-
             database.zadd(f"race.scores:{ctx.channel.id}", {str(ctx.author.id): 0})
             await ctx.send(f"**Race started with options:**\n{self._get_options(ctx)}")
 
             logger.info("auto sending next image")
-            #group, bw = database.hmget(f"race.data:{ctx.channel.id}", ["group", "bw"])
             media = self.bot.get_cog("Media")
             await media.send_pic_(ctx, group, bw)
 

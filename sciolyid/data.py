@@ -227,24 +227,6 @@ def _all_lists():
 
 def _config():
     logger.info("Reading configuration file")
-    logger.info("Validating configuration file")
-    '''test_var = (
-        config.options["authors"],
-        config.options["category_aliases"],
-        config.options["id_type"],
-        config.options["prefixes"],
-        config.options["bot_description"],
-        config.options["github_image_repo_url"],
-        config.options["invite"],
-        config.options["support_server"],
-        config.options["bot_signature"],
-        config.options["id_groups"],
-        config.options["name"],
-        config.options["source_link"],
-        config.options["category_name"]
-    )'''
-    logger.info("Done valiating configuration file")
-
     for group in groups:
         if group not in config.options["category_aliases"].keys():
             config.options["category_aliases"][group] = [group]

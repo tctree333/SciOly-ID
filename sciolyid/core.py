@@ -52,7 +52,9 @@ async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
         response = await get_image(ctx, item)
     except GenericError as e:
         await delete.delete()
-        await ctx.send(f"**An error has occurred while fetching images.**\n*Please try again.*\n**Reason:** {e}")
+        await ctx.send(
+            f"**An error has occurred while fetching images.**\n*Please try again.*\n**Reason:** {e}"
+        )
         logger.exception(e)
         if on_error is not None:
             on_error(ctx)
@@ -110,7 +112,8 @@ async def get_image(ctx, item):
             stat_info = os.stat(image_link)
             logger.info("size: " + str(stat_info.st_size))
             if (
-                extension.lower() in valid_image_extensions and stat_info.st_size < 4000000  # keep files less than 4mb
+                extension.lower() in valid_image_extensions and
+                stat_info.st_size < 4000000  # keep files less than 4mb
             ):
                 logger.info("found one!")
                 break

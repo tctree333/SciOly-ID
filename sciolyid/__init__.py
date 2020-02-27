@@ -22,7 +22,7 @@ def setup(**kwargs):
             try:
                 config.options[option] = kwargs[option]
             except KeyError:
-                raise config.BotConfigError(f"Error: Required setup argument {option} when ID_GROUPS is True")
+                raise config.BotConfigError(f"Error: Required setup argument {option} when id_groups is True")
 
     if config.options['file_folder'] and config.options['file_folder'][-1] != "/":
         config.options['file_folder'] += "/"
@@ -36,6 +36,9 @@ def setup(**kwargs):
     config.options["list_dir"] = f"{config.options['data_dir']}{config.options['list_dir']}"
     config.options["wikipedia_file"] = f"{config.options['data_dir']}{config.options['wikipedia_file']}"
     config.options["alias_file"] = f"{config.options['data_dir']}{config.options['alias_file']}"
+
+    config.options["id_type"] = config.options["id_type"].lower()
+    config.options["category_name"] = config.options["category_name"].title()
 
 def start():
     import sciolyid.start_bot  # pylint: disable=unused-import

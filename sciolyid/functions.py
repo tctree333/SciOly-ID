@@ -176,6 +176,14 @@ def score_increment(ctx, amount: int = 1):
     logger.info(f"incrementing score by {amount}")
     database.zincrby("score:global", amount, str(ctx.channel.id))
     database.zincrby("users:global", amount, str(ctx.author.id))
+    if ctx.guild is not None:
+        logger.info("no dm")
+        database.zincrby(f"users.server:{ctx.guild.id}", amount, str(ctx.author.id))
+    else:
+        logger.info("dm context")
+    if database.exists(f"race.data:{ctx.channel.id}"):
+        logger.info("race in session")
+        database.zincrby(f"race.scores:{ctx.channel.id}", amount, str(ctx.author.id))
 
 def black_and_white(input_image_path) -> BytesIO:
     """Returns a black and white version of an image.
@@ -232,8 +240,8 @@ def spellcheck(worda, wordb, cutoff=3):
     `wordb` (str) - second word to compare
     `cutoff` (int) - allowed difference amount
     """
-    worda = worda.lower()
-    wordb = wordb.lower()
+    worda = worda.lower().replace("-", " ").replace("'", "")
+    wordb = wordb.lower().replace("-", " ").replace("'", "")
     shorterword = min(worda, wordb, key=len)
     if worda != wordb:
         if len(list(difflib.Differ().compare(worda, wordb))) - len(shorterword) >= cutoff:

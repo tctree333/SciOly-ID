@@ -93,8 +93,11 @@ class Other(commands.Cog):
 
     # Group command - lists groups
     @commands.command(
-        help="- DMs the user with the appropriate list.",
-        aliases=["taxons", "group", "categories"],
+        help="- Prints a list of all available groups.",
+        aliases=[
+            config.options['category_name'].lower(), config.options['category_name'].lower() + "s", "group",
+            "category", "categories"
+        ],
     )
     @commands.cooldown(1, 8.0, type=commands.BucketType.user)
     async def groups(self, ctx):
@@ -139,8 +142,8 @@ class Other(commands.Cog):
         embed.add_field(
             name="Bot Info",
             value=f"This bot was created by {config.options['authors']}" +
-            f" for helping people practice {config.options['id_type']} identification for Science Olympiad.\n" +
-            f"The bot's source can be found here: {config.options['source_link']}",
+            f" for helping people practice {config.options['id_type']} identification for Science Olympiad.\n"
+            + f"The bot's source can be found here: {config.options['source_link']}",
             inline=False,
         )
         embed.add_field(
@@ -172,7 +175,8 @@ class Other(commands.Cog):
         embed.set_author(name=config.options["bot_signature"])
         embed.add_field(
             name="Invite",
-            value=f"To invite this bot to your own server, use the following invite links.\n {config.options['invite']}",
+            value=
+            f"To invite this bot to your own server, use the following invite links.\n {config.options['invite']}",
             inline=False,
         )
         await ctx.send(embed=embed)
