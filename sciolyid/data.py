@@ -29,21 +29,23 @@ import sciolyid.config as config
 
 # define database for one connection
 if config.options["local_redis"]:
-    database = redis.Redis(host='localhost', port=6379, db=0)
+    database = redis.Redis(host="localhost", port=6379, db=0)
 elif config.options["redis_env"] is not None:
     database = redis.from_url(os.getenv(config.options["redis_env"]))
 else:
     raise ValueError("redis_env must be set if local_redis is False")
 
+
 def before_sentry_send(event, hint):
     """Fingerprint certain events before sending to Sentry."""
-    if 'exc_info' in hint:
-        error = hint['exc_info'][1]
+    if "exc_info" in hint:
+        error = hint["exc_info"][1]
         if isinstance(error, commands.CommandNotFound):
-            event['fingerprint'] = ['command-not-found']
+            event["fingerprint"] = ["command-not-found"]
         elif isinstance(error, commands.CommandOnCooldown):
-            event['fingerprint'] = ['command-cooldown']
+            event["fingerprint"] = ["command-cooldown"]
     return event
+
 
 # add sentry logging
 if config.options["sentry"]:
@@ -53,7 +55,7 @@ if config.options["sentry"]:
         release=f"Heroku Release {os.getenv('HEROKU_RELEASE_VERSION')}:{os.getenv('HEROKU_SLUG_DESCRIPTION')}",
         dsn=os.getenv(config.options["sentry_dsn_env"]),
         integrations=[RedisIntegration(), AioHttpIntegration()],
-        before_send=before_sentry_send
+        before_send=before_sentry_send,
     )
 
 # Database Format Definitions
@@ -120,8 +122,14 @@ if config.options["logs"]:
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(logging.DEBUG)
 
-    file_handler.setFormatter(logging.Formatter("{asctime} - {filename:10} -  {levelname:8} - {message}", style="{"))
-    stream_handler.setFormatter(logging.Formatter("{filename:10} -  {levelname:8} - {message}", style="{"))
+    file_handler.setFormatter(
+        logging.Formatter(
+            "{asctime} - {filename:10} -  {levelname:8} - {message}", style="{"
+        )
+    )
+    stream_handler.setFormatter(
+        logging.Formatter("{filename:10} -  {levelname:8} - {message}", style="{")
+    )
 
     logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
@@ -132,9 +140,12 @@ if config.options["logs"]:
             sys.__excepthook__(exc_type, exc_value, exc_traceback)
             return
 
-        logger.critical("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+        logger.critical(
+            "Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback)
+        )
 
     sys.excepthook = handle_exception
+
 
 class GenericError(commands.CommandError):
     """A custom error class.
@@ -149,9 +160,11 @@ class GenericError(commands.CommandError):
         842 - Banned User
         666 - No output error
     """
+
     def __init__(self, message=None, code=0):
         self.code = code
         super().__init__(message=message)
+
 
 # Error codes: (can add more if needed)
 # 0 - no code
@@ -163,31 +176,35 @@ class GenericError(commands.CommandError):
 # 842 - Banned User
 # 666 - No output error
 
+
 def _wiki_urls():
     logger.info("Working on wiki urls")
     urls = {}
-    with open(f'{config.options["wikipedia_file"]}', 'r') as f:
+    with open(f'{config.options["wikipedia_file"]}', "r") as f:
         for line in f:
-            item = line.strip().split(',')[0].lower()
-            url = line.strip().split(',')[1]
+            item = line.strip().split(",")[0].lower()
+            url = line.strip().split(",")[1]
             urls[item] = url
     logger.info("Done with wiki urls")
     return urls
+
 
 def get_wiki_url(item):
     item = item.lower()
     return wikipedia_urls[item]
 
+
 def _generate_aliases():
     logger.info("Working on aliases")
     aliases = {}
-    with open(f'{config.options["alias_file"]}', 'r') as f:
+    with open(f'{config.options["alias_file"]}', "r") as f:
         for line in f:
-            raw_aliases = list(line.strip().lower().split(','))
+            raw_aliases = list(line.strip().lower().split(","))
             item = raw_aliases[0].lower()
             aliases[item] = raw_aliases
     logger.info("Done with aliases")
     return aliases
+
 
 def get_aliases(item):
     item = item.lower()
@@ -197,6 +214,7 @@ def get_aliases(item):
         alias_list = [item]
     return alias_list
 
+
 def get_category(item: str):
     item = item.lower()
     for group in groups:
@@ -204,18 +222,22 @@ def get_category(item: str):
             return group.lower()
     return None
 
+
 def _groups():
     """Converts txt files of data into lists."""
-    filenames = [name.split(".")[0] for name in os.listdir(f"{config.options['list_dir']}/")]
+    filenames = [
+        name.split(".")[0] for name in os.listdir(f"{config.options['list_dir']}/")
+    ]
     # Converts txt file of data into lists
     lists = {}
     for filename in filenames:
         logger.info(f"Working on {filename}")
-        with open(f'{config.options["list_dir"]}/{filename}.txt', 'r') as f:
+        with open(f'{config.options["list_dir"]}/{filename}.txt', "r") as f:
             lists[filename] = [line.strip().lower() for line in f]
         logger.info(f"Done with {filename}")
     logger.info("Done with lists!")
     return lists
+
 
 def _all_lists():
     """Compiles lists into master lists."""
@@ -227,31 +249,17 @@ def _all_lists():
     return master
 
 def _config():
-    logger.info("Reading configuration file")
-    logger.info("Validating configuration file")
-    '''test_var = (
-        config.options["authors"],
-        config.options["category_aliases"],
-        config.options["id_type"],
-        config.options["prefixes"],
-        config.options["bot_description"],
-        config.options["github_image_repo_url"],
-        config.options["invite"],
-        config.options["support_server"],
-        config.options["bot_signature"],
-        config.options["id_groups"],
-        config.options["name"],
-        config.options["source_link"],
-        config.options["category_name"]
-    )'''
-    logger.info("Done valiating configuration file")
-
     for group in groups:
         if group not in config.options["category_aliases"].keys():
             config.options["category_aliases"][group] = [group]
-            logger.info(f"Added {group} to aliases")
 
-    logger.info("Done reading configuration file!")
+    _aliases = [
+        item
+        for group in groups.keys()
+        for item in config.options["category_aliases"][group]
+    ]
+    if len(_aliases) != len(set(_aliases)):
+        raise config.BotConfigError("Aliases in category_aliases not unique")
 
 groups = _groups()
 id_list = _all_lists()
