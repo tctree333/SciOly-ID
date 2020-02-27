@@ -17,6 +17,7 @@
 import difflib
 import math
 import os
+import pickle
 import string
 from io import BytesIO
 
@@ -242,6 +243,33 @@ def owner_check(ctx) -> bool:
     """Check to see if the user is the owner of the bot."""
     owners = set(str(os.getenv("ids")).split(","))
     return str(ctx.author.id) in owners
+
+def backup_all():
+    """Backs up the database to a file.
+    
+    This function serializes all data in the REDIS database
+    into a file in the `backups` directory.
+
+    This function is run with a task every 6 hours and sends the files
+    to a specified discord channel.
+    """
+    logger.info("Starting Backup")
+    logger.info("Creating Dump")
+    keys = (key.decode("utf-8") for key in database.keys())
+    dump = ((database.dump(key), key) for key in keys)
+    logger.info("Finished Dump")
+    logger.info("Writing To File")
+    try:
+        os.mkdir(config.options["backups_dir"])
+        logger.info("Created backups directory")
+    except FileExistsError:
+        logger.info("Backups directory exists")
+    with open(config.options["backups_dir"] + "dump.dump", 'wb') as f:
+        with open(config.options["backups_dir"] + "keys.txt", 'w') as k:
+            for item, key in dump:
+                pickle.dump(item, f)
+                k.write(f"{key}\n")
+    logger.info("Backup Finished")
 
 def spellcheck_list(word_to_check, correct_list, abs_cutoff=None):
     for correct_word in correct_list:

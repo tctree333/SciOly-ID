@@ -133,7 +133,7 @@ class Race(commands.Cog):
         Arguments passed will become the default arguments to '{config.options['prefixes'][0]}pic', but can be manually overwritten during use.
         Arguments can be passed in any order.""",
         aliases=["st"],
-        usage=f"[bw]{' [group]' if config.options.id_groups else ''} [amount to win (default 10)]"
+        usage=f"[bw]{' [group]' if config.options['id_groups'] else ''} [amount to win (default 10)]"
     )
     @commands.cooldown(1, 3.0, type=commands.BucketType.channel)
     async def start(self, ctx, *, args_str: str = ""):

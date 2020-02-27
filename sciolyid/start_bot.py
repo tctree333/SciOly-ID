@@ -15,6 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
+import concurrent.futures
 import os
 import sys
 
@@ -25,7 +26,7 @@ from discord.ext import commands, tasks
 from sentry_sdk import capture_exception
 
 from sciolyid.data import GenericError, database, logger
-from sciolyid.functions import channel_setup
+from sciolyid.functions import channel_setup, backup_all
 from sciolyid.core import download_github
 import sciolyid.config as config
 
@@ -47,6 +48,8 @@ async def on_ready():
 
     # start tasks
     update_images.start()
+    if config.options["backups_channel"]:
+        refresh_backup.start()
 
 # Here we load our extensions(cogs) that are located in the cogs directory, each cog is a collection of commands
 initial_extensions = [
@@ -246,6 +249,33 @@ async def update_images():
     logger.info("updating github")
     await download_github()
     logger.info("done updating images!")
+
+@tasks.loop(hours=6.0)
+async def refresh_backup():
+    """Sends a copy of the database to a discord channel (BACKUPS_CHANNEL)."""
+    logger.info("Refreshing backup")
+    try:
+        os.remove(config.options["backups_dir"] + "dump.dump")
+        logger.info("Cleared backup dump")
+    except FileNotFoundError:
+        logger.info("Already cleared backup dump")
+    try:
+        os.remove(config.options["backups_dir"] + 'keys.txt')
+        logger.info("Cleared backup keys")
+    except FileNotFoundError:
+        logger.info("Already cleared backup keys")
+
+    event_loop = asyncio.get_event_loop()
+    with concurrent.futures.ThreadPoolExecutor(1) as executor:
+        await event_loop.run_in_executor(executor, backup_all)
+
+    logger.info("Sending backup files")
+    channel = bot.get_channel(config.options["backups_channel"])
+    with open(config.options["backups_dir"] + "dump.dump", 'rb') as f:
+        await channel.send(file=discord.File(f, filename="dump"))
+    with open(config.options["backups_dir"] + "keys.txt", 'r') as f:
+        await channel.send(file=discord.File(f, filename="keys.txt"))
+    logger.info("Backup Files Sent!")
 
 # Actually run the bot
 token = os.getenv(config.options["bot_token_env"])

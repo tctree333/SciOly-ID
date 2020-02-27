@@ -33,6 +33,8 @@ optional = {
     "bot_token_env": "token",
     "sentry_dsn_env": "SENTRY_DISCORD_DSN",
     "redis_env": "REDIS_URL",
+    "backups_channel": 0,
+    "backups_dir": "backups"
 }
 
 options = {d: e for d, e in list(required.items()) + list(id_required.items()) + list(optional.items())}

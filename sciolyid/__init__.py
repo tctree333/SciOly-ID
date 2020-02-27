@@ -30,8 +30,12 @@ def setup(**kwargs):
     if config.options['data_dir'] and config.options['data_dir'][-1] != "/":
         config.options['data_dir'] += "/"
 
+    if config.options['backups_dir'] and config.options['backups_dir'][-1] != "/":
+        config.options['backups_dir'] += "/"
+
     config.options["log_dir"] = f"{config.options['file_folder']}{config.options['log_dir']}"
     config.options["download_dir"] = f"{config.options['file_folder']}{config.options['download_dir']}"
+    config.options["backups_dir"] = f"{config.options['file_folder']}{config.options['backups_dir']}"
 
     config.options["list_dir"] = f"{config.options['data_dir']}{config.options['list_dir']}"
     config.options["wikipedia_file"] = f"{config.options['data_dir']}{config.options['wikipedia_file']}"
