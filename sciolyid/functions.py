@@ -201,24 +201,49 @@ def black_and_white(input_image_path) -> BytesIO:
     return final_buffer
 
 def build_id_list(group_str: str = ""):
+    logger.info("building id list")
     categories = group_str.split(" ")
+    logger.info(f"categories: {categories}")
 
     id_choices = []
     category_output = ""
 
     if not config.options["id_groups"]:
+        logger.info("no groups allowed")
         return (id_list, "None")
 
-    group_args = set(groups.keys()).intersection({category.lower() for category in categories})
+    group_args = list()
+    for group in set(
+        list(groups.keys())
+        + [
+            item
+            for group in groups.keys()
+            for item in config.options["category_aliases"][group]
+        ]
+    ).intersection({category.lower() for category in categories}):
+        if group not in groups.keys():
+            group = next(
+                key
+                for key, value in config.options["category_aliases"].items()
+                if value == group
+            )
+        group_args.append(group)
+    logger.info(f"group_args: {group_args}")
+
     category_output = " ".join(group_args).strip()
     for group in group_args:
+        logger.info(f"group: {group}")
         id_choices += groups[group]
 
     if not id_choices:
+        logger.info("no choices")
         id_choices += id_list
         category_output = "None"
 
-    return (id_choices, category_output.strip())
+    logger.info(f"id_choices length: {len(id_choices)}")
+    logger.info(f"category_output: {category_output}")
+
+    return (id_choices, category_output)
 
 def owner_check(ctx) -> bool:
     """Check to see if the user is the owner of the bot."""

@@ -30,7 +30,7 @@ import sciolyid.config as config
 
 # define database for one connection
 if config.options["local_redis"]:
-    database = redis.Redis(host='localhost', port=6379, db=0)
+    database = redis.Redis(host="localhost", port=6379, db=0)
 elif config.options["redis_env"] is not None:
     database = redis.from_url(os.getenv(config.options["redis_env"]))
 else:
@@ -38,12 +38,12 @@ else:
 
 def before_sentry_send(event, hint):
     """Fingerprint certain events before sending to Sentry."""
-    if 'exc_info' in hint:
-        error = hint['exc_info'][1]
+    if "exc_info" in hint:
+        error = hint["exc_info"][1]
         if isinstance(error, commands.CommandNotFound):
-            event['fingerprint'] = ['command-not-found']
+            event["fingerprint"] = ["command-not-found"]
         elif isinstance(error, commands.CommandOnCooldown):
-            event['fingerprint'] = ['command-cooldown']
+            event["fingerprint"] = ["command-cooldown"]
     return event
 
 # add sentry logging
@@ -54,7 +54,7 @@ if config.options["sentry"]:
         release=f"Heroku Release {os.getenv('HEROKU_RELEASE_VERSION')}:{os.getenv('HEROKU_SLUG_DESCRIPTION')}",
         dsn=os.getenv(config.options["sentry_dsn_env"]),
         integrations=[RedisIntegration(), AioHttpIntegration()],
-        before_send=before_sentry_send
+        before_send=before_sentry_send,
     )
 
 # Database Format Definitions
@@ -210,7 +210,7 @@ def _groups():
     lists = {}
     for filename in filenames:
         logger.info(f"Working on {filename}")
-        with open(f'{config.options["list_dir"]}/{filename}.txt', 'r') as f:
+        with open(f'{config.options["list_dir"]}/{filename}.txt', "r") as f:
             lists[filename] = [line.strip().lower() for line in f]
         logger.info(f"Done with {filename}")
     logger.info("Done with lists!")
@@ -226,13 +226,13 @@ def _all_lists():
     return master
 
 def _config():
-    logger.info("Reading configuration file")
     for group in groups:
         if group not in config.options["category_aliases"].keys():
             config.options["category_aliases"][group] = [group]
-            logger.info(f"Added {group} to aliases")
 
-    logger.info("Done reading configuration file!")
+    _aliases = [item for group in groups.keys() for item in config.options["category_aliases"][group]]
+    if len(_aliases) != len(set(_aliases)):
+        raise config.BotConfigError("Aliases in category_aliases not unique")
 
 groups = _groups()
 id_list = _all_lists()
