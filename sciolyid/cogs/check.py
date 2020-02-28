@@ -89,7 +89,7 @@ class Check(commands.Cog):
                         logger.info("auto sending next image")
                         group, bw = database.hmget(f"race.data:{ctx.channel.id}", ["group", "bw"])
                         media = self.bot.get_cog("Media")
-                        await media.send_pic_(ctx, group, bw)
+                        await media.send_pic_(ctx, group.decode("utf-8"), bw.decode("utf-8"))
 
             else:
                 logger.info("incorrect")
