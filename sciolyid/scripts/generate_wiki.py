@@ -1,12 +1,15 @@
-import wikipedia
 import csv
+import sys
+
+import wikipedia
 from sciolyid.data import id_list
 
-with open(f'data/wikipedia.txt', 'r') as f:
+folder = sys.argv[1].rstrip("/") if len(sys.argv) > 1 else "data"
+with open(f'{folder}/wikipedia.txt', 'r') as f:
     urls = {thing: url for thing, url in csv.reader(f)}
 
 fails = []
-with open("data/wikipedia.txt", 'w') as f:
+with open(f"{folder}/wikipedia.txt", 'w') as f:
     writer = csv.writer(f)
     for thing in id_list:
         print(thing)
