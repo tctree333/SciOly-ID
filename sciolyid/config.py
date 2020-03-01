@@ -22,6 +22,7 @@ optional = {
     "logs": True,
     "log_dir": "logs",
     "file_folder": "",
+    "short_id_type": "",  # short (usually 1 letter) form of id_type, used as alias for the pic command
     "invite": "This bot is currently not avaliable outside the support server.",  # bot server invite link
     "authors": "person_v1.32, hmmm, and EraserBird",  # creator names
     "id_groups": True,  # true/false - if you want to be able to select certain groups of items to id
@@ -33,7 +34,7 @@ optional = {
     "bot_token_env": "token",
     "sentry_dsn_env": "SENTRY_DISCORD_DSN",
     "redis_env": "REDIS_URL",
-    "backups_channel": 0,
+    "backups_channel": None,
     "backups_dir": "backups"
 }
 

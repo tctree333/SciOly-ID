@@ -82,7 +82,7 @@ class Media(commands.Cog):
     # help text
     @commands.command(
         help="- Sends a random image for you to ID",
-        aliases=["p", config.options["id_type"][:-1], config.options["id_type"][0]],
+        aliases=["p", config.options["id_type"][:-1], config.options["short_id_type"]]
     )
     # 5 second cooldown
     @commands.cooldown(1, 5.0, type=commands.BucketType.channel)
@@ -97,7 +97,7 @@ class Media(commands.Cog):
 
         bw = "bw" in args
 
-        group_args = []
+        toggle_groups = []
         for category in set(
             list(groups.keys()) +
             [item for group in groups.keys() for item in config.options["category_aliases"][group]]
@@ -107,18 +107,17 @@ class Media(commands.Cog):
                 category = next(
                     key for key, value in config.options["category_aliases"].items() if category in value
                 )
-            group_args.append(category)
-        logger.info(f"group_args: {group_args}")
-        if group_args:
-            group = " ".join(group_args).strip()
+            toggle_groups.append(category)
+        logger.info(f"group_args: {toggle_groups}")
+        if toggle_groups:
+            group = " ".join(toggle_groups).strip()
         else:
             group = ""
 
         if database.exists(f"session.data:{ctx.author.id}"):
             logger.info("session parameters")
 
-            if group_args:
-                toggle_groups = list(group_args)
+            if toggle_groups:
                 current_groups = (
                     database.hget(f"session.data:{ctx.author.id}", "group").decode("utf-8").split(" ")
                 )

@@ -74,9 +74,12 @@ initial_extensions = list(set(initial_extensions))
 for extension in initial_extensions:
     try:
         bot.load_extension(extension)
-    except (discord.ClientException, ModuleNotFoundError):
-        logger.exception(f"Failed to load extension {extension}.")
+    except (discord.ClientException, ModuleNotFoundError, commands.errors.ExtensionFailed) as e:
+        if isinstance(e, commands.errors.ExtensionFailed
+                     ) and e.args[0].endswith("is already an existing command or alias."):
+            raise config.BotConfigError(f"short_id_type conflicts with a prexisting command in {extension}")
 
+        raise GenericError(f"Failed to load extension {extension}.", 999) from e
 if sys.platform == "win32":
     asyncio.set_event_loop(asyncio.ProactorEventLoop())
 

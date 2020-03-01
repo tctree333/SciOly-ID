@@ -84,7 +84,7 @@ class Sessions(commands.Cog):
 
     @commands.group(
         brief=f"- Base session command. Use '{config.options['prefixes'][0]}help session' for more info.",
-        help="- Base session command\n" + "Sessions will record your activity for an amount of time and " +
+        help="- Base session command\nSessions will record your activity for an amount of time and " +
         "will give you stats on how your performance and " +
         "also set global variables such as black and white" +
         (" or specific categories." if config.options["id_groups"] else "."),
@@ -159,7 +159,7 @@ class Sessions(commands.Cog):
     # views session
     @session.command(
         brief="- Views session",
-        help="- Views session\n" + "Sessions will record your activity for an amount of time and " +
+        help="- Views session\nSessions will record your activity for an amount of time and " +
         "will give you stats on how your performance and " +
         "also set global variables such as black and white" +
         (" or specific categories." if config.options["id_groups"] else "."),
