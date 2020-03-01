@@ -114,7 +114,7 @@ class Race(commands.Cog):
         database.delete(f"race.scores:{ctx.channel.id}")
 
     @commands.group(
-        brief="- Base race command. Use '{config.options['prefixes'][0]}help race' for more info.",
+        brief=f"- Base race command. Use '{config.options['prefixes'][0]}help race' for more info.",
         help="- Base race command\n" +
         f"Races allow you to compete with others to see who can ID {config.options['id_type']} first. " +
         "Starting a race will automatically run " +
