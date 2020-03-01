@@ -139,7 +139,9 @@ class Score(commands.Cog):
                 scope = "server"
             else:
                 logger.info("dm context")
-                await ctx.send("**Server scopes are not avaliable in DMs.**\n*Showing global leaderboard instead.*")
+                await ctx.send(
+                    "**Server scopes are not avaliable in DMs.**\n*Showing global leaderboard instead.*"
+                )
                 scope = "global"
                 database_key = "users:global"
         else:
@@ -251,7 +253,9 @@ class Score(commands.Cog):
                 scope = "server"
             else:
                 logger.info("dm context")
-                await ctx.send("**Server scopes are not avaliable in DMs.**\n*Showing global leaderboard instead.*")
+                await ctx.send(
+                    "**Server scopes are not avaliable in DMs.**\n*Showing global leaderboard instead.*"
+                )
                 scope = "global"
                 database_key = "incorrect:global"
         elif scope in ("me", "m"):
@@ -280,7 +284,7 @@ class Score(commands.Cog):
         for i, stats in enumerate(leaderboard_list):
             leaderboard += (f"{i+1+page}. **{stats[0].decode('utf-8')}** - {int(stats[1])}\n")
         embed.add_field(
-            name=f"Top Missed {config.options['id_type']} ({scope})",
+            name=f"Top Missed {config.options['id_type'].title()} ({scope})",
             value=leaderboard,
             inline=False,
         )
@@ -308,8 +312,8 @@ class Score(commands.Cog):
             capture_exception(error)
             await ctx.send(
                 "**An uncaught leaderboard error has occurred.**\n" +
-                "*Please log this message in #support in the support server below, or try again.*\n" + "**Error:** " +
-                str(error)
+                "*Please log this message in #support in the support server below, or try again.*\n" +
+                "**Error:** " + str(error)
             )
             await ctx.send(config.options["support_server"])
             raise error

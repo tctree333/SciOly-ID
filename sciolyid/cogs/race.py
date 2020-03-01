@@ -20,22 +20,21 @@ import time
 import discord
 from discord.ext import commands
 
-from sciolyid.data import database, logger
+import sciolyid.config as config
+from sciolyid.data import database, logger, groups
 from sciolyid.functions import channel_setup, user_setup
 
 class Race(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def _get_options(self, ctx):
-        bw, addon, state, media, limit = database.hmget(
-            f"race.data:{ctx.channel.id}", ["bw", "addon", "state", "media", "limit"]
+    def _get_options(self, ctx):
+        bw, group = database.hmget(f"race.data:{ctx.channel.id}", ["bw", "group"])
+        options = f"**Black & White:** {bw==b'bw'}" + (
+            f"\n**{config.options['category_name']}:** {group.decode('utf-8') if group else 'None'}"
+            if config.options["id_groups"] else ""
         )
-        options = str(
-            f"**Age/Sex:** {str(addon)[2:-1] if addon else 'default'}\n" + f"**Black & White:** {bw==b'bw'}\n" +
-            f"**Special bird list:** {str(state)[2:-1] if state else 'None'}\n" +
-            f"**Media Type:** {str(media)[2:-1]}\n" + f"**Amount to Win:** {limit.decode('utf-8')}\n"
-        )
+
         return options
 
     async def _send_stats(self, ctx, preamble):
@@ -51,7 +50,7 @@ class Race(commands.Cog):
 
         leaderboard_list = database.zrevrangebyscore(database_key, "+inf", "-inf", 0, placings, True)
         embed = discord.Embed(type="rich", colour=discord.Color.blurple(), title=preamble)
-        embed.set_author(name="Bird ID - An Ornithology Bot")
+        embed.set_author(name=config.options["bot_signature"])
         leaderboard = ""
 
         for i, stats in enumerate(leaderboard_list):
@@ -74,7 +73,7 @@ class Race(commands.Cog):
         start = int(database.hget(f"race.data:{ctx.channel.id}", "start"))
         elapsed = str(datetime.timedelta(seconds=round(time.time()) - start))
 
-        embed.add_field(name="Options", value=await self._get_options(ctx), inline=False)
+        embed.add_field(name="Options", value=self._get_options(ctx), inline=False)
         embed.add_field(name="Stats", value=f"**Race Duration:** `{elapsed}`", inline=False)
         embed.add_field(name="Leaderboard", value=leaderboard, inline=False)
 
@@ -104,7 +103,8 @@ class Race(commands.Cog):
 
         await ctx.send(
             f"**Congratulations, {user}!**\n" +
-            f"You have won the race by correctly identifying `{int(first[1])}` birds. " + "*Way to go!*"
+            f"You have won the race by correctly identifying `{int(first[1])}` {config.options['id_type']}. "
+            + "*Way to go!*"
         )
 
         database.hset(f"race.data:{ctx.channel.id}", "stop", round(time.time()))
@@ -114,12 +114,14 @@ class Race(commands.Cog):
         database.delete(f"race.scores:{ctx.channel.id}")
 
     @commands.group(
-        brief=f"- Base race command. Use '{config.options['prefixes'][0]}help race' for more info.",
-        help="- Base race command\n" + "Races allow you to compete with others to see who can ID a bird first. " +
-        "Starting a race will keep all cooldowns the same, but automatically run " +
-        "'b!bird' (or 'b!song') after every check. You will still need to use 'b!check' " +
-        "to check your answer. Races are channel-specific, and anyone in that channel can play." +
-        "Races end when a player is the first to correctly ID a set amount of birds. (default 10)"
+        brief="- Base race command. Use '{config.options['prefixes'][0]}help race' for more info.",
+        help="- Base race command\n" +
+        f"Races allow you to compete with others to see who can ID {config.options['id_type']} first. " +
+        "Starting a race will automatically run " +
+        f"'{config.options['prefixes'][0]}pic' after every check. " +
+        f"You will still need to use '{config.options['prefixes'][0]}check' to check your answer. " +
+        f"Races are channel-specific, and anyone in that channel can play." +
+        f"Races end when a player is the first to correctly ID a set amount of {config.options['id_type']}. (default 10)"
     )
     async def race(self, ctx):
         if ctx.invoked_subcommand is None:
@@ -127,12 +129,11 @@ class Race(commands.Cog):
 
     @race.command(
         brief="- Starts race",
-        help="""- Starts race.
-        Arguments passed will become the default arguments to 'b!bird', but can be manually overwritten during use.
-        Arguments can be passed in any order.
-        However, having both females and juveniles are not supported.""",
+        help=f"""- Starts race.
+        Arguments passed will become the default arguments to '{config.options['prefixes'][0]}pic', but can be manually overwritten during use.
+        Arguments can be passed in any order.""",
         aliases=["st"],
-        usage="[bw] [state] [female|juvenile] [amount to win (default 10)]"
+        usage=f"[bw]{' [group]' if config.options['id_groups'] else ''} [amount to win (default 10)]"
     )
     @commands.cooldown(1, 3.0, type=commands.BucketType.channel)
     async def start(self, ctx, *, args_str: str = ""):
@@ -156,7 +157,9 @@ class Race(commands.Cog):
 
         if database.exists(f"race.data:{ctx.channel.id}"):
             logger.info("already race")
-            await ctx.send("**There is already a race in session.** *Change settings/view stats with `b!race view`*")
+            await ctx.send(
+                f"**There is already a race in session.** *View stats with `{config.options['prefixes'][0]}race view`*"
+            )
             return
         else:
             args = args_str.split(" ")
@@ -165,37 +168,18 @@ class Race(commands.Cog):
                 bw = "bw"
             else:
                 bw = ""
-
-            states_args = set(states.keys()).intersection({arg.upper() for arg in args})
-            if states_args:
-                state = " ".join(states_args).strip()
-            else:
-                state = " ".join(check_state_role(ctx))
-
-            female = "female" in args or "f" in args
-            juvenile = "juvenile" in args or "j" in args
-            if female and juvenile:
-                await ctx.send("**Juvenile females are not yet supported.**\n*Please try again*")
-                return
-            elif female:
-                addon = "female"
-            elif juvenile:
-                addon = "juvenile"
-            else:
-                addon = ""
-
-            song = "song" in args or "s" in args
-            image = "image" in args or "i" in args or "picture" in args or "p" in args
-            if song and image:
-                await ctx.send("**Songs and images are not yet supported.**\n*Please try again*")
-                return
-            elif song:
-                media = "song"
-            elif image:
-                media = "image"
-            else:
-                media = "image"
-
+            group_args = []
+            for category in set(
+                list(groups.keys()) +
+                [item for group in groups.keys() for item in config.options["category_aliases"][group]]
+            ).intersection({arg.lower()
+                            for arg in args}):
+                if category not in groups.keys():
+                    category = next(
+                        key for key, value in config.options["category_aliases"].items() if category in value
+                    )
+                group_args.append(category)
+            group = " ".join(group_args).strip()
             for arg in args:
                 try:
                     limit = int(arg)
@@ -209,7 +193,7 @@ class Race(commands.Cog):
                 await ctx.send("**Sorry, the maximum amount to win is 1 million.**")
                 limit = 1000000
 
-            logger.info(f"adding bw: {bw}; addon: {addon}; state: {state}; media: {media}; limit: {limit}")
+            logger.info(f"adding bw: {bw}; group: {group}; ")
 
             database.hmset(
                 f"race.data:{ctx.channel.id}", {
@@ -217,29 +201,20 @@ class Race(commands.Cog):
                     "stop": 0,
                     "limit": limit,
                     "bw": bw,
-                    "state": state,
-                    "addon": addon,
-                    "media": media
+                    "group": group,
                 }
             )
-
             database.zadd(f"race.scores:{ctx.channel.id}", {str(ctx.author.id): 0})
-            await ctx.send(f"**Race started with options:**\n{await self._get_options(ctx)}")
+            await ctx.send(f"**Race started with options:**\n{self._get_options(ctx)}")
 
-            if str(database.hget(f"race.data:{ctx.channel.id}", "media"))[2:-1] == "image":
-                logger.info("auto sending next bird image")
-                addon, bw = map(str, database.hmget(f"race.data:{ctx.channel.id}", ["addon", "bw"]))
-                birds = self.bot.get_cog("Birds")
-                await birds.send_bird_(ctx, addon[2:-1], bw[2:-1])
-
-            if str(database.hget(f"race.data:{ctx.channel.id}", "media"))[2:-1] == "song":
-                logger.info("auto sending next bird song")
-                birds = self.bot.get_cog("Birds")
-                await birds.send_song_(ctx)
+            logger.info("auto sending next image")
+            media = self.bot.get_cog("Media")
+            await media.send_pic_(ctx, group, bw)
 
     @race.command(
         brief="- Views race",
-        help="- Views race.\nRaces allow you to compete with your friends to ID a certain bird first."
+        help="- Views race.\n" +
+        f"Races allow you to compete with your friends to ID {config.options['id_type']} first."
     )
     @commands.cooldown(1, 3.0, type=commands.BucketType.channel)
     async def view(self, ctx):
@@ -251,7 +226,9 @@ class Race(commands.Cog):
         if database.exists(f"race.data:{ctx.channel.id}"):
             await self._send_stats(ctx, f"**Race In Progress**")
         else:
-            await ctx.send("**There is no race in session.** *You can start one with `b!race start`*")
+            await ctx.send(
+                f"**There is no race in session.** *You can start one with `{config.options['prefixes'][0]}race start`*"
+            )
 
     @race.command(help="- Stops race", aliases=["stp", "end"])
     @commands.cooldown(1, 3.0, type=commands.BucketType.channel)
@@ -264,7 +241,9 @@ class Race(commands.Cog):
         if database.exists(f"race.data:{ctx.channel.id}"):
             await self.stop_race_(ctx)
         else:
-            await ctx.send("**There is no race in session.** *You can start one with `b!race start`*")
+            await ctx.send(
+                f"**There is no race in session.** *You can start one with `{config.options['prefixes'][0]}race start`*"
+            )
 
 def setup(bot):
     bot.add_cog(Race(bot))

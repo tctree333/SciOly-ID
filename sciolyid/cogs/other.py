@@ -53,7 +53,9 @@ class Other(commands.Cog):
             await delete.delete()
 
         else:
-            await ctx.send(f"{config.options['id_type'].title()} not found. Are you sure it's on the list?")
+            await ctx.send(
+                f"{config.options['id_type'][:-1].title()} not found. Are you sure it's on the list?"
+            )
 
     # List command
     @commands.command(help="- DMs the user with the appropriate list.", name="list")
@@ -81,20 +83,23 @@ class Other(commands.Cog):
             await ctx.author.create_dm()
 
         await ctx.author.dm_channel.send(
-            f"**{detected_groups.capitalize()} in the National {config.options['id_type']} list:**"
+            f"**{detected_groups.capitalize()} in the National {config.options['id_type'][:-1].title()} list:**"
         )
         for group in item_lists:
             await ctx.author.dm_channel.send(f"```\n{group}```")
 
         await ctx.send(
-            f"The national {config.options['id_type']} list has **{len(group_list)}** {detected_groups}.\n" +
-            f"*A full list of {detected_groups} has been sent to you via DMs.*"
+            f"The National {config.options['id_type'][:-1].title()} list has **{len(group_list)}** {detected_groups}.\n"
+            + f"*A full list of {detected_groups} has been sent to you via DMs.*"
         )
 
     # Group command - lists groups
     @commands.command(
-        help="- DMs the user with the appropriate list.",
-        aliases=["taxons", "group", "categories"],
+        help="- Prints a list of all available groups.",
+        aliases=[
+            config.options['category_name'].lower(), config.options['category_name'].lower() + "s", "group",
+            "category", "categories"
+        ],
     )
     @commands.cooldown(1, 8.0, type=commands.BucketType.user)
     async def groups(self, ctx):
@@ -139,8 +144,8 @@ class Other(commands.Cog):
         embed.add_field(
             name="Bot Info",
             value=f"This bot was created by {config.options['authors']}" +
-            f" for helping people practice {config.options['id_type']} identification for Science Olympiad.\n" +
-            f"The bot's source can be found here: {config.options['source_link']}",
+            f" for helping people practice {config.options['id_type'][:-1]} identification for Science Olympiad.\n"
+            + f"The bot's source can be found here: {config.options['source_link']}",
             inline=False,
         )
         embed.add_field(
@@ -172,7 +177,8 @@ class Other(commands.Cog):
         embed.set_author(name=config.options["bot_signature"])
         embed.add_field(
             name="Invite",
-            value=f"To invite this bot to your own server, use the following invite links.\n {config.options['invite']}",
+            value=
+            f"To invite this bot to your own server, use the following invite links.\n {config.options['invite']}",
             inline=False,
         )
         await ctx.send(embed=embed)

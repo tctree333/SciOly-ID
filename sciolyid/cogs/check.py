@@ -18,8 +18,15 @@ from discord.ext import commands
 
 from sciolyid.data import database, get_aliases, get_wiki_url, logger
 from sciolyid.functions import (
-    channel_setup, incorrect_increment, item_setup, score_increment, session_increment, spellcheck_list, user_setup
+    channel_setup, incorrect_increment, item_setup, score_increment, session_increment, spellcheck_list,
+    user_setup
 )
+
+def racing_check(ctx):
+    """clears cooldown in racing"""
+    if ctx.command.is_on_cooldown(ctx) and str(ctx.channel.name).startswith("racing"):
+        ctx.command.reset_cooldown(ctx)
+    return True
 
 class Check(commands.Cog):
     def __init__(self, bot):
@@ -28,6 +35,7 @@ class Check(commands.Cog):
     # Check command - argument is the guess
     @commands.command(help="- Checks your answer.", usage="guess", aliases=["guess", "c"])
     @commands.cooldown(1, 3.0, type=commands.BucketType.user)
+    @commands.check(racing_check)
     async def check(self, ctx, *, arg):
         logger.info("command: check")
 
@@ -54,17 +62,34 @@ class Check(commands.Cog):
 
                 database.zincrby("streak:global", 1, str(ctx.author.id))
                 # check if streak is greater than max, if so, increases max
-                if database.zscore("streak:global", str(ctx.author.id
-                                                       )) > database.zscore("streak.max:global", str(ctx.author.id)):
+                if database.zscore("streak:global", str(
+                    ctx.author.id
+                )) > database.zscore("streak.max:global", str(ctx.author.id)):
                     database.zadd(
                         "streak.max:global",
                         {str(ctx.author.id): database.zscore("streak:global", str(ctx.author.id))},
                     )
 
-                await ctx.send("Correct! Good job!")
+                await ctx.send(
+                    "Correct! Good job!" if not database.exists(f"race.data:{ctx.channel.id}") else
+                    f"**{ctx.author.mention}**, you are correct!"
+                )
                 url = get_wiki_url(current_item)
                 await ctx.send(url)
                 score_increment(ctx, 1)
+                if database.exists(f"race.data:{ctx.channel.id}"):
+
+                    limit = int(database.hget(f"race.data:{ctx.channel.id}", "limit"))
+                    first = database.zrevrange(f"race.scores:{ctx.channel.id}", 0, 0, True)[0]
+                    if int(first[1]) >= limit:
+                        logger.info("race ending")
+                        race = self.bot.get_cog("Race")
+                        await race.stop_race_(ctx)
+                    else:
+                        logger.info("auto sending next image")
+                        group, bw = database.hmget(f"race.data:{ctx.channel.id}", ["group", "bw"])
+                        media = self.bot.get_cog("Media")
+                        await media.send_pic_(ctx, group.decode("utf-8"), bw.decode("utf-8"))
 
             else:
                 logger.info("incorrect")
@@ -77,11 +102,14 @@ class Check(commands.Cog):
 
                 incorrect_increment(ctx, str(current_item), 1)
 
-                database.hset(f"channel:{ctx.channel.id}", "item", "")
-                database.hset(f"channel:{ctx.channel.id}", "answered", "1")
-                await ctx.send("Sorry, the image was actually " + current_item.lower() + ".")
-                url = get_wiki_url(current_item)
-                await ctx.send(url)
+                if database.exists(f"race.data:{ctx.channel.id}"):
+                    await ctx.send("Sorry, that wasn't the right answer.")
+                else:
+                    database.hset(f"channel:{ctx.channel.id}", "item", "")
+                    database.hset(f"channel:{ctx.channel.id}", "answered", "1")
+                    await ctx.send("Sorry, the image was actually " + current_item.lower() + ".")
+                    url = get_wiki_url(current_item)
+                    await ctx.send(url)
 
 def setup(bot):
     bot.add_cog(Check(bot))

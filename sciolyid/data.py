@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import csv
 import logging
 import logging.handlers
 import os
@@ -35,7 +36,6 @@ elif config.options["redis_env"] is not None:
 else:
     raise ValueError("redis_env must be set if local_redis is False")
 
-
 def before_sentry_send(event, hint):
     """Fingerprint certain events before sending to Sentry."""
     if "exc_info" in hint:
@@ -45,7 +45,6 @@ def before_sentry_send(event, hint):
         elif isinstance(error, commands.CommandOnCooldown):
             event["fingerprint"] = ["command-cooldown"]
     return event
-
 
 # add sentry logging
 if config.options["sentry"]:
@@ -61,17 +60,17 @@ if config.options["sentry"]:
 # Database Format Definitions
 
 # prevJ - makes sure it sends a diff image
-# prevB - makes sure it sends a diff item (img)
+# prevI - makes sure it sends a diff item (img)
 
 # server format = {
 # channel:channel_id : { "item", "answered",
-#                     "prevJ", "prevB" }
+#                     "prevJ", "prevI" }
 # }
 
 # session format:
 # session.data:user_id : {"start": 0, "stop": 0,
 #                         "correct": 0, "incorrect": 0, "total": 0,
-#                         "bw": bw, "state": state, "addon": addon}
+#                         "bw": bw, "group": group}
 # session.incorrect:user_id : [item name, # incorrect]
 
 # race format:
@@ -80,9 +79,7 @@ if config.options["sentry"]:
 #                    "stop": 0,
 #                    "limit": 10,
 #                    "bw": bw,
-#                    "state": state,
-#                    "addon": addon,
-#                    "media": media
+#                    "group": group
 # }
 # race.scores:ctx.channel.id : [ctx.author.id, #correct]
 
@@ -123,13 +120,9 @@ if config.options["logs"]:
     stream_handler.setLevel(logging.DEBUG)
 
     file_handler.setFormatter(
-        logging.Formatter(
-            "{asctime} - {filename:10} -  {levelname:8} - {message}", style="{"
-        )
+        logging.Formatter("{asctime} - {filename:10} -  {levelname:8} - {message}", style="{")
     )
-    stream_handler.setFormatter(
-        logging.Formatter("{filename:10} -  {levelname:8} - {message}", style="{")
-    )
+    stream_handler.setFormatter(logging.Formatter("{filename:10} -  {levelname:8} - {message}", style="{"))
 
     logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
@@ -140,12 +133,9 @@ if config.options["logs"]:
             sys.__excepthook__(exc_type, exc_value, exc_traceback)
             return
 
-        logger.critical(
-            "Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback)
-        )
+        logger.critical("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
 
     sys.excepthook = handle_exception
-
 
 class GenericError(commands.CommandError):
     """A custom error class.
@@ -160,11 +150,9 @@ class GenericError(commands.CommandError):
         842 - Banned User
         666 - No output error
     """
-
     def __init__(self, message=None, code=0):
         self.code = code
         super().__init__(message=message)
-
 
 # Error codes: (can add more if needed)
 # 0 - no code
@@ -176,44 +164,37 @@ class GenericError(commands.CommandError):
 # 842 - Banned User
 # 666 - No output error
 
-
 def _wiki_urls():
     logger.info("Working on wiki urls")
     urls = {}
-    with open(f'{config.options["wikipedia_file"]}', "r") as f:
-        for line in f:
-            item = line.strip().split(",")[0].lower()
-            url = line.strip().split(",")[1]
-            urls[item] = url
+    with open(f'{config.options["wikipedia_file"]}', 'r') as f:
+        reader = csv.reader(f)
+        for item, url in reader:
+            urls[item.lower()] = url
     logger.info("Done with wiki urls")
     return urls
 
-
-def get_wiki_url(item):
-    item = item.lower()
-    return wikipedia_urls[item]
-
+def get_wiki_url(item: str):
+    return wikipedia_urls[item.lower()]
 
 def _generate_aliases():
     logger.info("Working on aliases")
     aliases = {}
-    with open(f'{config.options["alias_file"]}', "r") as f:
-        for line in f:
-            raw_aliases = list(line.strip().lower().split(","))
-            item = raw_aliases[0].lower()
+    with open(f'{config.options["alias_file"]}', 'r') as f:
+        reader = csv.reader(f)
+        for raw_aliases in reader:
+            raw_aliases = list(map(str.lower, raw_aliases))
+            item = raw_aliases[0]
             aliases[item] = raw_aliases
     logger.info("Done with aliases")
     return aliases
 
-
-def get_aliases(item):
+def get_aliases(item: str):
     item = item.lower()
     try:
-        alias_list = aliases[item]
+        return aliases[item]
     except KeyError:
-        alias_list = [item]
-    return alias_list
-
+        return [item]
 
 def get_category(item: str):
     item = item.lower()
@@ -222,12 +203,9 @@ def get_category(item: str):
             return group.lower()
     return None
 
-
 def _groups():
     """Converts txt files of data into lists."""
-    filenames = [
-        name.split(".")[0] for name in os.listdir(f"{config.options['list_dir']}/")
-    ]
+    filenames = [name.split(".")[0] for name in os.listdir(f"{config.options['list_dir']}/")]
     # Converts txt file of data into lists
     lists = {}
     for filename in filenames:
@@ -237,7 +215,6 @@ def _groups():
         logger.info(f"Done with {filename}")
     logger.info("Done with lists!")
     return lists
-
 
 def _all_lists():
     """Compiles lists into master lists."""
@@ -253,11 +230,7 @@ def _config():
         if group not in config.options["category_aliases"].keys():
             config.options["category_aliases"][group] = [group]
 
-    _aliases = [
-        item
-        for group in groups.keys()
-        for item in config.options["category_aliases"][group]
-    ]
+    _aliases = [item for group in groups.keys() for item in config.options["category_aliases"][group]]
     if len(_aliases) != len(set(_aliases)):
         raise config.BotConfigError("Aliases in category_aliases not unique")
 

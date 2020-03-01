@@ -1,15 +1,16 @@
+import csv
+import sys
+
 import wikipedia
 from sciolyid.data import id_list
 
-urls = {}
-with open(f'data/wikipedia.txt', 'r') as f:
-    for line in f:
-        thing = line.strip().split(',')[0]
-        url = line.strip().split(',')[1]
-        urls[thing] = url
+folder = sys.argv[1].rstrip("/") if len(sys.argv) > 1 else "data"
+with open(f'{folder}/wikipedia.txt', 'r') as f:
+    urls = {thing: url for thing, url in csv.reader(f)}
 
 fails = []
-with open("data/wikipedia.txt", 'w') as f:
+with open(f"{folder}/wikipedia.txt", 'w') as f:
+    writer = csv.writer(f)
     for thing in id_list:
         print(thing)
         if thing in urls.keys():
@@ -17,10 +18,10 @@ with open("data/wikipedia.txt", 'w') as f:
         else:
             try:
                 url = wikipedia.page(f"{thing}").url
-            except Exception:
+            except (wikipedia.exceptions.DisambiguationError, wikipedia.exceptions.PageError):
                 print('FAIL')
                 fails.append(thing)
                 continue
-        f.write(f"{thing},{url}\n")
+        writer.writerow((thing, url))
 
 print(fails)

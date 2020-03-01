@@ -38,8 +38,23 @@ class Skip(commands.Cog):
         if current_item:  # check if there is image
             url = get_wiki_url(current_item)
             await ctx.send(f"Ok, skipping {current_item.lower()}")
-            await ctx.send(url)  # sends wiki page
+            await ctx.send(
+                url if not database.exists(f"race.data:{ctx.channel.id}") else f"<{url}>"
+            )  # sends wiki page
             database.zadd("streak:global", {str(ctx.author.id): 0})  # end streak
+            if database.exists(f"race.data:{ctx.channel.id}"):
+
+                limit = int(database.hget(f"race.data:{ctx.channel.id}", "limit"))
+                first = database.zrevrange(f"race.scores:{ctx.channel.id}", 0, 0, True)[0]
+                if int(first[1]) >= limit:
+                    logger.info("race ending")
+                    race = self.bot.get_cog("Race")
+                    await race.stop_race_(ctx)
+                else:
+                    logger.info("auto sending next image")
+                    group, bw = database.hmget(f"race.data:{ctx.channel.id}", ["group", "bw"])
+                    media = self.bot.get_cog("Media")
+                    await media.send_pic_(ctx, group.decode("utf-8"), bw.decode("utf-8"))
         else:
             await ctx.send("You need to ask for an image first!")
 

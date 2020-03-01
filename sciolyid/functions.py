@@ -17,6 +17,7 @@
 import difflib
 import math
 import os
+import pickle
 import string
 from io import BytesIO
 
@@ -40,7 +41,7 @@ async def channel_setup(ctx):
                 "item": "",
                 "answered": 1,
                 "prevJ": 20,
-                "prevB": ""
+                "prevI": ""
             },
         )
         # true = 1, false = 0, prevJ is 20 to define as integer
@@ -176,6 +177,14 @@ def score_increment(ctx, amount: int = 1):
     logger.info(f"incrementing score by {amount}")
     database.zincrby("score:global", amount, str(ctx.channel.id))
     database.zincrby("users:global", amount, str(ctx.author.id))
+    if ctx.guild is not None:
+        logger.info("no dm")
+        database.zincrby(f"users.server:{ctx.guild.id}", amount, str(ctx.author.id))
+    else:
+        logger.info("dm context")
+    if database.exists(f"race.data:{ctx.channel.id}"):
+        logger.info("race in session")
+        database.zincrby(f"race.scores:{ctx.channel.id}", amount, str(ctx.author.id))
 
 def black_and_white(input_image_path) -> BytesIO:
     """Returns a black and white version of an image.
@@ -204,21 +213,14 @@ def build_id_list(group_str: str = ""):
         logger.info("no groups allowed")
         return (id_list, "None")
 
-    group_args = list()
+    group_args = []
     for group in set(
-        list(groups.keys())
-        + [
-            item
-            for group in groups.keys()
-            for item in config.options["category_aliases"][group]
-        ]
-    ).intersection({category.lower() for category in categories}):
+        list(groups.keys()) +
+        [item for group in groups.keys() for item in config.options["category_aliases"][group]]
+    ).intersection({category.lower()
+                    for category in categories}):
         if group not in groups.keys():
-            group = next(
-                key
-                for key, value in config.options["category_aliases"].items()
-                if value == group
-            )
+            group = next(key for key, value in config.options["category_aliases"].items() if value == group)
         group_args.append(group)
     logger.info(f"group_args: {group_args}")
 
@@ -242,6 +244,33 @@ def owner_check(ctx) -> bool:
     owners = set(str(os.getenv("ids")).split(","))
     return str(ctx.author.id) in owners
 
+def backup_all():
+    """Backs up the database to a file.
+    
+    This function serializes all data in the REDIS database
+    into a file in the `backups` directory.
+
+    This function is run with a task every 6 hours and sends the files
+    to a specified discord channel.
+    """
+    logger.info("Starting Backup")
+    logger.info("Creating Dump")
+    keys = (key.decode("utf-8") for key in database.keys())
+    dump = ((database.dump(key), key) for key in keys)
+    logger.info("Finished Dump")
+    logger.info("Writing To File")
+    try:
+        os.mkdir(config.options["backups_dir"])
+        logger.info("Created backups directory")
+    except FileExistsError:
+        logger.info("Backups directory exists")
+    with open(config.options["backups_dir"] + "dump.dump", 'wb') as f:
+        with open(config.options["backups_dir"] + "keys.txt", 'w') as k:
+            for item, key in dump:
+                pickle.dump(item, f)
+                k.write(f"{key}\n")
+    logger.info("Backup Finished")
+
 def spellcheck_list(word_to_check, correct_list, abs_cutoff=None):
     for correct_word in correct_list:
         if abs_cutoff is None:
@@ -257,8 +286,8 @@ def spellcheck(worda, wordb, cutoff=3):
     `wordb` (str) - second word to compare
     `cutoff` (int) - allowed difference amount
     """
-    worda = worda.lower()
-    wordb = wordb.lower()
+    worda = worda.lower().replace("-", " ").replace("'", "")
+    wordb = wordb.lower().replace("-", " ").replace("'", "")
     shorterword = min(worda, wordb, key=len)
     if worda != wordb:
         if len(list(difflib.Differ().compare(worda, wordb))) - len(shorterword) >= cutoff:

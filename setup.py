@@ -27,7 +27,7 @@ setuptools.setup(
         "sentry-sdk>=0.13.5, <1.0.0",
         "Pillow>=6.1.0, <8.0.0",
         "wikipedia>=1.4.0, <2.0.0",
-        "gitpython>=3.0.5, <4.0.0",
+        "gitpython>=3.0.6, <4.0.0",
     ],
     py_modules=["config", "core", "data", "functions", "start_bot"],
     python_requires="~=3.7",

@@ -9,7 +9,7 @@ def setup(**kwargs):
         try:
             config.options[option] = kwargs[option]
         except KeyError:
-            raise config.BotConfigError(f"Error: Required setup argument {option}")
+            raise config.BotConfigError(f"Required setup argument {option}")
 
     for option in optional:
         try:
@@ -22,20 +22,29 @@ def setup(**kwargs):
             try:
                 config.options[option] = kwargs[option]
             except KeyError:
-                raise config.BotConfigError(f"Error: Required setup argument {option} when ID_GROUPS is True")
+                raise config.BotConfigError(f"Required setup argument {option} when id_groups is True")
 
-    if config.options['file_folder'] and config.options['file_folder'][-1] != "/":
+    if config.options['file_folder'] and not config.options['file_folder'].endswith("/"):
         config.options['file_folder'] += "/"
 
-    if config.options['data_dir'] and config.options['data_dir'][-1] != "/":
+    if config.options['data_dir'] and not config.options['data_dir'].endswith("/"):
         config.options['data_dir'] += "/"
+
+    if config.options['backups_dir'] and not config.options['backups_dir'].endswith("/"):
+        config.options['backups_dir'] += "/"
 
     config.options["log_dir"] = f"{config.options['file_folder']}{config.options['log_dir']}"
     config.options["download_dir"] = f"{config.options['file_folder']}{config.options['download_dir']}"
+    config.options["backups_dir"] = f"{config.options['file_folder']}{config.options['backups_dir']}"
 
     config.options["list_dir"] = f"{config.options['data_dir']}{config.options['list_dir']}"
     config.options["wikipedia_file"] = f"{config.options['data_dir']}{config.options['wikipedia_file']}"
     config.options["alias_file"] = f"{config.options['data_dir']}{config.options['alias_file']}"
+
+    config.options["id_type"] = config.options["id_type"].lower()
+    config.options["category_name"] = config.options["category_name"].title()
+
+    config.options["short_id_type"] = config.options["short_id_type"] or config.options["id_type"][0]
 
 def start():
     import sciolyid.start_bot  # pylint: disable=unused-import
