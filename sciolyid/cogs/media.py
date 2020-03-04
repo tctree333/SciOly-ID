@@ -134,6 +134,12 @@ class Media(commands.Cog):
             if database.hget(f"session.data:{ctx.author.id}", "bw").decode("utf-8"):
                 bw = not bw
 
+        if database.exists(f"race.data:{ctx.channel.id}"):
+            logger.info("race parameters")
+
+            if database.hget(f"race.data:{ctx.channel.id}", "bw").decode("utf-8"):
+                bw = not bw
+
         if not config.options["id_groups"]:
             group = ""
 
