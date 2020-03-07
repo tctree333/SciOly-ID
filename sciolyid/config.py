@@ -14,13 +14,14 @@ id_required = {
 
 optional = {
     "name": "id-bot",  # all lowercase, no spaces, doesn't really matter what this is
-    "download_dir": "github_download",
+    "download_dir": "github_download/",
     "data_dir": "data/",
-    "list_dir": "lists",
+    "list_dir": "lists/",
+    "restricted_list_dir": "restricted/",
     "wikipedia_file": "wikipedia.txt",
     "alias_file": "aliases.txt",
     "logs": True,
-    "log_dir": "logs",
+    "log_dir": "logs/",
     "file_folder": "",
     "short_id_type": "",  # short (usually 1 letter) form of id_type, used as alias for the pic command
     "invite": "This bot is currently not avaliable outside the support server.",  # bot server invite link
@@ -35,7 +36,7 @@ optional = {
     "sentry_dsn_env": "SENTRY_DISCORD_DSN",
     "redis_env": "REDIS_URL",
     "backups_channel": None,
-    "backups_dir": "backups"
+    "backups_dir": "backups/"
 }
 
 options = {d: e for d, e in list(required.items()) + list(id_required.items()) + list(optional.items())}

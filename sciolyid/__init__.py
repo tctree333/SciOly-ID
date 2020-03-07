@@ -33,11 +33,24 @@ def setup(**kwargs):
     if config.options['backups_dir'] and not config.options['backups_dir'].endswith("/"):
         config.options['backups_dir'] += "/"
 
+    if config.options['download_dir'] and not config.options['download_dir'].endswith("/"):
+        config.options['download_dir'] += "/"
+
+    if config.options['list_dir'] and not config.options['list_dir'].endswith("/"):
+        config.options['list_dir'] += "/"
+
+    if config.options['restricted_list_dir'] and not config.options['restricted_list_dir'].endswith("/"):
+        config.options['restricted_list_dir'] += "/"
+
+    if config.options['log_dir'] and not config.options['log_dir'].endswith("/"):
+        config.options['log_dir'] += "/"
+
     config.options["log_dir"] = f"{config.options['file_folder']}{config.options['log_dir']}"
     config.options["download_dir"] = f"{config.options['file_folder']}{config.options['download_dir']}"
     config.options["backups_dir"] = f"{config.options['file_folder']}{config.options['backups_dir']}"
 
     config.options["list_dir"] = f"{config.options['data_dir']}{config.options['list_dir']}"
+    config.options["restricted_list_dir"] = f"{config.options['data_dir']}{config.options['restricted_list_dir']}"
     config.options["wikipedia_file"] = f"{config.options['data_dir']}{config.options['wikipedia_file']}"
     config.options["alias_file"] = f"{config.options['data_dir']}{config.options['alias_file']}"
 

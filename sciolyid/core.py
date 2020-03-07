@@ -139,7 +139,7 @@ async def get_files(item, retries=0):
     logger.info(f"get_files retries: {retries}")
     item = str(item).lower()
     category = get_category(item)
-    directory = f"{config.options['download_dir']}/{category}/{item}/"
+    directory = f"{config.options['download_dir']}{category}/{item}/"
     try:
         logger.info("trying")
         files_dir = os.listdir(directory)
@@ -164,7 +164,7 @@ async def download_github():
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
     loop = asyncio.get_event_loop()
     try:
-        os.listdir(f"{config.options['download_dir']}/")
+        os.listdir(config.options['download_dir'])
     except FileNotFoundError:
         logger.info("doesn't exist, cloning")
         await loop.run_in_executor(executor, _clone)
@@ -175,7 +175,7 @@ async def download_github():
         logger.info("done pulling")
 
 def _clone():
-    Repo.clone_from(config.options["github_image_repo_url"], f"{config.options['download_dir']}/")
+    Repo.clone_from(config.options["github_image_repo_url"], config.options['download_dir'])
 
 def _pull():
-    Repo(f"{config.options['download_dir']}/").remote("origin").pull()
+    Repo(config.options['download_dir']).remote("origin").pull()

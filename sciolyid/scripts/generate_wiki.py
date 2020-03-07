@@ -2,7 +2,7 @@ import csv
 import sys
 
 import wikipedia
-from sciolyid.data import id_list
+from sciolyid.data import master_id_list
 
 folder = sys.argv[1].rstrip("/") if len(sys.argv) > 1 else "data"
 with open(f'{folder}/wikipedia.txt', 'r') as f:
@@ -11,7 +11,7 @@ with open(f'{folder}/wikipedia.txt', 'r') as f:
 fails = []
 with open(f"{folder}/wikipedia.txt", 'w') as f:
     writer = csv.writer(f)
-    for thing in id_list:
+    for thing in master_id_list:
         print(thing)
         if thing in urls.keys():
             url = urls[thing]

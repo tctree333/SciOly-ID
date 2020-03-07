@@ -23,7 +23,7 @@ import wikipedia
 from discord.ext import commands
 
 import sciolyid.config as config
-from sciolyid.data import database, get_aliases, id_list, logger, aliases, groups
+from sciolyid.data import database, get_aliases, master_id_list, logger, aliases, groups
 from sciolyid.functions import channel_setup, owner_check, user_setup, build_id_list
 from sciolyid.core import send_image
 
@@ -42,7 +42,7 @@ class Other(commands.Cog):
 
         matches = get_close_matches(
             arg.lower(),
-            id_list + list(itertools.chain.from_iterable(aliases.values())),
+            master_id_list + list(itertools.chain.from_iterable(aliases.values())),
             n=1,
         )
         if matches:
