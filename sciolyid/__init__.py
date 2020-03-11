@@ -24,8 +24,8 @@ def setup(**kwargs):
             except KeyError:
                 raise config.BotConfigError(f"Required setup argument {option} when id_groups is True")
 
-    if config.options['file_folder'] and not config.options['file_folder'].endswith("/"):
-        config.options['file_folder'] += "/"
+    if config.options['bot_files_dir'] and not config.options['bot_files_dir'].endswith("/"):
+        config.options['bot_files_dir'] += "/"
 
     if config.options['data_dir'] and not config.options['data_dir'].endswith("/"):
         config.options['data_dir'] += "/"
@@ -45,9 +45,9 @@ def setup(**kwargs):
     if config.options['log_dir'] and not config.options['log_dir'].endswith("/"):
         config.options['log_dir'] += "/"
 
-    config.options["log_dir"] = f"{config.options['file_folder']}{config.options['log_dir']}"
-    config.options["download_dir"] = f"{config.options['file_folder']}{config.options['download_dir']}"
-    config.options["backups_dir"] = f"{config.options['file_folder']}{config.options['backups_dir']}"
+    config.options["log_dir"] = f"{config.options['bot_files_dir']}{config.options['log_dir']}"
+    config.options["download_dir"] = f"{config.options['bot_files_dir']}{config.options['download_dir']}"
+    config.options["backups_dir"] = f"{config.options['bot_files_dir']}{config.options['backups_dir']}"
 
     config.options["list_dir"] = f"{config.options['data_dir']}{config.options['list_dir']}"
     config.options["restricted_list_dir"] = f"{config.options['data_dir']}{config.options['restricted_list_dir']}"

@@ -29,6 +29,6 @@ setuptools.setup(
         "wikipedia>=1.4.0, <2.0.0",
         "gitpython>=3.0.6, <4.0.0",
     ],
-    py_modules=["config", "core", "data", "functions", "start_bot"],
+    py_modules=["config", "core", "data", "functions", "github", "start_bot"],
     python_requires="~=3.7",
 )

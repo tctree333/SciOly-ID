@@ -215,11 +215,11 @@ def _groups():
             lists[filename] = [line.strip().lower() for line in f]
         logger.info(f"Done with {filename}")
 
-    for filename in restricted_filenames:
-        logger.info(f"Working on {filename}")
-        with open(f'{config.options["restricted_list_dir"]}{filename}.txt', "r") as f:
-            lists[filename] = [line.strip().lower() for line in f]
-        logger.info(f"Done with {filename}")
+    for restricted_filename in restricted_filenames:
+        logger.info(f"Working on {restricted_filename}")
+        with open(f'{config.options["restricted_list_dir"]}{restricted_filename}.txt', "r") as f:
+            lists[restricted_filename] = [line.strip().lower() for line in f]
+        logger.info(f"Done with {restricted_filename}")
 
     logger.info("Done with lists!")
     return lists
@@ -248,6 +248,10 @@ def _config():
     _aliases = [item for group in groups.keys() for item in config.options["category_aliases"][group]]
     if len(_aliases) != len(set(_aliases)):
         raise config.BotConfigError("Aliases in category_aliases not unique")
+
+    if config.options["download_func"] is None:
+        from sciolyid.github import download_github
+        config.options["download_func"] = download_github
 
 groups = _groups()
 id_list, master_id_list = _all_lists()
