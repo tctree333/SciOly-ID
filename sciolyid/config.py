@@ -37,6 +37,7 @@ optional = {
     "restricted_list_dir": "restricted/",  # directory within data_dir containg id lists that are avaliable by selection only
     "wikipedia_file": "wikipedia.txt",  # filename within data_dir containing wiki urls for every item
     "alias_file": "aliases.txt",  # filename within data_dir contiaining aliases for any item
+    "meme_file": None,
     "logs": True,  # enable logging
     "log_dir": "logs/",  # directory for text logs/backups
     "bot_files_dir": "",  # folder for bot generated files (downloaded images, logs)

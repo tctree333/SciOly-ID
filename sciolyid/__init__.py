@@ -69,6 +69,8 @@ def setup(**kwargs):
     config.options["restricted_list_dir"] = f"{config.options['data_dir']}{config.options['restricted_list_dir']}"
     config.options["wikipedia_file"] = f"{config.options['data_dir']}{config.options['wikipedia_file']}"
     config.options["alias_file"] = f"{config.options['data_dir']}{config.options['alias_file']}"
+    if config.options["meme_file"]:
+        config.options["meme_file"] = f"{config.options['data_dir']}{config.options['meme_file']}"
 
     config.options["id_type"] = config.options["id_type"].lower()
     config.options["category_name"] = config.options["category_name"].title()

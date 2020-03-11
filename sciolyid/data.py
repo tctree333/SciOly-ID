@@ -224,6 +224,16 @@ def _groups():
     logger.info("Done with lists!")
     return lists
 
+def _memes():
+    """Converts a txt file of memes/video urls into a list."""
+    logger.info("Working on memes")
+    if config.options["meme_file"]:
+        with open(f'{config.options["meme_file"]}', 'r') as f:
+            memes = [line.strip() for line in f]
+        logger.info("Done with memes")
+        return memes
+    return []
+
 def _all_lists():
     """Compiles lists into master lists."""
     id_list = []
@@ -254,6 +264,7 @@ def _config():
         config.options["download_func"] = download_github
 
 groups = _groups()
+meme_list = _memes()
 id_list, master_id_list = _all_lists()
 wikipedia_urls = _wiki_urls()
 aliases = _generate_aliases()
