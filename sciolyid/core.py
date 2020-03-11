@@ -1,4 +1,4 @@
-# core.py | functions for getting media from a GitHub repo
+# core.py | functions for getting media
 # Copyright (C) 2019-2020  EraserBird, person_v1.32, hmmm
 
 # This program is free software: you can redistribute it and/or modify
