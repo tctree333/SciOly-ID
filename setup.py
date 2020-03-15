@@ -6,7 +6,7 @@ def readme():
 
 setuptools.setup(
     name="sciolyid",
-    version="0.2.1",
+    version="0.2.2",
     description="Create ID Discord bots for SciOly studying.",
     long_description=readme(),
     long_description_content_type="text/markdown",
