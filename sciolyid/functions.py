@@ -241,7 +241,7 @@ def build_id_list(group_str: str = ""):
 
 def owner_check(ctx) -> bool:
     """Check to see if the user is the owner of the bot."""
-    owners = set(str(os.getenv("ids")).split(","))
+    owners = set(str((config.options["secrets"]["ids"] if config.options["secrets"] else os.getenv("ids")).split(",")))
     return str(ctx.author.id) in owners
 
 def backup_all():

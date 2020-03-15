@@ -32,7 +32,7 @@ import sciolyid.config as config
 if config.options["local_redis"]:
     database = redis.Redis(host="localhost", port=6379, db=0)
 elif config.options["redis_env"] is not None:
-    database = redis.from_url(os.getenv(config.options["redis_env"]))
+    database = redis.from_url((config.options["secrets"][config.options["redis_env"]] if config.options["secrets"] else os.getenv(config.options["redis_env"])))
 else:
     raise ValueError("redis_env must be set if local_redis is False")
 

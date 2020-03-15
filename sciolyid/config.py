@@ -29,6 +29,7 @@ optional = {
     "category_aliases": {},  # aliases for categories
     "disable_extensions": [],
     "custom_extensions": [],
+    "secrets": None,
     "sentry": False,
     "local_redis": True,
     "bot_token_env": "token",
