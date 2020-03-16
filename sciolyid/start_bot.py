@@ -281,5 +281,5 @@ async def refresh_backup():
     logger.info("Backup Files Sent!")
 
 # Actually run the bot
-token = (config.options["secrets"][config.options["bot_token_env"]] if config.options["secrets"] else os.getenv(config.options["bot_token_env"]))
+token = os.getenv(config.options["bot_token_env"])
 bot.run(token)
