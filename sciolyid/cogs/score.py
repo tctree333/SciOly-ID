@@ -21,7 +21,7 @@ from discord.ext import commands
 from sentry_sdk import capture_exception
 
 import sciolyid.config as config
-from sciolyid.data import database, logger
+from sciolyid.data import database, logger, GenericError
 from sciolyid.functions import channel_setup, user_setup
 
 class Score(commands.Cog):
@@ -308,6 +308,25 @@ class Score(commands.Cog):
 **Permissions Missing:** `{', '.join(map(str, error.missing_perms))}`
 *Please try again once the correct permissions are set.*"""
             )
+        elif isinstance(error, GenericError):
+            if error.code == 842:
+                await ctx.send("**Sorry, you cannot use this command.**")
+            elif error.code == 666:
+                logger.info("GenericError 666")
+            elif error.code == 201:
+                logger.info("HTTP Error")
+                capture_exception(error)
+                await ctx.send("**An unexpected HTTP Error has occurred.**\n *Please try again.*")
+            else:
+                logger.info("uncaught generic error")
+                capture_exception(error)
+                await ctx.send(
+                    "**An uncaught generic error has occurred.**\n" +
+                    "*Please log this message in #support in the support server below, or try again.*\n" +
+                    "**Error:** " + str(error)
+                )
+                await ctx.send("https://discord.gg/fXxYyDJ")
+                raise error
         else:
             capture_exception(error)
             await ctx.send(

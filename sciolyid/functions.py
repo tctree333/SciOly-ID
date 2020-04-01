@@ -25,7 +25,7 @@ from PIL import Image
 import discord
 
 import sciolyid.config as config
-from sciolyid.data import database, groups, id_list, logger
+from sciolyid.data import database, groups, id_list, logger, GenericError
 
 async def channel_setup(ctx):
     """Sets up a new discord channel.
@@ -279,7 +279,7 @@ async def fools(ctx):
         embed.set_author(name="Bird ID - An Ornithology Bot")
         embed.add_field(name=f"{str(ctx.command).title()}", value="User scores and data have been cleared. We apologize for the inconvenience.", inline=False)
         await ctx.send(embed=embed)
-        return False
+        raise GenericError(code=666)
     return True
 
 def spellcheck_list(word_to_check, correct_list, abs_cutoff=None):
