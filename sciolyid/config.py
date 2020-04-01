@@ -35,7 +35,8 @@ optional = {
     "sentry_dsn_env": "SENTRY_DISCORD_DSN",
     "redis_env": "REDIS_URL",
     "backups_channel": None,
-    "backups_dir": "backups"
+    "backups_dir": "backups",
+    "holidays": True
 }
 
 options = {d: e for d, e in list(required.items()) + list(id_required.items()) + list(optional.items())}

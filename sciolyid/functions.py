@@ -22,6 +22,7 @@ import string
 from io import BytesIO
 
 from PIL import Image
+import discord
 
 import sciolyid.config as config
 from sciolyid.data import database, groups, id_list, logger
@@ -270,6 +271,16 @@ def backup_all():
                 pickle.dump(item, f)
                 k.write(f"{key}\n")
     logger.info("Backup Finished")
+
+async def fools(ctx):
+    logger.info(f"holiday check: invoked command: {str(ctx.command)}")
+    if str(ctx.command) in ("leaderboard", "missed", "score", "streak", "userscore"):
+        embed = discord.Embed(type="rich", colour=discord.Color.blurple(), title=f"{str(ctx.command).title()}")
+        embed.set_author(name="Bird ID - An Ornithology Bot")
+        embed.add_field(name=f"{str(ctx.command).title()}", value="User scores and data have been cleared. We apologize for the inconvenience.", inline=False)
+        await ctx.send(embed=embed)
+        return False
+    return True
 
 def spellcheck_list(word_to_check, correct_list, abs_cutoff=None):
     for correct_word in correct_list:

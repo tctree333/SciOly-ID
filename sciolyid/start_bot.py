@@ -18,6 +18,7 @@ import asyncio
 import concurrent.futures
 import os
 import sys
+from datetime import datetime, date, timezone, timedelta
 
 import discord
 import redis
@@ -26,7 +27,7 @@ from discord.ext import commands, tasks
 from sentry_sdk import capture_exception
 
 from sciolyid.data import GenericError, database, logger
-from sciolyid.functions import channel_setup, backup_all
+from sciolyid.functions import channel_setup, backup_all, fools
 from sciolyid.core import download_github
 import sciolyid.config as config
 
@@ -114,6 +115,21 @@ async def bot_has_permissions(ctx):
         raise commands.BotMissingPermissions(missing)
     else:
         return True
+
+if config.options["holidays"]:
+    @bot.check
+    async def is_holiday(ctx):
+        """April Fools Prank.
+
+        Can be extended to other holidays as well.
+        """
+        logger.info("global check: checking holiday")
+        now = datetime.now(tz=timezone(-timedelta(hours=4)))
+        now = date(now.year, now.month, now.day)
+        if now == date(now.year, 4, 1):
+            return await fools(ctx)
+        return True
+
 
 ######
 # GLOBAL ERROR CHECKING
