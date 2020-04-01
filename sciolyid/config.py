@@ -36,7 +36,8 @@ optional = {
     "redis_env": "REDIS_URL",
     "backups_channel": None,
     "backups_dir": "backups",
-    "holidays": True
+    "holidays": True,
+    "sendas": True,
 }
 
 options = {d: e for d, e in list(required.items()) + list(id_required.items()) + list(optional.items())}

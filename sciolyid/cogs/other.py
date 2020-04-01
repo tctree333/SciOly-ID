@@ -210,21 +210,22 @@ class Other(commands.Cog):
         database.zrem("banned:global", str(user.id))
         await ctx.send(f"Ok, {user.name} can use the bot!")
 
-    # Send command - for testing purposes only
-    @commands.command(help="- send command", hidden=True, aliases=["sendas"])
-    @commands.check(owner_check)
-    async def send_as_bot(self, ctx, *, args_str):
-        logger.info("command: send")
-        logger.info(f"args: {args_str}")
-        args = args_str.split(" ")
-        channel_id = int(args[0])
-        try:
-            message = args[1:]
-        except IndexError:
-            await ctx.send("No message provided!")
-        channel = self.bot.get_channel(channel_id)
-        await channel.send(message)
-        await ctx.send("Ok, sent!")
+    if config.options["sendas"]:
+        # Send command - for testing purposes only
+        @commands.command(help="- send command", hidden=True, aliases=["sendas"])
+        @commands.check(owner_check)
+        async def send_as_bot(self, ctx, *, args_str):
+            logger.info("command: send")
+            logger.info(f"args: {args_str}")
+            args = args_str.split(" ")
+            channel_id = int(args[0])
+            try:
+                message = args[1:]
+            except IndexError:
+                await ctx.send("No message provided!")
+            channel = self.bot.get_channel(channel_id)
+            await channel.send(" ".join(message))
+            await ctx.send("Ok, sent!")
 
     # Test command - for testing purposes only
     @commands.command(help="- test command", hidden=True)
