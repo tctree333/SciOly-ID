@@ -276,7 +276,7 @@ async def fools(ctx):
     logger.info(f"holiday check: invoked command: {str(ctx.command)}")
     if str(ctx.command) in ("leaderboard", "missed", "score", "streak", "userscore"):
         embed = discord.Embed(type="rich", colour=discord.Color.blurple(), title=f"{str(ctx.command).title()}")
-        embed.set_author(name="Bird ID - An Ornithology Bot")
+        embed.set_author(name=config.options["bot_signature"])
         embed.add_field(name=f"{str(ctx.command).title()}", value="User scores and data have been cleared. We apologize for the inconvenience.", inline=False)
         await ctx.send(embed=embed)
         raise GenericError(code=666)
