@@ -48,6 +48,10 @@ class Other(commands.Cog):
         if matches:
             item = matches[0]
 
+            if item in itertools.chain.from_iterable(aliases.values()):
+                logger.info("matched alias! getting item name.")
+                item = next(key for key, value in aliases.items() if item in value)
+
             delete = await ctx.send("Please wait a moment.")
             await send_image(ctx, str(item), message=f"Here's a *{item.lower()}* image!")
             await delete.delete()
