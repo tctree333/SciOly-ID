@@ -190,17 +190,23 @@ def _generate_aliases():
     return aliases
 
 def get_aliases(item: str):
+    logger.info(f"getting aliases for {item}")
     item = item.lower()
     try:
+        logger.info("aliases found")
         return aliases[item]
     except KeyError:
+        logger.info("no aliases")
         return [item]
 
 def get_category(item: str):
+    logger.info(f"getting category for item {item}")
     item = item.lower()
     for group in groups:
         if item in groups[group]:
+            logger.info(f"category found: {group}")
             return group.lower()
+    logger.info(f"no category found for item {item}")
     return None
 
 def _groups():
