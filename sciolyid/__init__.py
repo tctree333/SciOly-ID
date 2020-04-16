@@ -24,6 +24,8 @@ def setup(**kwargs):
             except KeyError:
                 raise config.BotConfigError(f"Required setup argument {option} when id_groups is True")
 
+        config.options["category_name"] = config.options["category_name"].title()
+
     if config.options['file_folder'] and not config.options['file_folder'].endswith("/"):
         config.options['file_folder'] += "/"
 
@@ -42,7 +44,6 @@ def setup(**kwargs):
     config.options["alias_file"] = f"{config.options['data_dir']}{config.options['alias_file']}"
 
     config.options["id_type"] = config.options["id_type"].lower()
-    config.options["category_name"] = config.options["category_name"].title()
 
     config.options["short_id_type"] = config.options["short_id_type"] or config.options["id_type"][0]
 

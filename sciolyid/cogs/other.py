@@ -94,21 +94,22 @@ class Other(commands.Cog):
         )
 
     # Group command - lists groups
-    @commands.command(
-        help="- Prints a list of all available groups.",
-        aliases=[
-            config.options['category_name'].lower(), config.options['category_name'].lower() + "s", "group",
-            "category", "categories"
-        ],
-    )
-    @commands.cooldown(1, 8.0, type=commands.BucketType.user)
-    async def groups(self, ctx):
-        logger.info("command: list")
+    if config.options["id_groups"]:
+        @commands.command(
+            help="- Prints a list of all available groups.",
+            aliases=[
+                config.options['category_name'].lower(), config.options['category_name'].lower() + "s", "group",
+                "category", "categories"
+            ],
+        )
+        @commands.cooldown(1, 8.0, type=commands.BucketType.user)
+        async def groups(self, ctx):
+            logger.info("command: list")
 
-        await channel_setup(ctx)
-        await user_setup(ctx)
+            await channel_setup(ctx)
+            await user_setup(ctx)
 
-        await ctx.send(f"**Valid Groups**: `{', '.join(map(str, list(groups.keys())))}`")
+            await ctx.send(f"**Valid Groups**: `{', '.join(map(str, list(groups.keys())))}`")
 
     # Wiki command - argument is the wiki page
     @commands.command(help="- Fetch the wikipedia page for any given argument")
