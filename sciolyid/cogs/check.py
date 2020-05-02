@@ -22,13 +22,6 @@ from sciolyid.functions import (CustomCooldown, channel_setup,
                                 score_increment, session_increment,
                                 spellcheck_list, user_setup)
 
-
-def racing_check(ctx):
-    """clears cooldown in racing"""
-    if ctx.command.is_on_cooldown(ctx) and str(ctx.channel.name).startswith("racing"):
-        ctx.command.reset_cooldown(ctx)
-    return True
-
 class Check(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -36,7 +29,6 @@ class Check(commands.Cog):
     # Check command - argument is the guess
     @commands.command(help="- Checks your answer.", usage="guess", aliases=["guess", "c"])
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.user))
-    @commands.check(racing_check)
     async def check(self, ctx, *, arg):
         logger.info("command: check")
 
