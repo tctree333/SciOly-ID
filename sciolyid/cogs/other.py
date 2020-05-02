@@ -24,7 +24,7 @@ from discord.ext import commands
 
 import sciolyid.config as config
 from sciolyid.data import database, get_aliases, id_list, logger, aliases, groups
-from sciolyid.functions import channel_setup, user_setup, build_id_list
+from sciolyid.functions import channel_setup, user_setup, build_id_list, CustomCooldown
 from sciolyid.core import send_image
 
 class Other(commands.Cog):
@@ -33,7 +33,7 @@ class Other(commands.Cog):
 
     # Info - Gives image
     @commands.command(help=f"- Gives images of specific {config.options['id_type']}", aliases=["i"])
-    @commands.cooldown(1, 10.0, type=commands.BucketType.user)
+    @commands.check(CustomCooldown(10.0, bucket=commands.BucketType.user))
     async def info(self, ctx, *, arg):
         logger.info("command: info")
 
@@ -63,7 +63,7 @@ class Other(commands.Cog):
 
     # List command
     @commands.command(help="- DMs the user with the appropriate list.", name="list")
-    @commands.cooldown(1, 8.0, type=commands.BucketType.user)
+    @commands.check(CustomCooldown(8.0, bucket=commands.BucketType.user))
     async def list_of_items(self, ctx, group=""):
         logger.info("command: list")
 
@@ -106,7 +106,7 @@ class Other(commands.Cog):
                 "category", "categories"
             ],
         )
-        @commands.cooldown(1, 8.0, type=commands.BucketType.user)
+        @commands.check(CustomCooldown(8.0, bucket=commands.BucketType.user))
         async def groups(self, ctx):
             logger.info("command: list")
 
@@ -117,7 +117,7 @@ class Other(commands.Cog):
 
     # Wiki command - argument is the wiki page
     @commands.command(help="- Fetch the wikipedia page for any given argument")
-    @commands.cooldown(1, 8.0, type=commands.BucketType.user)
+    @commands.check(CustomCooldown(8.0, bucket=commands.BucketType.user))
     async def wiki(self, ctx, *, arg):
         logger.info("command: wiki")
 
@@ -137,7 +137,7 @@ class Other(commands.Cog):
         help="- Gives info on bot, support server invite, stats",
         aliases=["bot_info", "support", "stats"],
     )
-    @commands.cooldown(1, 5.0, type=commands.BucketType.channel)
+    @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.channel))
     async def botinfo(self, ctx):
         logger.info("command: botinfo")
 
@@ -171,7 +171,7 @@ class Other(commands.Cog):
 
     # invite command - sends invite link
     @commands.command(help="- Get the invite link for this bot")
-    @commands.cooldown(1, 5.0, type=commands.BucketType.channel)
+    @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.channel))
     async def invite(self, ctx):
         logger.info("command: invite")
 

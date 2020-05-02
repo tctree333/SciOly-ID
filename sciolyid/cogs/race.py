@@ -22,7 +22,7 @@ from discord.ext import commands
 
 import sciolyid.config as config
 from sciolyid.data import database, logger, groups
-from sciolyid.functions import channel_setup, user_setup
+from sciolyid.functions import channel_setup, user_setup, CustomCooldown
 
 class Race(commands.Cog):
     def __init__(self, bot):
@@ -135,7 +135,7 @@ class Race(commands.Cog):
         aliases=["st"],
         usage=f"[bw]{' [group]' if config.options['id_groups'] else ''} [amount to win (default 10)]"
     )
-    @commands.cooldown(1, 3.0, type=commands.BucketType.channel)
+    @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.channel))
     async def start(self, ctx, *, args_str: str = ""):
         logger.info("command: start race")
 
@@ -216,7 +216,7 @@ class Race(commands.Cog):
         help="- Views race.\n" +
         f"Races allow you to compete with your friends to ID {config.options['id_type']} first."
     )
-    @commands.cooldown(1, 3.0, type=commands.BucketType.channel)
+    @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.channel))
     async def view(self, ctx):
         logger.info("command: view race")
 
@@ -231,7 +231,7 @@ class Race(commands.Cog):
             )
 
     @race.command(help="- Stops race", aliases=["stp", "end"])
-    @commands.cooldown(1, 3.0, type=commands.BucketType.channel)
+    @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.channel))
     async def stop(self, ctx):
         logger.info("command: stop race")
 

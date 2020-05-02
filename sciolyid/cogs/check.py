@@ -17,10 +17,11 @@
 from discord.ext import commands
 
 from sciolyid.data import database, get_aliases, get_wiki_url, logger
-from sciolyid.functions import (
-    channel_setup, incorrect_increment, item_setup, score_increment, session_increment, spellcheck_list,
-    user_setup
-)
+from sciolyid.functions import (CustomCooldown, channel_setup,
+                                incorrect_increment, item_setup,
+                                score_increment, session_increment,
+                                spellcheck_list, user_setup)
+
 
 def racing_check(ctx):
     """clears cooldown in racing"""
@@ -34,7 +35,7 @@ class Check(commands.Cog):
 
     # Check command - argument is the guess
     @commands.command(help="- Checks your answer.", usage="guess", aliases=["guess", "c"])
-    @commands.cooldown(1, 3.0, type=commands.BucketType.user)
+    @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.user))
     @commands.check(racing_check)
     async def check(self, ctx, *, arg):
         logger.info("command: check")

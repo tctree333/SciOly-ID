@@ -23,6 +23,7 @@ from io import BytesIO
 
 from PIL import Image
 import discord
+from discord.ext import commands
 
 import sciolyid.config as config
 from sciolyid.data import database, groups, id_list, logger, GenericError
@@ -299,3 +300,37 @@ def spellcheck(worda, wordb, cutoff=3):
         if len(list(difflib.Differ().compare(worda, wordb))) - len(shorterword) >= cutoff:
             return False
     return True
+
+class CustomCooldown:
+        """Halve cooldown times in DM channels."""
+        # Code adapted from discord.py example
+        def __init__(self, per: float, disable: bool = False, bucket: commands.BucketType = commands.BucketType.channel):
+            """Initialize a custom cooldown.
+
+            `per` (float) - Cooldown default duration, halves in DM channels
+            `bucket` (commands.BucketType) - cooldown scope, defaults to channel
+            """
+            rate = 1
+            dm_per = per/2
+            race_per = 0.5
+            self.disable = disable
+            self.default_mapping = commands.CooldownMapping.from_cooldown(rate, per, bucket)
+            self.dm_mapping = commands.CooldownMapping.from_cooldown(rate, dm_per, bucket)
+            self.race_mapping = commands.CooldownMapping.from_cooldown(rate, race_per, bucket)
+
+        def __call__(self, ctx: commands.Context):
+            if not self.disable and ctx.guild is None:
+                # halve cooldown in DMs
+                bucket = self.dm_mapping.get_bucket(ctx.message)
+
+            elif ctx.command.name.startswith("check") and ctx.channel.name.startswith("racing"):
+                # tiny check cooldown in racing channels
+                bucket = self.race_mapping.get_bucket(ctx.message)
+
+            else:
+                bucket = self.default_mapping.get_bucket(ctx.message)
+
+            retry_after = bucket.update_rate_limit()
+            if retry_after:
+                raise commands.CommandOnCooldown(bucket, retry_after)
+            return True
