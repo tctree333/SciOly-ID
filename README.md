@@ -50,7 +50,6 @@ To setup your own bot, follow these steps:
 ```sh
 #!/bin/sh
 export token=
-export ids=
 ```
 
 This will be used to store environment variables. We will fill these in later. **Put this in `.gitignore` if you have a public github repo.**

@@ -24,7 +24,7 @@ from discord.ext import commands
 
 import sciolyid.config as config
 from sciolyid.data import database, get_aliases, id_list, logger, aliases, groups
-from sciolyid.functions import channel_setup, owner_check, user_setup, build_id_list
+from sciolyid.functions import channel_setup, user_setup, build_id_list
 from sciolyid.core import send_image
 
 class Other(commands.Cog):
@@ -191,7 +191,7 @@ class Other(commands.Cog):
 
     # ban command - prevents certain users from using the bot
     @commands.command(help="- ban command", hidden=True)
-    @commands.check(owner_check)
+    @commands.is_owner()
     async def ban(self, ctx, *, user: discord.Member = None):
         logger.info("command: ban")
         if user is None or isinstance(user, str):
@@ -204,7 +204,7 @@ class Other(commands.Cog):
 
     # unban command - prevents certain users from using the bot
     @commands.command(help="- unban command", hidden=True)
-    @commands.check(owner_check)
+    @commands.is_owner()
     async def unban(self, ctx, *, user: typing.Optional[typing.Union[discord.Member, str]] = None):
         logger.info("command: unban")
         if user is None or isinstance(user, str):
@@ -218,7 +218,7 @@ class Other(commands.Cog):
     if config.options["sendas"]:
         # Send command - for testing purposes only
         @commands.command(help="- send command", hidden=True, aliases=["sendas"])
-        @commands.check(owner_check)
+        @commands.is_owner()
         async def send_as_bot(self, ctx, *, args_str):
             logger.info("command: send")
             logger.info(f"args: {args_str}")
