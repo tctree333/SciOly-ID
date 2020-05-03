@@ -19,6 +19,7 @@ import logging
 import logging.handlers
 import os
 import sys
+import datetime
 
 import redis
 import sentry_sdk
@@ -51,7 +52,7 @@ if config.options["sentry"]:
     if config.options["sentry_dsn_env"] is None:
         raise ValueError("sentry_dsn_env must be set if sentry is True")
     sentry_sdk.init(
-        release=f"Heroku Release {os.getenv('HEROKU_RELEASE_VERSION')}:{os.getenv('HEROKU_SLUG_DESCRIPTION')}",
+        release=f"Deployed Discord Bot at {datetime.datetime.today()}",
         dsn=os.getenv(config.options["sentry_dsn_env"]),
         integrations=[RedisIntegration(), AioHttpIntegration()],
         before_send=before_sentry_send,
