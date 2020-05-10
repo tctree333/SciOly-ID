@@ -16,6 +16,7 @@
 
 import itertools
 import typing
+import random
 from difflib import get_close_matches
 
 import discord
@@ -23,7 +24,7 @@ import wikipedia
 from discord.ext import commands
 
 import sciolyid.config as config
-from sciolyid.data import database, get_aliases, id_list, logger, aliases, groups
+from sciolyid.data import database, get_aliases, id_list, logger, aliases, groups, meme_list, master_id_list
 from sciolyid.functions import channel_setup, user_setup, build_id_list, CustomCooldown
 from sciolyid.core import send_image
 
@@ -42,7 +43,7 @@ class Other(commands.Cog):
 
         matches = get_close_matches(
             arg.lower(),
-            id_list + list(itertools.chain.from_iterable(aliases.values())),
+            master_id_list + list(itertools.chain.from_iterable(aliases.values())),
             n=1,
         )
         if matches:
@@ -131,6 +132,20 @@ class Other(commands.Cog):
             await ctx.send("Sorry, that page was not found. Try being more specific.")
         except wikipedia.exceptions.PageError:
             await ctx.send("Sorry, that page was not found.")
+
+    if config.options["meme_file"]:
+        # meme command - sends a random bird video/gif
+        @commands.command(help=f"- Sends a funny {config.options['id_type'][:-1]} video/image!")
+        @commands.cooldown(1, 300.0, type=commands.BucketType.user)
+        async def meme(self, ctx):
+            logger.info("command: meme")
+
+            await channel_setup(ctx)
+            await user_setup(ctx)
+            if meme_list:
+                await ctx.send(random.choice(meme_list))
+            else:
+                await ctx.send("No memes avaliable :(")
 
     # bot info command - gives info on bot
     @commands.command(

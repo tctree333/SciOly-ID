@@ -28,7 +28,6 @@ from sentry_sdk import capture_exception
 
 from sciolyid.data import GenericError, database, logger
 from sciolyid.functions import channel_setup, backup_all, fools
-from sciolyid.core import download_github
 import sciolyid.config as config
 
 # Initialize bot
@@ -257,8 +256,8 @@ async def on_command_error(ctx, error):
 @tasks.loop(hours=24.0)
 async def update_images():
     """Updates the images."""
-    logger.info("updating github")
-    await download_github()
+    logger.info("updating images")
+    await config.options["download_func"]()
     logger.info("done updating images!")
 
 @tasks.loop(hours=6.0)

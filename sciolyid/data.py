@@ -111,10 +111,10 @@ if config.options["sentry"]:
 logger = logging.getLogger(config.options["name"])
 if config.options["logs"]:
     logger.setLevel(logging.DEBUG)
-    os.makedirs(f"{config.options['log_dir']}", exist_ok=True)
+    os.makedirs(config.options['log_dir'], exist_ok=True)
 
     file_handler = logging.handlers.TimedRotatingFileHandler(
-        f"{config.options['log_dir']}/log.txt", backupCount=4, when="midnight"
+        f"{config.options['log_dir']}log.txt", backupCount=4, when="midnight"
     )
     file_handler.setLevel(logging.DEBUG)
     stream_handler = logging.StreamHandler()
@@ -212,25 +212,50 @@ def get_category(item: str):
 
 def _groups():
     """Converts txt files of data into lists."""
-    filenames = [name.split(".")[0] for name in os.listdir(f"{config.options['list_dir']}/")]
+    filenames = [name.split(".")[0] for name in os.listdir(config.options['list_dir'])]
+    restricted_filenames = [name.split(".")[0] for name in os.listdir(config.options['restricted_list_dir'])]
     # Converts txt file of data into lists
     lists = {}
     for filename in filenames:
         logger.info(f"Working on {filename}")
-        with open(f'{config.options["list_dir"]}/{filename}.txt', "r") as f:
+        with open(f'{config.options["list_dir"]}{filename}.txt', "r") as f:
             lists[filename] = [line.strip().lower() for line in f]
         logger.info(f"Done with {filename}")
+
+    for restricted_filename in restricted_filenames:
+        logger.info(f"Working on {restricted_filename}")
+        with open(f'{config.options["restricted_list_dir"]}{restricted_filename}.txt', "r") as f:
+            lists[restricted_filename] = [line.strip().lower() for line in f]
+        logger.info(f"Done with {restricted_filename}")
+
     logger.info("Done with lists!")
     return lists
 
+def _memes():
+    """Converts a txt file of memes/video urls into a list."""
+    logger.info("Working on memes")
+    if config.options["meme_file"]:
+        with open(f'{config.options["meme_file"]}', 'r') as f:
+            memes = [line.strip() for line in f]
+        logger.info("Done with memes")
+        return memes
+    return []
+
 def _all_lists():
     """Compiles lists into master lists."""
-    master = []
+    id_list = []
+    master_id_list = []
     for group in groups:
-        for item in groups[group]:
-            master.append(item)
-    master = list(set(master))
-    return master
+        if group in [name.split(".")[0] for name in os.listdir(config.options['restricted_list_dir'])]:
+            for item in groups[group]:
+                master_id_list.append(item)
+        else:
+            for item in groups[group]:
+                id_list.append(item)
+                master_id_list.append(item)
+    id_list = list(set(id_list))
+    master_id_list = list(set(master_id_list))
+    return id_list, master_id_list
 
 def _config():
     for group in groups:
@@ -241,11 +266,17 @@ def _config():
     if len(_aliases) != len(set(_aliases)):
         raise config.BotConfigError("Aliases in category_aliases not unique")
 
+    if config.options["download_func"] is None:
+        from sciolyid.github import download_github
+        config.options["download_func"] = download_github
+
 groups = _groups()
-id_list = _all_lists()
+meme_list = _memes()
+id_list, master_id_list = _all_lists()
 wikipedia_urls = _wiki_urls()
 aliases = _generate_aliases()
 _config()
 logger.info(f"List Lengths: {len(id_list)}")
+logger.info(f"Master List Lengths: {len(master_id_list)}")
 
 logger.info("Done importing data!")
