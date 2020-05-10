@@ -24,8 +24,8 @@ import wikipedia
 from discord.ext import commands
 
 import sciolyid.config as config
-from sciolyid.data import database, get_aliases, master_id_list, logger, aliases, groups, meme_list
-from sciolyid.functions import channel_setup, owner_check, user_setup, build_id_list
+from sciolyid.data import database, get_aliases, id_list, logger, aliases, groups, meme_list, master_id_list
+from sciolyid.functions import channel_setup, user_setup, build_id_list, CustomCooldown
 from sciolyid.core import send_image
 
 class Other(commands.Cog):
@@ -34,7 +34,7 @@ class Other(commands.Cog):
 
     # Info - Gives image
     @commands.command(help=f"- Gives images of specific {config.options['id_type']}", aliases=["i"])
-    @commands.cooldown(1, 10.0, type=commands.BucketType.user)
+    @commands.check(CustomCooldown(10.0, bucket=commands.BucketType.user))
     async def info(self, ctx, *, arg):
         logger.info("command: info")
 
@@ -49,6 +49,10 @@ class Other(commands.Cog):
         if matches:
             item = matches[0]
 
+            if item in itertools.chain.from_iterable(aliases.values()):
+                logger.info("matched alias! getting item name.")
+                item = next(key for key, value in aliases.items() if item in value)
+
             delete = await ctx.send("Please wait a moment.")
             await send_image(ctx, str(item), message=f"Here's a *{item.lower()}* image!")
             await delete.delete()
@@ -60,7 +64,7 @@ class Other(commands.Cog):
 
     # List command
     @commands.command(help="- DMs the user with the appropriate list.", name="list")
-    @commands.cooldown(1, 8.0, type=commands.BucketType.user)
+    @commands.check(CustomCooldown(8.0, bucket=commands.BucketType.user))
     async def list_of_items(self, ctx, group=""):
         logger.info("command: list")
 
@@ -95,25 +99,26 @@ class Other(commands.Cog):
         )
 
     # Group command - lists groups
-    @commands.command(
-        help="- Prints a list of all available groups.",
-        aliases=[
-            config.options['category_name'].lower(), config.options['category_name'].lower() + "s", "group",
-            "category", "categories"
-        ],
-    )
-    @commands.cooldown(1, 8.0, type=commands.BucketType.user)
-    async def groups(self, ctx):
-        logger.info("command: list")
+    if config.options["id_groups"]:
+        @commands.command(
+            help="- Prints a list of all available groups.",
+            aliases=[
+                config.options['category_name'].lower(), config.options['category_name'].lower() + "s", "group",
+                "category", "categories"
+            ],
+        )
+        @commands.check(CustomCooldown(8.0, bucket=commands.BucketType.user))
+        async def groups(self, ctx):
+            logger.info("command: list")
 
-        await channel_setup(ctx)
-        await user_setup(ctx)
+            await channel_setup(ctx)
+            await user_setup(ctx)
 
-        await ctx.send(f"**Valid Groups**: `{', '.join(map(str, list(groups.keys())))}`")
+            await ctx.send(f"**Valid Groups**: `{', '.join(map(str, list(groups.keys())))}`")
 
     # Wiki command - argument is the wiki page
     @commands.command(help="- Fetch the wikipedia page for any given argument")
-    @commands.cooldown(1, 8.0, type=commands.BucketType.user)
+    @commands.check(CustomCooldown(8.0, bucket=commands.BucketType.user))
     async def wiki(self, ctx, *, arg):
         logger.info("command: wiki")
 
@@ -147,7 +152,7 @@ class Other(commands.Cog):
         help="- Gives info on bot, support server invite, stats",
         aliases=["bot_info", "support", "stats"],
     )
-    @commands.cooldown(1, 5.0, type=commands.BucketType.channel)
+    @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.channel))
     async def botinfo(self, ctx):
         logger.info("command: botinfo")
 
@@ -181,7 +186,7 @@ class Other(commands.Cog):
 
     # invite command - sends invite link
     @commands.command(help="- Get the invite link for this bot")
-    @commands.cooldown(1, 5.0, type=commands.BucketType.channel)
+    @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.channel))
     async def invite(self, ctx):
         logger.info("command: invite")
 
@@ -201,7 +206,7 @@ class Other(commands.Cog):
 
     # ban command - prevents certain users from using the bot
     @commands.command(help="- ban command", hidden=True)
-    @commands.check(owner_check)
+    @commands.is_owner()
     async def ban(self, ctx, *, user: discord.Member = None):
         logger.info("command: ban")
         if user is None or isinstance(user, str):
@@ -214,7 +219,7 @@ class Other(commands.Cog):
 
     # unban command - prevents certain users from using the bot
     @commands.command(help="- unban command", hidden=True)
-    @commands.check(owner_check)
+    @commands.is_owner()
     async def unban(self, ctx, *, user: typing.Optional[typing.Union[discord.Member, str]] = None):
         logger.info("command: unban")
         if user is None or isinstance(user, str):
@@ -225,21 +230,22 @@ class Other(commands.Cog):
         database.zrem("banned:global", str(user.id))
         await ctx.send(f"Ok, {user.name} can use the bot!")
 
-    # Send command - for testing purposes only
-    @commands.command(help="- send command", hidden=True, aliases=["sendas"])
-    @commands.check(owner_check)
-    async def send_as_bot(self, ctx, *, args_str):
-        logger.info("command: send")
-        logger.info(f"args: {args_str}")
-        args = args_str.split(" ")
-        channel_id = int(args[0])
-        try:
-            message = args[1:]
-        except IndexError:
-            await ctx.send("No message provided!")
-        channel = self.bot.get_channel(channel_id)
-        await channel.send(message)
-        await ctx.send("Ok, sent!")
+    if config.options["sendas"]:
+        # Send command - for testing purposes only
+        @commands.command(help="- send command", hidden=True, aliases=["sendas"])
+        @commands.is_owner()
+        async def send_as_bot(self, ctx, *, args_str):
+            logger.info("command: send")
+            logger.info(f"args: {args_str}")
+            args = args_str.split(" ")
+            channel_id = int(args[0])
+            try:
+                message = args[1:]
+            except IndexError:
+                await ctx.send("No message provided!")
+            channel = self.bot.get_channel(channel_id)
+            await channel.send(" ".join(message))
+            await ctx.send("Ok, sent!")
 
     # Test command - for testing purposes only
     @commands.command(help="- test command", hidden=True)

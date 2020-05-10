@@ -17,7 +17,7 @@
 from discord.ext import commands
 
 from sciolyid.data import database, get_wiki_url, logger
-from sciolyid.functions import channel_setup, user_setup
+from sciolyid.functions import channel_setup, user_setup, CustomCooldown
 
 class Skip(commands.Cog):
     def __init__(self, bot):
@@ -25,7 +25,7 @@ class Skip(commands.Cog):
 
     # Skip command - no args
     @commands.command(help="- Skip the current image to get a new one", aliases=["sk", "s"])
-    @commands.cooldown(1, 5.0, type=commands.BucketType.channel)
+    @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.channel))
     async def skip(self, ctx):
         logger.info("command: skip")
 

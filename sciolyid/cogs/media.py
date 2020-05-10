@@ -16,17 +16,13 @@
 
 import random
 
-import sciolyid.config as config
 from discord.ext import commands
+
+import sciolyid.config as config
 from sciolyid.core import send_image
 from sciolyid.data import database, groups, id_list, logger
-from sciolyid.functions import (
-    build_id_list,
-    channel_setup,
-    error_skip,
-    session_increment,
-    user_setup,
-)
+from sciolyid.functions import (CustomCooldown, build_id_list, channel_setup,
+                                error_skip, session_increment, user_setup)
 
 IMAGE_MESSAGE = (
     f"*Here you go!* \n**Use `{config.options['prefixes'][0]}pic` again to get a new image of the same {config.options['id_type'][:-1]}, "
@@ -85,7 +81,7 @@ class Media(commands.Cog):
         aliases=["p", config.options["id_type"][:-1], config.options["short_id_type"]]
     )
     # 5 second cooldown
-    @commands.cooldown(1, 5.0, type=commands.BucketType.channel)
+    @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.channel))
     async def pic(self, ctx, *, args_str: str = ""):
         logger.info("command: pic")
 

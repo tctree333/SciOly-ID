@@ -19,6 +19,7 @@ import logging
 import logging.handlers
 import os
 import sys
+import datetime
 
 import redis
 import sentry_sdk
@@ -51,7 +52,7 @@ if config.options["sentry"]:
     if config.options["sentry_dsn_env"] is None:
         raise ValueError("sentry_dsn_env must be set if sentry is True")
     sentry_sdk.init(
-        release=f"Heroku Release {os.getenv('HEROKU_RELEASE_VERSION')}:{os.getenv('HEROKU_SLUG_DESCRIPTION')}",
+        release=f"Deployed Discord Bot at {datetime.datetime.today()}",
         dsn=os.getenv(config.options["sentry_dsn_env"]),
         integrations=[RedisIntegration(), AioHttpIntegration()],
         before_send=before_sentry_send,
@@ -190,17 +191,23 @@ def _generate_aliases():
     return aliases
 
 def get_aliases(item: str):
+    logger.info(f"getting aliases for {item}")
     item = item.lower()
     try:
+        logger.info("aliases found")
         return aliases[item]
     except KeyError:
+        logger.info("no aliases")
         return [item]
 
 def get_category(item: str):
+    logger.info(f"getting category for item {item}")
     item = item.lower()
     for group in groups:
         if item in groups[group]:
+            logger.info(f"category found: {group}")
             return group.lower()
+    logger.info(f"no category found for item {item}")
     return None
 
 def _groups():

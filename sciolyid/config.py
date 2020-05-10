@@ -54,7 +54,9 @@ optional = {
     "sentry_dsn_env": "SENTRY_DISCORD_DSN",  # name of environment variable containing the sentry dsn
     "redis_env": "REDIS_URL",  # name of environment variable containing the redis database url
     "backups_channel": None,  # discord channel id to upload database backups (None/False to disable)
-    "backups_dir": "backups/"  # directory to put database backup files before uploading
+    "backups_dir": "backups",  # directory to put database backup files before uploading
+    "holidays": True,  # enable special features on select holidays
+    "sendas": True,  # enable the "sendas" command
 }
 
 options = {d: e for d, e in list(required.items()) + list(id_required.items()) + list(optional.items())}

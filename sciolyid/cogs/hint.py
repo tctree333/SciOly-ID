@@ -17,7 +17,7 @@
 from discord.ext import commands
 
 from sciolyid.data import database, logger
-from sciolyid.functions import channel_setup, user_setup
+from sciolyid.functions import channel_setup, user_setup, CustomCooldown
 
 class Hint(commands.Cog):
     def __init__(self, bot):
@@ -25,7 +25,7 @@ class Hint(commands.Cog):
 
     # give hint
     @commands.command(help="- Gives first letter of current image", aliases=["h"])
-    @commands.cooldown(1, 3.0, type=commands.BucketType.channel)
+    @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.channel))
     async def hint(self, ctx):
         logger.info("command: hint")
 

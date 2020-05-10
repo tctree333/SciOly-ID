@@ -18,6 +18,7 @@ import asyncio
 import concurrent.futures
 import os
 import sys
+from datetime import datetime, date, timezone, timedelta
 
 import discord
 import redis
@@ -26,7 +27,7 @@ from discord.ext import commands, tasks
 from sentry_sdk import capture_exception
 
 from sciolyid.data import GenericError, database, logger
-from sciolyid.functions import channel_setup, backup_all
+from sciolyid.functions import channel_setup, backup_all, fools
 import sciolyid.config as config
 
 # Initialize bot
@@ -87,14 +88,6 @@ if sys.platform == "win32":
 ######
 
 @bot.check
-async def dm_cooldown(ctx):
-    """Clears the cooldown in DMs."""
-    logger.info("global check: checking dm cooldown clear")
-    if ctx.command.is_on_cooldown(ctx) and ctx.guild is None:
-        ctx.command.reset_cooldown(ctx)
-    return True
-
-@bot.check
 async def bot_has_permissions(ctx):
     """Checks if the bot has correct permissions."""
     logger.info("global check: checking permissions")
@@ -113,6 +106,21 @@ async def bot_has_permissions(ctx):
         raise commands.BotMissingPermissions(missing)
     else:
         return True
+
+if config.options["holidays"]:
+    @bot.check
+    async def is_holiday(ctx):
+        """April Fools Prank.
+
+        Can be extended to other holidays as well.
+        """
+        logger.info("global check: checking holiday")
+        now = datetime.now(tz=timezone(-timedelta(hours=4)))
+        now = date(now.year, now.month, now.day)
+        if now == date(now.year, 4, 1):
+            return await fools(ctx)
+        return True
+
 
 ######
 # GLOBAL ERROR CHECKING

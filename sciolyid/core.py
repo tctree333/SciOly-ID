@@ -140,10 +140,12 @@ async def get_files(item, retries=0):
     directory = f"{config.options['download_dir']}{category}/{item}/"
     try:
         logger.info("trying")
+        logger.info(f"looking in: {directory}")
         files_dir = os.listdir(directory)
-        logger.info(directory)
         if not files_dir:
+            logger.info("no files in directory")
             raise GenericError("No Files", code=100)
+        logger.info("files found!")
         return [f"{directory}{path}" for path in files_dir]
     except (FileNotFoundError, GenericError):
         # if not found, fetch images
