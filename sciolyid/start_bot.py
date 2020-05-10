@@ -16,25 +16,28 @@
 
 import asyncio
 import concurrent.futures
+import errno
 import os
 import sys
-from datetime import datetime, date, timezone, timedelta
+from datetime import date, datetime, timedelta, timezone
 
+import aiohttp
 import discord
 import redis
 import wikipedia
 from discord.ext import commands, tasks
 from sentry_sdk import capture_exception
 
-from sciolyid.data import GenericError, database, logger
-from sciolyid.functions import channel_setup, backup_all, fools
 import sciolyid.config as config
+from sciolyid.data import GenericError, database, logger
+from sciolyid.functions import backup_all, channel_setup, fools
 
 # Initialize bot
 bot = commands.Bot(
     command_prefix=config.options["prefixes"],
     case_insensitive=True,
     description=config.options["bot_description"],
+    help_command=commands.DefaultHelpCommand(verify_checks=False)
 )
 
 @bot.event
@@ -60,6 +63,7 @@ initial_extensions = [
     "sciolyid.cogs.score",
     "sciolyid.cogs.sessions",
     "sciolyid.cogs.race",
+    "sciolyid.cogs.meta",
     "sciolyid.cogs.other",
 ]
 for extension in config.options["disable_extensions"]:
@@ -86,6 +90,21 @@ if sys.platform == "win32":
 ######
 # Global Command Checks
 ######
+@bot.check
+def moderation_check(ctx):
+    """Checks different moderation checks.
+
+    Disallows:
+    - Users that are banned from the bot,
+    - Channels that are ignored
+    """
+    logger.info("global check: checking banned")
+    if database.zscore("ignore:global", str(ctx.channel.id)) is not None:
+        raise GenericError(code=192)
+    elif database.zscore("banned:global", str(ctx.author.id)) is not None:
+        raise GenericError(code=842)
+    else:
+        return True
 
 @bot.check
 async def bot_has_permissions(ctx):
@@ -160,12 +179,21 @@ async def on_command_error(ctx, error):
             "*Please try again once the correct permissions are set.*"
         )
 
+    elif isinstance(error, commands.MissingPermissions):
+        await ctx.send(
+            "You do not have the required permissions to use this command.\n" +
+            f"**Required Perms:** `{'`, `'.join(error.missing_perms)}`"
+        )
+
     elif isinstance(error, commands.NoPrivateMessage):
         capture_exception(error)
         await ctx.send("**This command is unavaliable in DMs!**")
 
     elif isinstance(error, GenericError):
-        if error.code == 842:
+        if error.code == 192:
+            #channel is ignored
+            return
+        elif error.code == 842:
             await ctx.send("**Sorry, you cannot use this command.**")
         elif error.code == 666:
             logger.info("GenericError 666")
@@ -208,6 +236,20 @@ async def on_command_error(ctx, error):
             capture_exception(error.original)
             await ctx.send("Wikipedia page unavaliable. Try again later.")
 
+        elif isinstance(error.original, discord.Forbidden):
+            if error.original.code == 50007:
+                await ctx.send("I was unable to DM you. Check if I was blocked and try again.")
+            elif error.original.code == 50013:
+                await ctx.send("There was an error with permissions. Check the bot has proper permissions and try again.")
+            else:
+                capture_exception(error)
+                await ctx.send(
+                    "**An unexpected Forbidden error has occurred.**\n"
+                    "*Please log this message in #support in the support server below, or try again.*\n"
+                    "**Error:** " + str(error)
+                )
+                await ctx.send(config.options["support_server"])
+
         elif isinstance(error.original, discord.HTTPException):
             if error.original.status == 502:
                 await ctx.send("**An error has occured with discord. :(**\n*Please try again.*")
@@ -220,16 +262,16 @@ async def on_command_error(ctx, error):
                 )
                 await ctx.send(config.options["support_server"])
 
-        #            elif isinstance(error.original, aiohttp.ClientOSError):
-        #                if error.original.errno == errno.ECONNRESET:
-        #                    await ctx.send("**An error has occured with discord. :(**\n*Please try again.*")
-        #                else:
-        #                    capture_exception(error.original)
-        #                    await ctx.send(
-        #                        "**An unexpected ClientOSError has occurred.**\n" +
-        #                        "*Please log this message in #support in the support server below, or try again.*\n" +
-        #                        "**Error:** " + str(error.original))
-        #                    await ctx.send(config.options["support_server"])
+        elif isinstance(error.original, aiohttp.ClientOSError):
+            if error.original.errno == errno.ECONNRESET:
+                await ctx.send("**An error has occured with discord. :(**\n*Please try again.*")
+            else:
+                capture_exception(error.original)
+                await ctx.send(
+                    "**An unexpected ClientOSError has occurred.**\n" +
+                    "*Please log this message in #support in the support server below, or try again.*\n" +
+                    "**Error:** " + str(error.original))
+                await ctx.send(config.options["support_server"])
 
         else:
             logger.info("uncaught command error")

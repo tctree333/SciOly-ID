@@ -107,6 +107,12 @@ if config.options["sentry"]:
 # ban format:
 #   banned:global : [user id, 0]
 
+# ignore format:
+#   ignore:global : [channel id, guild id]
+
+# leave confirm format:
+#   leave:guild_id : 0
+
 # setup logging
 logger = logging.getLogger(config.options["name"])
 if config.options["logs"]:
