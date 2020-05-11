@@ -29,11 +29,11 @@ class Race(commands.Cog):
         self.bot = bot
 
     def _get_options(self, ctx):
-        bw, group = database.hmget(f"race.data:{ctx.channel.id}", ["bw", "group"])
-        options = f"**Black & White:** {bw==b'bw'}" + (
-            f"\n**{config.options['category_name']}:** {group.decode('utf-8') if group else 'None'}"
+        bw, group, limit = database.hmget(f"race.data:{ctx.channel.id}", ["bw", "group", "limit"])
+        options = f"**Black & White:** {bw==b'bw'}\n" + (
+            f"**{config.options['category_name']}:** {group.decode('utf-8') if group else 'None'}\n"
             if config.options["id_groups"] else ""
-        )
+        ) + f"**Amount to Win:** {limit.decode('utf-8')}\n"
 
         return options
 
@@ -123,6 +123,7 @@ class Race(commands.Cog):
         f"Races are channel-specific, and anyone in that channel can play." +
         f"Races end when a player is the first to correctly ID a set amount of {config.options['id_type']}. (default 10)"
     )
+    @commands.guild_only()
     async def race(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.send('**Invalid subcommand passed.**\n*Valid Subcommands:* `start, view, stop`')
@@ -141,11 +142,6 @@ class Race(commands.Cog):
 
         await channel_setup(ctx)
         await user_setup(ctx)
-
-        if ctx.guild is None:
-            logger.info("dm context")
-            await ctx.send("**Sorry, racing is not avaliable in DMs.**")
-            return
 
         if not str(ctx.channel.name).startswith("racing"):
             logger.info("not race channel")

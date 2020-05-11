@@ -68,7 +68,9 @@ class Check(commands.Cog):
                     f"**{ctx.author.mention}**, you are correct!"
                 )
                 url = get_wiki_url(current_item)
-                await ctx.send(url)
+                await ctx.send(
+                    url if not database.exists(f"race.data:{ctx.channel.id}") else f"<{url}>"
+                )  # sends wiki page
                 score_increment(ctx, 1)
                 if database.exists(f"race.data:{ctx.channel.id}"):
 
