@@ -222,7 +222,7 @@ def build_id_list(group_str: str = ""):
     ).intersection({category.lower()
                     for category in categories}):
         if group not in groups.keys():
-            group = next(key for key, value in config.options["category_aliases"].items() if value == group)
+            group = next(key for key, value in config.options["category_aliases"].items() if group in value)
         group_args.append(group)
     logger.info(f"group_args: {group_args}")
 
