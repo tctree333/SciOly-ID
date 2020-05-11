@@ -29,11 +29,11 @@ class Sessions(commands.Cog):
         self.bot = bot
 
     def _get_options(self, ctx):
-        bw, group = database.hmget(f"session.data:{ctx.author.id}", ["bw", "group"])
-        options = f"**Black & White:** {bw==b'bw'}" + (
-            f"\n**{config.options['category_name']}:** {group.decode('utf-8') if group else 'None'}"
+        bw, group, wiki = database.hmget(f"session.data:{ctx.author.id}", ["bw", "group", "wiki"])
+        options = f"**Black & White:** {bw==b'bw'}\n" + (
+            f"**{config.options['category_name']}:** {group.decode('utf-8') if group else 'None'}\n"
             if config.options["id_groups"] else ""
-        )
+        ) + f"**Wiki Embeds**: {wiki==b'wiki'}\n"
         return options
 
     def _get_stats(self, ctx):
@@ -119,18 +119,24 @@ class Sessions(commands.Cog):
             )
             return
         else:
-            args = args_str.split(" ")
+            args = args_str.lower().split(" ")
             logger.info(f"args: {args}")
+
             if "bw" in args:
                 bw = "bw"
             else:
                 bw = ""
+
+            if "wiki" in args:
+                wiki = ""
+            else:
+                wiki = "wiki"
+
             group_args = []
             for category in set(
                 list(groups.keys()) +
                 [item for group in groups.keys() for item in config.options["category_aliases"][group]]
-            ).intersection({arg.lower()
-                            for arg in args}):
+            ).intersection({arg.lower() for arg in args}):
                 if category not in groups.keys():
                     category = next(
                         key for key, value in config.options["category_aliases"].items() if category in value
@@ -140,7 +146,8 @@ class Sessions(commands.Cog):
                 group = " ".join(group_args).strip()
             else:
                 group = ""
-            logger.info(f"adding bw: {bw}; group: {group}")
+
+            logger.info(f"adding bw: {bw}; group: {group}; wiki: {wiki}")
 
             database.hmset(
                 f"session.data:{ctx.author.id}",
@@ -152,6 +159,7 @@ class Sessions(commands.Cog):
                     "total": 0,
                     "bw": bw,
                     "group": group,
+                    "wiki": wiki,
                 },
             )
             await ctx.send(f"**Session started with options:**\n{self._get_options(ctx)}")
@@ -174,8 +182,9 @@ class Sessions(commands.Cog):
         await user_setup(ctx)
 
         if database.exists(f"session.data:{ctx.author.id}"):
-            args = args_str.split(" ")
+            args = args_str.lower().split(" ")
             logger.info(f"args: {args}")
+
             if "bw" in args:
                 if not database.hget(f"session.data:{ctx.author.id}", "bw"):
                     logger.info("adding bw")
@@ -183,6 +192,15 @@ class Sessions(commands.Cog):
                 else:
                     logger.info("removing bw")
                     database.hset(f"session.data:{ctx.author.id}", "bw", "")
+
+            if "wiki" in args:
+                if database.hget(f"session.data:{ctx.author.id}", "wiki"):
+                    logger.info("disabling wiki embeds")
+                    database.hset(f"session.data:{ctx.author.id}", "wiki", "")
+                else:
+                    logger.info("enabling wiki embeds")
+                    database.hset(f"session.data:{ctx.author.id}", "wiki", "wiki")
+
             group_args = []
             for category in set(
                 list(groups.keys()) +

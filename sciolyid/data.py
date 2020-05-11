@@ -181,7 +181,9 @@ def _wiki_urls():
     logger.info("Done with wiki urls")
     return urls
 
-def get_wiki_url(item: str):
+def get_wiki_url(ctx, item: str):
+    if database.hget(f"session.data:{ctx.author.id}", "wiki") == b"":
+        return f"<{wikipedia_urls[item.lower()]}>"
     return wikipedia_urls[item.lower()]
 
 def _generate_aliases():

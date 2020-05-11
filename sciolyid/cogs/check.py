@@ -67,7 +67,7 @@ class Check(commands.Cog):
                     "Correct! Good job!" if not database.exists(f"race.data:{ctx.channel.id}") else
                     f"**{ctx.author.mention}**, you are correct!"
                 )
-                url = get_wiki_url(current_item)
+                url = get_wiki_url(ctx, current_item)
                 await ctx.send(
                     url if not database.exists(f"race.data:{ctx.channel.id}") else f"<{url}>"
                 )  # sends wiki page
@@ -103,7 +103,7 @@ class Check(commands.Cog):
                     database.hset(f"channel:{ctx.channel.id}", "item", "")
                     database.hset(f"channel:{ctx.channel.id}", "answered", "1")
                     await ctx.send("Sorry, the image was actually " + current_item.lower() + ".")
-                    url = get_wiki_url(current_item)
+                    url = get_wiki_url(ctx, current_item)
                     await ctx.send(url)
 
 def setup(bot):

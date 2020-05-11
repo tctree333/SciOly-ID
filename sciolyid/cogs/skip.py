@@ -36,7 +36,7 @@ class Skip(commands.Cog):
         database.hset(f"channel:{ctx.channel.id}", "item", "")
         database.hset(f"channel:{ctx.channel.id}", "answered", "1")
         if current_item:  # check if there is image
-            url = get_wiki_url(current_item)
+            url = get_wiki_url(ctx, current_item)
             await ctx.send(f"Ok, skipping {current_item.lower()}")
             await ctx.send(
                 url if not database.exists(f"race.data:{ctx.channel.id}") else f"<{url}>"
