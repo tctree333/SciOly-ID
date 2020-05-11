@@ -34,7 +34,7 @@ optional = {
     "download_dir": "github_download/",  # local directory containing media (images)
     "data_dir": "data/",  # local directory containing the id data
     "list_dir": "lists/",  # directory within data_dir containing id lists
-    "restricted_list_dir": "restricted/",  # directory within data_dir containg id lists that are avaliable by selection only
+    "restricted_list_dir": None,  # directory within data_dir containg id lists that are avaliable by selection only
     "wikipedia_file": "wikipedia.txt",  # filename within data_dir containing wiki urls for every item
     "alias_file": "aliases.txt",  # filename within data_dir contiaining aliases for any item
     "meme_file": None,

@@ -67,7 +67,10 @@ def setup(**kwargs):
     config.options["backups_dir"] = f"{config.options['bot_files_dir']}{config.options['backups_dir']}"
 
     config.options["list_dir"] = f"{config.options['data_dir']}{config.options['list_dir']}"
-    config.options["restricted_list_dir"] = f"{config.options['data_dir']}{config.options['restricted_list_dir']}"
+
+    if config.options["restricted_list_dir"]:
+        config.options["restricted_list_dir"] = f"{config.options['data_dir']}{config.options['restricted_list_dir']}"
+
     config.options["wikipedia_file"] = f"{config.options['data_dir']}{config.options['wikipedia_file']}"
     config.options["alias_file"] = f"{config.options['data_dir']}{config.options['alias_file']}"
     if config.options["meme_file"]:

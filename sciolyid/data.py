@@ -219,7 +219,10 @@ def get_category(item: str):
 def _groups():
     """Converts txt files of data into lists."""
     filenames = [name.split(".")[0] for name in os.listdir(config.options['list_dir'])]
-    restricted_filenames = [name.split(".")[0] for name in os.listdir(config.options['restricted_list_dir'])]
+    restricted_filenames = []
+    if config.options["restricted_list_dir"]:
+        restricted_filenames = [name.split(".")[0] for name in os.listdir(config.options['restricted_list_dir'])]
+
     # Converts txt file of data into lists
     lists = {}
     for filename in filenames:
@@ -251,8 +254,11 @@ def _all_lists():
     """Compiles lists into master lists."""
     id_list = []
     master_id_list = []
+    restricted = []
+    if config.options["restricted_list_dir"]:
+        restricted = [name.split(".")[0] for name in os.listdir(config.options['restricted_list_dir'])]
     for group in groups:
-        if group in [name.split(".")[0] for name in os.listdir(config.options['restricted_list_dir'])]:
+        if group in restricted:
             for item in groups[group]:
                 master_id_list.append(item)
         else:
