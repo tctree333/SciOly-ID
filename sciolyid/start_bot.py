@@ -186,8 +186,10 @@ async def on_command_error(ctx, error):
         )
 
     elif isinstance(error, commands.NoPrivateMessage):
-        capture_exception(error)
         await ctx.send("**This command is unavaliable in DMs!**")
+
+    elif isinstance(error, commands.PrivateMessageOnly):
+            await ctx.send("**This command is only avaliable in DMs!**")
 
     elif isinstance(error, GenericError):
         if error.code == 192:
@@ -272,6 +274,14 @@ async def on_command_error(ctx, error):
                     "*Please log this message in #support in the support server below, or try again.*\n" +
                     "**Error:** " + str(error.original))
                 await ctx.send(config.options["support_server"])
+
+        elif isinstance(error.original, aiohttp.ServerDisconnectedError):
+            capture_exception(error.original)
+            await ctx.send("**The server disconnected.**\n*Please try again.*")
+
+        elif isinstance(error.original, asyncio.TimeoutError):
+            capture_exception(error.original)
+            await ctx.send("**The request timed out.**\n*Please try again in a bit.*")
 
         else:
             logger.info("uncaught command error")
