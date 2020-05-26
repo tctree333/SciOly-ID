@@ -15,11 +15,11 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import csv
+import datetime
 import logging
 import logging.handlers
 import os
 import sys
-import datetime
 
 import redis
 import sentry_sdk
@@ -98,6 +98,14 @@ if config.options["sentry"]:
 #    incorrect:global : [item name, # incorrect]
 #    incorrect.server:guild_id : [item name, # incorrect]
 #    incorrect.user:user_id: : [item name, # incorrect]
+# }
+
+# item frequency format = {
+#   frequency.item:global : [bird name, # displayed]
+# }
+
+# command frequency format = {
+#   frequency.command:global : [command, # used]
 # }
 
 # channel score format = {
@@ -188,7 +196,9 @@ def _wiki_urls():
     return urls
 
 def get_wiki_url(ctx, item: str):
+    logger.info("fetching wiki url")
     if database.hget(f"session.data:{ctx.author.id}", "wiki") == b"":
+        logger.info("disabling preview")
         return f"<{wikipedia_urls[item.lower()]}>"
     return wikipedia_urls[item.lower()]
 

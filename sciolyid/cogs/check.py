@@ -17,10 +17,10 @@
 from discord.ext import commands
 
 from sciolyid.data import database, get_aliases, get_wiki_url, logger
-from sciolyid.functions import (CustomCooldown, channel_setup,
-                                incorrect_increment, item_setup,
-                                score_increment, session_increment,
-                                spellcheck_list, user_setup)
+from sciolyid.functions import (CustomCooldown, incorrect_increment,
+                                item_setup, score_increment, session_increment,
+                                spellcheck_list, streak_increment)
+
 
 class Check(commands.Cog):
     def __init__(self, bot):
@@ -32,9 +32,6 @@ class Check(commands.Cog):
     async def check(self, ctx, *, arg):
         logger.info("command: check")
 
-        await channel_setup(ctx)
-        await user_setup(ctx)
-
         current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8")
         if current_item == "":  # no image
             await ctx.send("You must ask for a image first!")
@@ -42,26 +39,15 @@ class Check(commands.Cog):
             logger.info("currentItem: " + str(current_item.lower().replace("-", " ")))
             logger.info("args: " + str(arg.lower().replace("-", " ")))
 
-            await item_setup(ctx, current_item)
+            item_setup(ctx, current_item)
             if spellcheck_list(arg, get_aliases(current_item.lower())):
                 logger.info("correct")
 
                 database.hset(f"channel:{ctx.channel.id}", "item", "")
                 database.hset(f"channel:{ctx.channel.id}", "answered", "1")
 
-                if database.exists(f"session.data:{ctx.author.id}"):
-                    logger.info("session active")
-                    session_increment(ctx, "correct", 1)
-
-                database.zincrby("streak:global", 1, str(ctx.author.id))
-                # check if streak is greater than max, if so, increases max
-                if database.zscore("streak:global", str(
-                    ctx.author.id
-                )) > database.zscore("streak.max:global", str(ctx.author.id)):
-                    database.zadd(
-                        "streak.max:global",
-                        {str(ctx.author.id): database.zscore("streak:global", str(ctx.author.id))},
-                    )
+                session_increment(ctx, "correct", 1)
+                streak_increment(ctx, 1)
 
                 await ctx.send(
                     "Correct! Good job!" if not database.exists(f"race.data:{ctx.channel.id}") else
@@ -89,12 +75,8 @@ class Check(commands.Cog):
             else:
                 logger.info("incorrect")
 
-                database.zadd("streak:global", {str(ctx.author.id): 0})
-
-                if database.exists(f"session.data:{ctx.author.id}"):
-                    logger.info("session active")
-                    session_increment(ctx, "incorrect", 1)
-
+                streak_increment(ctx, None)
+                session_increment(ctx, "incorrect", 1)
                 incorrect_increment(ctx, str(current_item), 1)
 
                 if database.exists(f"race.data:{ctx.channel.id}"):

@@ -21,8 +21,9 @@ import discord
 from discord.ext import commands
 
 import sciolyid.config as config
-from sciolyid.data import database, logger, groups
-from sciolyid.functions import channel_setup, user_setup, CustomCooldown
+from sciolyid.data import database, groups, logger
+from sciolyid.functions import CustomCooldown
+
 
 class Sessions(commands.Cog):
     def __init__(self, bot):
@@ -109,9 +110,6 @@ class Sessions(commands.Cog):
     async def start(self, ctx, *, args_str: str = ""):
         logger.info("command: start session")
 
-        await channel_setup(ctx)
-        await user_setup(ctx)
-
         if database.exists(f"session.data:{ctx.author.id}"):
             logger.info("already session")
             await ctx.send(
@@ -178,9 +176,6 @@ class Sessions(commands.Cog):
     async def edit(self, ctx, *, args_str: str = ""):
         logger.info("command: view session")
 
-        await channel_setup(ctx)
-        await user_setup(ctx)
-
         if database.exists(f"session.data:{ctx.author.id}"):
             args = args_str.lower().split(" ")
             logger.info(f"args: {args}")
@@ -239,9 +234,6 @@ class Sessions(commands.Cog):
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.user))
     async def stop(self, ctx):
         logger.info("command: stop session")
-
-        await channel_setup(ctx)
-        await user_setup(ctx)
 
         if database.exists(f"session.data:{ctx.author.id}"):
             database.hset(f"session.data:{ctx.author.id}", "stop", round(time.time()))

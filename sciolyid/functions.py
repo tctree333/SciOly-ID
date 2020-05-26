@@ -109,7 +109,7 @@ async def user_setup(ctx):
     else:
         logger.info("dm context")
 
-async def item_setup(ctx, item: str):
+def item_setup(ctx, item: str):
     """Sets up a new item for incorrect tracking.
     
     `ctx` - Discord context object
@@ -134,6 +134,12 @@ async def item_setup(ctx, item: str):
     else:
         database.zadd(f"daily.incorrect:{date}", {string.capwords(item): 0})
         logger.info("item daily added")
+
+    if database.zscore("frequency.item:global", string.capwords(item)) is not None:
+        logger.info("bird freq global ok")
+    else:
+        database.zadd("frequency.item:global", {string.capwords(item): 0})
+        logger.info("item freq global added")
 
     if ctx.guild is not None:
         logger.info("no dm")
@@ -172,10 +178,14 @@ def session_increment(ctx, item: str, amount: int = 1):
     possible values include correct, incorrect, total)\n
     `amount` (int) - amount to increment by, usually 1
     """
-    logger.info(f"incrementing {item} by {amount}")
-    value = int(database.hget(f"session.data:{ctx.author.id}", item))
-    value += int(amount)
-    database.hset(f"session.data:{ctx.author.id}", item, str(value))
+    if database.exists(f"session.data:{ctx.author.id}"):
+        logger.info("session active")
+        logger.info(f"incrementing {item} by {amount}")
+        value = int(database.hget(f"session.data:{ctx.author.id}", item))
+        value += int(amount)
+        database.hset(f"session.data:{ctx.author.id}", item, str(value))
+    else:
+        logger.info("session not active")
 
 def incorrect_increment(ctx, item: str, amount: int = 1):
     """Increments the value of an incorrect item by `amount`.
@@ -220,6 +230,25 @@ def score_increment(ctx, amount: int = 1):
         logger.info("race in session")
         database.zincrby(f"race.scores:{ctx.channel.id}", amount, str(ctx.author.id))
 
+def streak_increment(ctx, amount:int):
+    """Increments the streak of a user by `amount`.
+
+    `ctx` - Discord context object\n
+    `amount` (int) - amount to increment by, usually 1.
+    If amount is None, the streak is ended.
+    """
+
+    if amount is not None:
+        # increment streak and update max
+        database.zincrby("streak:global", amount, ctx.author.id)
+        if database.zscore("streak:global", ctx.author.id) > database.zscore("streak.max:global", ctx.author.id):
+            database.zadd(
+                "streak.max:global", 
+                {ctx.author.id: database.zscore("streak:global", ctx.author.id)}
+            )
+    else:
+        database.zadd("streak:global", {ctx.author.id: 0})
+
 def black_and_white(input_image_path) -> BytesIO:
     """Returns a black and white version of an image.
 
@@ -234,6 +263,47 @@ def black_and_white(input_image_path) -> BytesIO:
         bw.save(final_buffer, "png")
     final_buffer.seek(0)
     return final_buffer
+
+async def send_leaderboard(ctx, title, page, database_key=None, data=None):
+        logger.info("building/sending leaderboard")
+
+        if database_key is None and data is None:
+            raise GenericError("database_key and data are both NoneType", 990)
+        elif database_key is not None and data is not None:
+            raise GenericError("database_key and data are both set", 990)
+
+        if page < 1:
+            page = 1
+
+        entry_count = (int(database.zcard(database_key)) if database_key is not None else data.count())
+        page = (page * 10) - 10
+
+        if entry_count == 0:
+            logger.info(f"no items in {database_key}")
+            await ctx.send("There are no items in the database.")
+            return
+
+        if page > entry_count:
+            page = entry_count - (entry_count % 10)
+
+        items_per_page = 10
+        leaderboard_list = (
+            map(
+                lambda x: (x[0].decode("utf-8"), x[1]), 
+                database.zrevrangebyscore(database_key, "+inf", "-inf", page, items_per_page, True)
+            )
+            if database_key is not None
+            else data.iloc[page:page+items_per_page-1].items()
+        )
+        embed = discord.Embed(type="rich", colour=discord.Color.blurple())
+        embed.set_author(name=config.options["bot_signature"])
+        leaderboard = ""
+
+        for i, stats in enumerate(leaderboard_list):
+            leaderboard += f"{i+1+page}. **{stats[0]}** - {int(stats[1])}\n"
+        embed.add_field(name=title, value=leaderboard, inline=False)
+
+        await ctx.send(embed=embed)
 
 def build_id_list(group_str: str = ""):
     logger.info("building id list")

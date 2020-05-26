@@ -15,14 +15,15 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import random
+import string
 
 from discord.ext import commands
 
 import sciolyid.config as config
 from sciolyid.core import send_image
 from sciolyid.data import database, groups, id_list, logger
-from sciolyid.functions import (CustomCooldown, build_id_list, channel_setup,
-                                error_skip, session_increment, user_setup)
+from sciolyid.functions import (CustomCooldown, build_id_list, error_skip,
+                                item_setup, session_increment)
 
 IMAGE_MESSAGE = (
     f"*Here you go!* \n**Use `{config.options['prefixes'][0]}pic` again to get a new image of the same {config.options['id_type'][:-1]}, "
@@ -35,6 +36,10 @@ class Media(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    def increment_item_frequency(self, ctx, item):
+        item_setup(ctx, item)
+        database.zincrby("frequency.bird:global", 1, string.capwords(item))
+
     async def send_pic_(self, ctx, group_str: str, bw: bool = False):
 
         logger.info(
@@ -46,9 +51,7 @@ class Media(commands.Cog):
         logger.info(f"answered: {answered}")
         # check to see if previous item was answered
         if answered:  # if yes, give a new item
-            if database.exists(f"session.data:{ctx.author.id}"):
-                logger.info("session active")
-                session_increment(ctx, "total", 1)
+            session_increment(ctx, "total", 1)
 
             if config.options["id_groups"]:
                 build = build_id_list(group_str)
@@ -57,6 +60,8 @@ class Media(commands.Cog):
                 choices = id_list
 
             current_item = random.choice(choices)
+            self.increment_item_frequency(ctx, current_item)
+
             prevI = database.hget(f"channel:{ctx.channel.id}", "prevI").decode("utf-8")
             while current_item == prevI:
                 current_item = random.choice(choices)
@@ -84,9 +89,6 @@ class Media(commands.Cog):
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.channel))
     async def pic(self, ctx, *, args_str: str = ""):
         logger.info("command: pic")
-
-        await channel_setup(ctx)
-        await user_setup(ctx)
 
         args = args_str.split(" ")
         logger.info(f"args: {args}")

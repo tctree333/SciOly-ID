@@ -17,7 +17,8 @@
 from discord.ext import commands
 
 from sciolyid.data import database, logger
-from sciolyid.functions import channel_setup, user_setup, CustomCooldown
+from sciolyid.functions import CustomCooldown
+
 
 class Hint(commands.Cog):
     def __init__(self, bot):
@@ -28,9 +29,6 @@ class Hint(commands.Cog):
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.channel))
     async def hint(self, ctx):
         logger.info("command: hint")
-
-        await channel_setup(ctx)
-        await user_setup(ctx)
 
         current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8")
         if current_item != "":  # check if there is item

@@ -21,7 +21,7 @@ from discord.ext import commands
 
 import sciolyid.config as config
 from sciolyid.data import database, logger
-from sciolyid.functions import CustomCooldown, channel_setup, user_setup
+from sciolyid.functions import CustomCooldown
 
 
 class Meta(commands.Cog):
@@ -36,9 +36,6 @@ class Meta(commands.Cog):
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.channel))
     async def botinfo(self, ctx):
         logger.info("command: botinfo")
-
-        await channel_setup(ctx)
-        await user_setup(ctx)
 
         embed = discord.Embed(type="rich", colour=discord.Color.blurple())
         embed.set_author(name=config.options["bot_signature"])
@@ -71,9 +68,6 @@ class Meta(commands.Cog):
     async def invite(self, ctx):
         logger.info("command: invite")
 
-        await channel_setup(ctx)
-        await user_setup(ctx)
-
         embed = discord.Embed(type="rich", colour=discord.Color.blurple())
         embed.set_author(name=config.options["bot_signature"])
         embed.add_field(
@@ -95,9 +89,6 @@ class Meta(commands.Cog):
     @commands.has_guild_permissions(manage_guild=True)
     async def ignore(self, ctx, channels: commands.Greedy[discord.TextChannel] = None):
         logger.info("command: invite")
-
-        await channel_setup(ctx)
-        await user_setup(ctx)
 
         if channels is None:
             logger.info("defaulting to current")
@@ -146,9 +137,6 @@ class Meta(commands.Cog):
     @commands.has_guild_permissions(manage_guild=True)
     async def leave(self, ctx, confirm: typing.Optional[bool] = False):
         logger.info("command: leave")
-
-        await channel_setup(ctx)
-        await user_setup(ctx)
 
         if database.exists(f"leave:{ctx.guild.id}"):
             logger.info("confirming")

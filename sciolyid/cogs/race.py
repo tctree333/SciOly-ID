@@ -21,8 +21,9 @@ import discord
 from discord.ext import commands
 
 import sciolyid.config as config
-from sciolyid.data import database, logger, groups
-from sciolyid.functions import channel_setup, user_setup, CustomCooldown
+from sciolyid.data import database, groups, logger
+from sciolyid.functions import CustomCooldown
+
 
 class Race(commands.Cog):
     def __init__(self, bot):
@@ -140,9 +141,6 @@ class Race(commands.Cog):
     async def start(self, ctx, *, args_str: str = ""):
         logger.info("command: start race")
 
-        await channel_setup(ctx)
-        await user_setup(ctx)
-
         if not str(ctx.channel.name).startswith("racing"):
             logger.info("not race channel")
             await ctx.send(
@@ -216,9 +214,6 @@ class Race(commands.Cog):
     async def view(self, ctx):
         logger.info("command: view race")
 
-        await channel_setup(ctx)
-        await user_setup(ctx)
-
         if database.exists(f"race.data:{ctx.channel.id}"):
             await self._send_stats(ctx, f"**Race In Progress**")
         else:
@@ -230,9 +225,6 @@ class Race(commands.Cog):
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.channel))
     async def stop(self, ctx):
         logger.info("command: stop race")
-
-        await channel_setup(ctx)
-        await user_setup(ctx)
 
         if database.exists(f"race.data:{ctx.channel.id}"):
             await self.stop_race_(ctx)

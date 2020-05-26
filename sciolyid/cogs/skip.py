@@ -17,7 +17,8 @@
 from discord.ext import commands
 
 from sciolyid.data import database, get_wiki_url, logger
-from sciolyid.functions import channel_setup, user_setup, CustomCooldown
+from sciolyid.functions import CustomCooldown, streak_increment
+
 
 class Skip(commands.Cog):
     def __init__(self, bot):
@@ -29,9 +30,6 @@ class Skip(commands.Cog):
     async def skip(self, ctx):
         logger.info("command: skip")
 
-        await channel_setup(ctx)
-        await user_setup(ctx)
-
         current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode('utf-8')
         database.hset(f"channel:{ctx.channel.id}", "item", "")
         database.hset(f"channel:{ctx.channel.id}", "answered", "1")
@@ -41,7 +39,7 @@ class Skip(commands.Cog):
             await ctx.send(
                 url if not database.exists(f"race.data:{ctx.channel.id}") else f"<{url}>"
             )  # sends wiki page
-            database.zadd("streak:global", {str(ctx.author.id): 0})  # end streak
+            streak_increment(ctx, None) # reset streak
             if database.exists(f"race.data:{ctx.channel.id}"):
 
                 limit = int(database.hget(f"race.data:{ctx.channel.id}", "limit"))

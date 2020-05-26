@@ -30,7 +30,7 @@ from sentry_sdk import capture_exception
 
 import sciolyid.config as config
 from sciolyid.data import GenericError, database, logger
-from sciolyid.functions import backup_all, channel_setup, fools
+from sciolyid.functions import backup_all, channel_setup, fools, user_setup
 
 # Initialize bot
 bot = commands.Bot(
@@ -61,6 +61,7 @@ initial_extensions = [
     "sciolyid.cogs.skip",
     "sciolyid.cogs.hint",
     "sciolyid.cogs.score",
+    "sciolyid.cogs.stats",
     "sciolyid.cogs.sessions",
     "sciolyid.cogs.race",
     "sciolyid.cogs.meta",
@@ -90,6 +91,13 @@ if sys.platform == "win32":
 ######
 # Global Command Checks
 ######
+@bot.check
+def log_command_frequency(ctx):
+    """Logs the command used to the database."""
+    logger.info("global check: logging command frequency")
+    database.zincrby("frequency.command:global", 1, str(ctx.command))
+    return True
+
 @bot.check
 def moderation_check(ctx):
     """Checks different moderation checks.
@@ -125,6 +133,15 @@ async def bot_has_permissions(ctx):
         raise commands.BotMissingPermissions(missing)
     else:
         return True
+
+@bot.check
+async def database_setup(ctx):
+    """Ensures database consistency before commands run."""
+    logger.info("global check: database setup")
+    await ctx.trigger_typing()
+    channel_setup(ctx)
+    await user_setup(ctx)
+    return True
 
 if config.options["holidays"]:
     @bot.check
@@ -225,7 +242,7 @@ async def on_command_error(ctx, error):
                 )
                 await ctx.send(config.options["support_server"])
             else:
-                await channel_setup(ctx)
+                channel_setup(ctx)
                 await ctx.send("Please run that command again.")
 
         elif isinstance(error.original, wikipedia.exceptions.DisambiguationError):

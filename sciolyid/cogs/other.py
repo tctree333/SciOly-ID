@@ -15,8 +15,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import itertools
-import typing
 import random
+import typing
 from difflib import get_close_matches
 
 import discord
@@ -24,9 +24,11 @@ import wikipedia
 from discord.ext import commands
 
 import sciolyid.config as config
-from sciolyid.data import database, get_aliases, id_list, logger, aliases, groups, meme_list, master_id_list
-from sciolyid.functions import channel_setup, user_setup, build_id_list, CustomCooldown
 from sciolyid.core import send_image
+from sciolyid.data import (aliases, database, get_aliases, groups, id_list,
+                           logger, master_id_list, meme_list)
+from sciolyid.functions import CustomCooldown, build_id_list
+
 
 class Other(commands.Cog):
     def __init__(self, bot):
@@ -37,9 +39,6 @@ class Other(commands.Cog):
     @commands.check(CustomCooldown(10.0, bucket=commands.BucketType.user))
     async def info(self, ctx, *, arg):
         logger.info("command: info")
-
-        await channel_setup(ctx)
-        await user_setup(ctx)
 
         matches = get_close_matches(
             arg.lower(),
@@ -67,9 +66,6 @@ class Other(commands.Cog):
     @commands.check(CustomCooldown(8.0, bucket=commands.BucketType.user))
     async def list_of_items(self, ctx, group=""):
         logger.info("command: list")
-
-        await channel_setup(ctx)
-        await user_setup(ctx)
 
         build = build_id_list(group)
         group_list = build[0]
@@ -111,9 +107,6 @@ class Other(commands.Cog):
         async def groups(self, ctx):
             logger.info("command: list")
 
-            await channel_setup(ctx)
-            await user_setup(ctx)
-
             await ctx.send(f"**Valid Groups**: `{', '.join(map(str, list(groups.keys())))}`")
 
     # Wiki command - argument is the wiki page
@@ -121,9 +114,6 @@ class Other(commands.Cog):
     @commands.check(CustomCooldown(8.0, bucket=commands.BucketType.user))
     async def wiki(self, ctx, *, arg):
         logger.info("command: wiki")
-
-        await channel_setup(ctx)
-        await user_setup(ctx)
 
         try:
             page = wikipedia.page(arg)
@@ -140,8 +130,6 @@ class Other(commands.Cog):
         async def meme(self, ctx):
             logger.info("command: meme")
 
-            await channel_setup(ctx)
-            await user_setup(ctx)
             if meme_list:
                 await ctx.send(random.choice(meme_list))
             else:
@@ -153,8 +141,10 @@ class Other(commands.Cog):
         @commands.is_owner()
         async def send_as_bot(self, ctx, *, args_str):
             logger.info("command: send")
+
             logger.info(f"args: {args_str}")
             args = args_str.split(" ")
+
             channel_id = int(args[0])
             try:
                 message = args[1:]
