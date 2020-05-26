@@ -25,7 +25,7 @@ class Skip(commands.Cog):
         self.bot = bot
 
     # Skip command - no args
-    @commands.command(help="- Skip the current image to get a new one", aliases=["sk", "s"])
+    @commands.command(help="- Skip the current image to get a new one", aliases=["sk"])
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.channel))
     async def skip(self, ctx):
         logger.info("command: skip")
