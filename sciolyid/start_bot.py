@@ -139,7 +139,7 @@ async def database_setup(ctx):
     """Ensures database consistency before commands run."""
     logger.info("global check: database setup")
     await ctx.trigger_typing()
-    channel_setup(ctx)
+    await channel_setup(ctx)
     await user_setup(ctx)
     return True
 
@@ -242,7 +242,7 @@ async def on_command_error(ctx, error):
                 )
                 await ctx.send(config.options["support_server"])
             else:
-                channel_setup(ctx)
+                await channel_setup(ctx)
                 await ctx.send("Please run that command again.")
 
         elif isinstance(error.original, wikipedia.exceptions.DisambiguationError):
