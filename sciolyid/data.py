@@ -86,7 +86,7 @@ if config.options["sentry"]:
 
 # leaderboard format = {
 #    users:global : [user id, # of correct]
-#    users.server:server_id : [user id, # of correct]
+#    users.server:guild_id : [user id, # of correct]
 # }
 
 # streaks format = {
@@ -96,12 +96,18 @@ if config.options["sentry"]:
 
 # incorrect item format = {
 #    incorrect:global : [item name, # incorrect]
-#    incorrect.server:server_id : [item name, # incorrect]
+#    incorrect.server:guild_id : [item name, # incorrect]
 #    incorrect.user:user_id: : [item name, # incorrect]
 # }
 
 # channel score format = {
 #   score:global : [channel id, # of correct]
+#   channels:global : ["guild id:channel id", 0]
+# }
+
+# daily update format = {
+#     daily.score:YYYY-MM-DD : [user id, # correct today]
+#     daily.incorrect:YYYY-MM-DD : [bird name, # incorrect today]
 # }
 
 # ban format:

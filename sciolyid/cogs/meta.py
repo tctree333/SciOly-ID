@@ -21,7 +21,7 @@ from discord.ext import commands
 
 import sciolyid.config as config
 from sciolyid.data import database, logger
-from sciolyid.functions import channel_setup, user_setup, CustomCooldown
+from sciolyid.functions import CustomCooldown, channel_setup, user_setup
 
 
 class Meta(commands.Cog):

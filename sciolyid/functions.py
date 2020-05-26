@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import datetime
 import difflib
 import math
 import os
@@ -21,12 +22,13 @@ import pickle
 import string
 from io import BytesIO
 
-from PIL import Image
 import discord
 from discord.ext import commands
+from PIL import Image
 
 import sciolyid.config as config
-from sciolyid.data import database, groups, id_list, logger, GenericError
+from sciolyid.data import GenericError, database, groups, id_list, logger
+
 
 async def channel_setup(ctx):
     """Sets up a new discord channel.
@@ -50,6 +52,18 @@ async def channel_setup(ctx):
         logger.info("channel data added")
         await ctx.send("Ok, setup! I'm all ready to use!")
 
+    if database.zscore("score:global", str(ctx.channel.id)) is not None:
+        logger.info("channel score ok")
+    else:
+        database.zadd("score:global", {str(ctx.channel.id): 0})
+        logger.info("channel score added")
+
+    if ctx.guild is not None:
+        if database.zadd("channels:global", {f"{ctx.guild.id}:{ctx.channel.id}": 0}) is not 0:
+            logger.info("server lookup ok")
+        else:
+            logger.info("server lookup added")
+
 async def user_setup(ctx):
     """Sets up a new discord user for score tracking.
     
@@ -62,6 +76,13 @@ async def user_setup(ctx):
         database.zadd("users:global", {str(ctx.author.id): 0})
         logger.info("user global added")
         await ctx.send("Welcome <@" + str(ctx.author.id) + ">!")
+
+    date = str(datetime.datetime.now(datetime.timezone.utc).date())
+    if database.zscore(f"daily.score:{date}", str(ctx.author.id)) is not None:
+        logger.info("user daily ok")
+    else:
+        database.zadd(f"daily.score:{date}", {str(ctx.author.id): 0})
+        logger.info("user daily added")
 
     # Add streak
     if (database.zscore("streak:global", str(ctx.author.id)) is
@@ -106,6 +127,13 @@ async def item_setup(ctx, item: str):
     else:
         database.zadd(f"incorrect.user:{ctx.author.id}", {string.capwords(item): 0})
         logger.info("item user added")
+
+    date = str(datetime.datetime.now(datetime.timezone.utc).date())
+    if database.zscore(f"daily.incorrect:{date}", string.capwords(item)) is not None:
+        logger.info("item daily ok")
+    else:
+        database.zadd(f"daily.incorrect:{date}", {string.capwords(item): 0})
+        logger.info("item daily added")
 
     if ctx.guild is not None:
         logger.info("no dm")
@@ -157,8 +185,10 @@ def incorrect_increment(ctx, item: str, amount: int = 1):
     `amount` (int) - amount to increment by, usually 1
     """
     logger.info(f"incrementing incorrect {item} by {amount}")
+    date = str(datetime.datetime.now(datetime.timezone.utc).date())
     database.zincrby("incorrect:global", amount, string.capwords(item))
     database.zincrby(f"incorrect.user:{ctx.author.id}", amount, string.capwords(item))
+    database.zincrby(f"daily.incorrect:{date}", amount, string.capwords(item))
     if ctx.guild is not None:
         logger.info("no dm")
         database.zincrby(f"incorrect.server:{ctx.guild.id}", amount, string.capwords(item))
@@ -177,8 +207,10 @@ def score_increment(ctx, amount: int = 1):
     `amount` (int) - amount to increment by, usually 1
     """
     logger.info(f"incrementing score by {amount}")
+    date = str(datetime.datetime.now(datetime.timezone.utc).date())
     database.zincrby("score:global", amount, str(ctx.channel.id))
     database.zincrby("users:global", amount, str(ctx.author.id))
+    database.zincrby(f"daily.score:{date}", amount, str(ctx.author.id))
     if ctx.guild is not None:
         logger.info("no dm")
         database.zincrby(f"users.server:{ctx.guild.id}", amount, str(ctx.author.id))
