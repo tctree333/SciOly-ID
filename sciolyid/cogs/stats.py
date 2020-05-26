@@ -71,7 +71,7 @@ class Stats(commands.Cog):
             title = "Most Frequently Used Commands"
         elif scope in (config.options['id_type'], config.options['id_type'][0]):
             database_key = "frequency.item:global"
-            title = f"Most Frequent {config.options['id_type']}"
+            title = f"Most Frequent {config.options['id_type'].title()}"
         else:
             await ctx.send(f"**Invalid Scope!**\n*Valid Scopes:* `commands, {config.options['id_type']}`")
             return
@@ -112,15 +112,15 @@ class Stats(commands.Cog):
         logger.info("exporting missed")
         keys = list(map(lambda x: x.decode("utf-8"), database.scan_iter(match="daily.incorrect:????-??-??", count=5000)))
         keys.sort()
-        keys = ["incorrect:global"] + keys
         titles = ",".join(map(lambda x: x.split(":")[1], keys))
+        keys = ["incorrect:global"] + keys
         _export_helper(keys, f"{config.options['id_type']},total missed,{titles}\n", "missed.csv", users=False)
 
         logger.info("exporting scores")
         keys = list(map(lambda x: x.decode("utf-8"), database.scan_iter(match="daily.score:????-??-??", count=5000)))
         keys.sort()
-        keys = ["users:global"] + keys
         titles = ",".join(map(lambda x: x.split(":")[1], keys))
+        keys = ["users:global"] + keys
         _export_helper(keys, f"username#discrim,total score,{titles}\n", "scores.csv", users=True)
 
         await ctx.send(files=files)
