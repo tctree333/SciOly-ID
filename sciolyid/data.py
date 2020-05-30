@@ -69,9 +69,16 @@ if config.options["sentry"]:
 # }
 
 # session format:
-# session.data:user_id : {"start": 0, "stop": 0,
-#                         "correct": 0, "incorrect": 0, "total": 0,
-#                         "bw": bw, "group": group}
+# session.data:user_id : {
+#                    "start": 0,
+#                    "stop": 0,
+#                    "correct": 0,
+#                    "incorrect": 0,
+#                    "total": 0,
+#                    "bw": bw, - Toggles if "bw", doesn't if empty (""), default ""
+#                    "group": group,
+#                    "wiki": wiki, - Enables if "wiki", disables if empty (""), default "wiki"
+#                    "strict": strict - Enables strict spe
 # session.incorrect:user_id : [item name, # incorrect]
 
 # race format:
@@ -80,7 +87,8 @@ if config.options["sentry"]:
 #                    "stop": 0,
 #                    "limit": 10,
 #                    "bw": bw,
-#                    "group": group
+#                    "group": group,
+#                    "strict": strict - Enables strict spelling if "strict", disables if empty, default ""
 # }
 # race.scores:ctx.channel.id : [ctx.author.id, #correct]
 

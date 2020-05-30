@@ -30,11 +30,16 @@ class Race(commands.Cog):
         self.bot = bot
 
     def _get_options(self, ctx):
-        bw, group, limit = database.hmget(f"race.data:{ctx.channel.id}", ["bw", "group", "limit"])
-        options = f"**Black & White:** {bw==b'bw'}\n" + (
-            f"**{config.options['category_name']}:** {group.decode('utf-8') if group else 'None'}\n"
-            if config.options["id_groups"] else ""
-        ) + f"**Amount to Win:** {limit.decode('utf-8')}\n"
+        bw, group, limit, strict = database.hmget(f"race.data:{ctx.channel.id}", ["bw", "group", "limit", "strict"])
+        options = (
+            f"**Black & White:** {bw==b'bw'}\n" +
+            (
+                f"**{config.options['category_name']}:** {group.decode('utf-8') if group else 'None'}\n"
+                if config.options["id_groups"] else ""
+            ) +
+            f"**Amount to Win:** {limit.decode('utf-8')}\n" +
+            f"**Strict Spelling:** {strict == b'strict'}"
+        )
 
         return options
 
@@ -132,7 +137,7 @@ class Race(commands.Cog):
     @race.command(
         brief="- Starts race",
         help=f"""- Starts race.
-        Arguments passed will become the default arguments to '{config.options['prefixes'][0]}pic', but can be manually overwritten during use.
+        Arguments passed will become the default arguments to '{config.options['prefixes'][0]}pic', but some can be manually overwritten during use.
         Arguments can be passed in any order.""",
         aliases=["st"],
         usage=f"[bw]{' [group]' if config.options['id_groups'] else ''} [amount to win (default 10)]"
@@ -158,22 +163,31 @@ class Race(commands.Cog):
         else:
             args = args_str.split(" ")
             logger.info(f"args: {args}")
+
             if "bw" in args:
                 bw = "bw"
             else:
                 bw = ""
+
+            if "strict" in args:
+                strict = "strict"
+            else:
+                strict = ""
+    
             group_args = []
             for category in set(
                 list(groups.keys()) +
                 [item for group in groups.keys() for item in config.options["category_aliases"][group]]
-            ).intersection({arg.lower()
-                            for arg in args}):
+            ).intersection(
+                {arg.lower() for arg in args}
+            ):
                 if category not in groups.keys():
                     category = next(
                         key for key, value in config.options["category_aliases"].items() if category in value
                     )
                 group_args.append(category)
             group = " ".join(group_args).strip()
+
             for arg in args:
                 try:
                     limit = int(arg)
@@ -196,6 +210,7 @@ class Race(commands.Cog):
                     "limit": limit,
                     "bw": bw,
                     "group": group,
+                    "strict": strict,
                 }
             )
             database.zadd(f"race.scores:{ctx.channel.id}", {str(ctx.author.id): 0})

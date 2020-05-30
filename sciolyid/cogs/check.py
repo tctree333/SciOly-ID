@@ -36,11 +36,32 @@ class Check(commands.Cog):
         if current_item == "":  # no image
             await ctx.send("You must ask for a image first!")
         else:  # if there is a image, it checks answer
-            logger.info("currentItem: " + str(current_item.lower().replace("-", " ")))
-            logger.info("args: " + str(arg.lower().replace("-", " ")))
+            arg = arg.lower()
+            current_item = current_item.lower()
+            logger.info("current_item: " + current_item)
+            logger.info("arg: " + arg)
 
             item_setup(ctx, current_item)
-            if spellcheck_list(arg, get_aliases(current_item.lower())):
+            correct_list = map(lambda x: x.lower(), get_aliases(current_item))
+
+            if database.exists(f"race.data:{ctx.channel.id}"):
+                logger.info("race in session")
+                if database.hget(f"race.data:{ctx.channel.id}", "strict"):
+                    logger.info("strict spelling")
+                    correct = arg in correct_list
+                else:
+                    logger.info("spelling leniency")
+                    correct = spellcheck_list(arg, correct_list)
+            else:
+                logger.info("no race")
+                if database.hget(f"session.data:{ctx.author.id}", "strict"):
+                    logger.info("strict spelling")
+                    correct = arg in correct_list
+                else:
+                    logger.info("spelling leniency")
+                    correct = spellcheck_list(arg, correct_list)
+
+            if correct:
                 logger.info("correct")
 
                 database.hset(f"channel:{ctx.channel.id}", "item", "")
@@ -84,7 +105,7 @@ class Check(commands.Cog):
                 else:
                     database.hset(f"channel:{ctx.channel.id}", "item", "")
                     database.hset(f"channel:{ctx.channel.id}", "answered", "1")
-                    await ctx.send("Sorry, the image was actually " + current_item.lower() + ".")
+                    await ctx.send("Sorry, the image was actually " + current_item + ".")
                     url = get_wiki_url(ctx, current_item)
                     await ctx.send(url)
 

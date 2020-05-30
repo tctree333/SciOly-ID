@@ -30,11 +30,17 @@ class Sessions(commands.Cog):
         self.bot = bot
 
     def _get_options(self, ctx):
-        bw, group, wiki = database.hmget(f"session.data:{ctx.author.id}", ["bw", "group", "wiki"])
-        options = f"**Black & White:** {bw==b'bw'}\n" + (
-            f"**{config.options['category_name']}:** {group.decode('utf-8') if group else 'None'}\n"
-            if config.options["id_groups"] else ""
-        ) + f"**Wiki Embeds**: {wiki==b'wiki'}\n"
+        bw, group, wiki, strict = database.hmget(f"session.data:{ctx.author.id}", ["bw", "group", "wiki", "strict"])
+        options = (
+            f"**Black & White:** {bw==b'bw'}\n" +
+            (
+                f"**{config.options['category_name']}:** {group.decode('utf-8') if group else 'None'}\n"
+                if config.options["id_groups"] else ""
+            ) +
+            f"**Wiki Embeds**: {wiki==b'wiki'}\n" +
+            f"**Strict Spelling**: {strict==b'strict'}"
+        )
+
         return options
 
     def _get_stats(self, ctx):
@@ -130,6 +136,11 @@ class Sessions(commands.Cog):
             else:
                 wiki = "wiki"
 
+            if "strict" in args:
+                strict = "strict"
+            else:
+                strict = ""
+
             group_args = []
             for category in set(
                 list(groups.keys()) +
@@ -145,7 +156,7 @@ class Sessions(commands.Cog):
             else:
                 group = ""
 
-            logger.info(f"adding bw: {bw}; group: {group}; wiki: {wiki}")
+            logger.info(f"adding bw: {bw}; group: {group}; wiki: {wiki}; strict: {strict}")
 
             database.hmset(
                 f"session.data:{ctx.author.id}",
@@ -158,6 +169,7 @@ class Sessions(commands.Cog):
                     "bw": bw,
                     "group": group,
                     "wiki": wiki,
+                    "strict": strict,
                 },
             )
             await ctx.send(f"**Session started with options:**\n{self._get_options(ctx)}")
@@ -195,6 +207,14 @@ class Sessions(commands.Cog):
                 else:
                     logger.info("enabling wiki embeds")
                     database.hset(f"session.data:{ctx.author.id}", "wiki", "wiki")
+            
+            if "strict" in args:
+                if database.hget(f"session.data:{ctx.author.id}", "strict"):
+                    logger.info("disabling strict spelling")
+                    database.hset(f"session.data:{ctx.author.id}", "strict", "")
+                else:
+                    logger.info("enabling strict spelling")
+                    database.hset(f"session.data:{ctx.author.id}", "strict", "strict")
 
             group_args = []
             for category in set(
