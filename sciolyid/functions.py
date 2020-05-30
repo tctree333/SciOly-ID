@@ -136,7 +136,7 @@ def item_setup(ctx, item: str):
         logger.info("item daily added")
 
     if database.zscore("frequency.item:global", string.capwords(item)) is not None:
-        logger.info("bird freq global ok")
+        logger.info("item freq global ok")
     else:
         database.zadd("frequency.item:global", {string.capwords(item): 0})
         logger.info("item freq global added")

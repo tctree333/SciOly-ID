@@ -109,7 +109,7 @@ if config.options["sentry"]:
 # }
 
 # item frequency format = {
-#   frequency.item:global : [bird name, # displayed]
+#   frequency.item:global : [item name, # displayed]
 # }
 
 # command frequency format = {
@@ -123,7 +123,7 @@ if config.options["sentry"]:
 
 # daily update format = {
 #     daily.score:YYYY-MM-DD : [user id, # correct today]
-#     daily.incorrect:YYYY-MM-DD : [bird name, # incorrect today]
+#     daily.incorrect:YYYY-MM-DD : [item name, # incorrect today]
 # }
 
 # ban format:

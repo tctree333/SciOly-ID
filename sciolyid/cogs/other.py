@@ -124,7 +124,7 @@ class Other(commands.Cog):
             await ctx.send("Sorry, that page was not found.")
 
     if config.options["meme_file"]:
-        # meme command - sends a random bird video/gif
+        # meme command - sends a random item video/gif
         @commands.command(help=f"- Sends a funny {config.options['id_type'][:-1]} video/image!")
         @commands.cooldown(1, 300.0, type=commands.BucketType.user)
         async def meme(self, ctx):
