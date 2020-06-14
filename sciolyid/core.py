@@ -32,14 +32,16 @@ async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
 
     `ctx` - Discord context object\n
     `item` (str) - picture to send\n
-    `on_error` (function)- function to run when an error occurs\n
+    `on_error` (function) - async function to run when an error occurs, passes error as argument\n
     `message` (str) - text message to send before picture\n
     """
     if item == "":
         logger.error(f"error - {config.options['id_type'][:-1]} is blank")
-        await ctx.send(f"**There was an error fetching {config.options['id_type']}.**\n*Please try again.*")
+        await ctx.send(f"**There was an error fetching {config.options['id_type']}.**")
         if on_error is not None:
-            on_error(ctx)
+            await on_error(GenericError("bird is blank", code=100))
+        else:
+            await ctx.send("*Please try again.*")
         return
 
     delete = await ctx.send("**Fetching.** This may take a while.")
@@ -50,12 +52,17 @@ async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
         response = await get_image(ctx, item)
     except GenericError as e:
         await delete.delete()
-        await ctx.send(
-            f"**An error has occurred while fetching images.**\n*Please try again.*\n**Reason:** {e}"
-        )
+        if e.code == 100:
+            await ctx.send("**No images were found.**")
+        else:
+            await ctx.send(
+                f"**An error has occurred while fetching images.**\n**Reason:** {e}"
+            )
         logger.exception(e)
         if on_error is not None:
-            on_error(ctx)
+            await on_error(e)
+        else:
+            await ctx.send("*Please try again.*")
         return
 
     filename = str(response[0])

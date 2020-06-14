@@ -161,15 +161,6 @@ def item_setup(ctx, item: str):
     else:
         logger.info("no session")
 
-def error_skip(ctx):
-    """Skips the current item.
-    
-    Passed to send_image() as on_error to skip the item when an error occurs to prevent error loops.
-    """
-    logger.info("ok")
-    database.hset(f"channel:{ctx.channel.id}", "item", "")
-    database.hset(f"channel:{ctx.channel.id}", "answered", "1")
-
 def session_increment(ctx, item: str, amount: int = 1):
     """Increments the value of a database hash field by `amount`.
 

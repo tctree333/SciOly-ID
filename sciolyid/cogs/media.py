@@ -21,9 +21,9 @@ from discord.ext import commands
 
 import sciolyid.config as config
 from sciolyid.core import send_image
-from sciolyid.data import database, groups, id_list, logger
-from sciolyid.functions import (CustomCooldown, build_id_list, error_skip,
-                                item_setup, session_increment)
+from sciolyid.data import GenericError, database, groups, id_list, logger
+from sciolyid.functions import (CustomCooldown, build_id_list, item_setup,
+                                session_increment)
 
 IMAGE_MESSAGE = (
     f"*Here you go!* \n**Use `{config.options['prefixes'][0]}pic` again to get a new image of the same {config.options['id_type'][:-1]}, "
@@ -36,11 +36,38 @@ class Media(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    def error_handle(
+        self, ctx, group_str: str, bw: bool, retries
+    ):
+        """Return a function to pass to send_bird() as on_error."""
+
+        async def inner(error):
+            nonlocal retries
+
+            # skip current bird
+            database.hset(f"channel:{ctx.channel.id}", "item", "")
+            database.hset(f"channel:{ctx.channel.id}", "answered", "1")
+
+            if retries >= 2:  # only retry twice
+                await ctx.send("**Too many retries.**\n*Please try again.*")
+                return
+
+            if isinstance(error, GenericError) and error.code == 100:
+                retries += 1
+                await ctx.send("**Retrying...**")
+                await self.send_pic_(
+                    ctx, group_str, bw, retries
+                )
+            else:
+                await ctx.send("*Please try again.*")
+
+        return inner
+
     def increment_item_frequency(self, ctx, item):
         item_setup(ctx, item)
         database.zincrby("frequency.item:global", 1, string.capwords(item))
 
-    async def send_pic_(self, ctx, group_str: str, bw: bool = False):
+    async def send_pic_(self, ctx, group_str: str, bw: bool = False, retries=0):
 
         logger.info(
             f"{config.options['id_type'][:-1]}: " +
@@ -69,12 +96,18 @@ class Media(commands.Cog):
             database.hset(f"channel:{ctx.channel.id}", "item", str(current_item))
             logger.info("currentItem: " + str(current_item))
             database.hset(f"channel:{ctx.channel.id}", "answered", "0")
-            await send_image(ctx, current_item, on_error=error_skip, message=IMAGE_MESSAGE, bw=bw)
+            await send_image(
+                ctx,
+                current_item,
+                on_error=self.error_handle(ctx, group_str, bw, retries),
+                message=IMAGE_MESSAGE,
+                bw=bw,
+            )
         else:  # if no, give the same item
             await send_image(
                 ctx,
                 database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8"),
-                on_error=error_skip,
+                on_error=self.error_handle(ctx, group_str, bw, retries),
                 message=IMAGE_MESSAGE,
                 bw=bw,
             )
