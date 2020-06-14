@@ -18,7 +18,6 @@ import asyncio
 import concurrent.futures
 import os
 
-import discord
 from git import Repo
 
 import sciolyid.config as config
@@ -35,12 +34,14 @@ async def download_github():
         await loop.run_in_executor(executor, _clone)
         logger.info("done cloning")
     else:
-        logger.info("exists, pulling")
-        await loop.run_in_executor(executor, _pull)
-        logger.info("done pulling")
+        logger.info("exists, syncing")
+        await loop.run_in_executor(executor, _sync)
+        logger.info("done syncing")
 
 def _clone():
-    Repo.clone_from(config.options["github_image_repo_url"], config.options['download_dir'])
+    Repo.clone_from(config.options["github_image_repo_url"], config.options['download_dir'], multi_options=["--depth=1"])
 
-def _pull():
-    Repo(config.options['download_dir']).remote("origin").pull()
+def _sync():
+    downloads = Repo(config.options['download_dir'])
+    downloads.remote("origin").fetch()
+    downloads.head.reset(working_tree=True)
