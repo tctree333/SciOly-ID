@@ -30,15 +30,18 @@ class Race(commands.Cog):
         self.bot = bot
 
     def _get_options(self, ctx):
-        bw, group, limit, strict = database.hmget(f"race.data:{ctx.channel.id}", ["bw", "group", "limit", "strict"])
+        bw, group, limit, strict = database.hmget(
+            f"race.data:{ctx.channel.id}", ["bw", "group", "limit", "strict"]
+        )
         options = (
-            f"**Black & White:** {bw==b'bw'}\n" +
-            (
+            f"**Black & White:** {bw==b'bw'}\n"
+            + (
                 f"**{config.options['category_name']}:** {group.decode('utf-8') if group else 'None'}\n"
-                if config.options["id_groups"] else ""
-            ) +
-            f"**Amount to Win:** {limit.decode('utf-8')}\n" +
-            f"**Strict Spelling:** {strict == b'strict'}"
+                if config.options["id_groups"]
+                else ""
+            )
+            + f"**Amount to Win:** {limit.decode('utf-8')}\n"
+            + f"**Strict Spelling:** {strict == b'strict'}"
         )
 
         return options
@@ -54,7 +57,9 @@ class Race(commands.Cog):
         if placings > database.zcard(database_key):
             placings = database.zcard(database_key)
 
-        leaderboard_list = database.zrevrangebyscore(database_key, "+inf", "-inf", 0, placings, True)
+        leaderboard_list = database.zrevrangebyscore(
+            database_key, "+inf", "-inf", 0, placings, True
+        )
         embed = discord.Embed(type="rich", colour=discord.Color.blurple(), title=preamble)
         embed.set_author(name=config.options["bot_signature"])
         leaderboard = ""
@@ -108,8 +113,8 @@ class Race(commands.Cog):
             user = f"{user.name}#{user.discriminator} ({user.mention})"
 
         await ctx.send(
-            f"**Congratulations, {user}!**\n" +
-            f"You have won the race by correctly identifying `{int(first[1])}` {config.options['id_type']}. "
+            f"**Congratulations, {user}!**\n"
+            + f"You have won the race by correctly identifying `{int(first[1])}` {config.options['id_type']}. "
             + "*Way to go!*"
         )
 
@@ -121,18 +126,20 @@ class Race(commands.Cog):
 
     @commands.group(
         brief=f"- Base race command. Use '{config.options['prefixes'][0]}help race' for more info.",
-        help="- Base race command\n" +
-        f"Races allow you to compete with others to see who can ID {config.options['id_type']} first. " +
-        "Starting a race will automatically run " +
-        f"'{config.options['prefixes'][0]}pic' after every check. " +
-        f"You will still need to use '{config.options['prefixes'][0]}check' to check your answer. " +
-        f"Races are channel-specific, and anyone in that channel can play." +
-        f"Races end when a player is the first to correctly ID a set amount of {config.options['id_type']}. (default 10)"
+        help="- Base race command\n"
+        + f"Races allow you to compete with others to see who can ID {config.options['id_type']} first. "
+        + "Starting a race will automatically run "
+        + f"'{config.options['prefixes'][0]}pic' after every check. "
+        + f"You will still need to use '{config.options['prefixes'][0]}check' to check your answer. "
+        + f"Races are channel-specific, and anyone in that channel can play."
+        + f"Races end when a player is the first to correctly ID a set amount of {config.options['id_type']}. (default 10)",
     )
     @commands.guild_only()
     async def race(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.send('**Invalid subcommand passed.**\n*Valid Subcommands:* `start, view, stop`')
+            await ctx.send(
+                "**Invalid subcommand passed.**\n*Valid Subcommands:* `start, view, stop`"
+            )
 
     @race.command(
         brief="- Starts race",
@@ -140,7 +147,7 @@ class Race(commands.Cog):
         Arguments passed will become the default arguments to '{config.options['prefixes'][0]}pic', but some can be manually overwritten during use.
         Arguments can be passed in any order.""",
         aliases=["st"],
-        usage=f"[bw]{' [group]' if config.options['id_groups'] else ''} [amount to win (default 10)]"
+        usage=f"[bw]{' [group]' if config.options['id_groups'] else ''} [amount to win (default 10)]",
     )
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.channel))
     async def start(self, ctx, *, args_str: str = ""):
@@ -149,8 +156,8 @@ class Race(commands.Cog):
         if not str(ctx.channel.name).startswith("racing"):
             logger.info("not race channel")
             await ctx.send(
-                "**Sorry, racing is not availiable in this channel.**\n" +
-                "*Set the channel name to start with `racing` to enable it.*"
+                "**Sorry, racing is not availiable in this channel.**\n"
+                + "*Set the channel name to start with `racing` to enable it.*"
             )
             return
 
@@ -173,17 +180,21 @@ class Race(commands.Cog):
                 strict = "strict"
             else:
                 strict = ""
-    
+
             group_args = []
             for category in set(
-                list(groups.keys()) +
-                [item for group in groups.keys() for item in config.options["category_aliases"][group]]
-            ).intersection(
-                {arg.lower() for arg in args}
-            ):
+                list(groups.keys())
+                + [
+                    item
+                    for group in groups.keys()
+                    for item in config.options["category_aliases"][group]
+                ]
+            ).intersection({arg.lower() for arg in args}):
                 if category not in groups.keys():
                     category = next(
-                        key for key, value in config.options["category_aliases"].items() if category in value
+                        key
+                        for key, value in config.options["category_aliases"].items()
+                        if category in value
                     )
                 group_args.append(category)
             group = " ".join(group_args).strip()
@@ -204,14 +215,15 @@ class Race(commands.Cog):
             logger.info(f"adding bw: {bw}; group: {group}; ")
 
             database.hmset(
-                f"race.data:{ctx.channel.id}", {
+                f"race.data:{ctx.channel.id}",
+                {
                     "start": round(time.time()),
                     "stop": 0,
                     "limit": limit,
                     "bw": bw,
                     "group": group,
                     "strict": strict,
-                }
+                },
             )
             database.zadd(f"race.scores:{ctx.channel.id}", {str(ctx.author.id): 0})
             await ctx.send(f"**Race started with options:**\n{self._get_options(ctx)}")
@@ -222,8 +234,8 @@ class Race(commands.Cog):
 
     @race.command(
         brief="- Views race",
-        help="- Views race.\n" +
-        f"Races allow you to compete with your friends to ID {config.options['id_type']} first."
+        help="- Views race.\n"
+        + f"Races allow you to compete with your friends to ID {config.options['id_type']} first.",
     )
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.channel))
     async def view(self, ctx):
@@ -247,6 +259,7 @@ class Race(commands.Cog):
             await ctx.send(
                 f"**There is no race in session.** *You can start one with `{config.options['prefixes'][0]}race start`*"
             )
+
 
 def setup(bot):
     bot.add_cog(Race(bot))

@@ -35,9 +35,11 @@ class Score(commands.Cog):
         logger.info("fetching server totals")
         channels = map(
             lambda x: x.decode("utf-8").split(":")[1],
-            database.zrangebylex("channels:global", f"[{ctx.guild.id}", f"({ctx.guild.id}\xff")
+            database.zrangebylex(
+                "channels:global", f"[{ctx.guild.id}", f"({ctx.guild.id}\xff"
+            ),
         )
-        pipe = database.pipeline() # use a pipeline to get all the scores
+        pipe = database.pipeline()  # use a pipeline to get all the scores
         for channel in channels:
             pipe.zscore("score:global", channel)
         scores = pipe.execute()
@@ -53,14 +55,19 @@ class Score(commands.Cog):
             raise GenericError("Invalid category", 990)
 
         today = datetime.datetime.now(datetime.timezone.utc).date()
-        past_month = pd.date_range(today-datetime.timedelta(29), today).date
+        past_month = pd.date_range(today - datetime.timedelta(29), today).date
         pipe = database.pipeline()
         for day in past_month:
             pipe.zrevrangebyscore(f"{key}:{day}", "+inf", "-inf", withscores=True)
         result = pipe.execute()
         totals = pd.Series(dtype="int64")
         for daily_score in result:
-            daily_score = pd.Series({e[0]:e[1] for e in map(lambda x: (x[0].decode("utf-8"), int(x[1])), daily_score)})
+            daily_score = pd.Series(
+                {
+                    e[0]: e[1]
+                    for e in map(lambda x: (x[0].decode("utf-8"), int(x[1])), daily_score)
+                }
+            )
             totals = totals.add(daily_score, fill_value=0)
         totals = totals.sort_values(ascending=False)
         return totals
@@ -74,7 +81,9 @@ class Score(commands.Cog):
         if page < 1:
             page = 1
 
-        user_amount = (int(database.zcard(database_key)) if database_key is not None else data.count())
+        user_amount = (
+            int(database.zcard(database_key)) if database_key is not None else data.count()
+        )
         page = (page * 10) - 10
 
         if user_amount == 0:
@@ -89,7 +98,7 @@ class Score(commands.Cog):
         leaderboard_list = (
             database.zrevrangebyscore(database_key, "+inf", "-inf", page, users_per_page, True)
             if database_key is not None
-            else data.iloc[page:page+users_per_page-1].items()
+            else data.iloc[page : page + users_per_page - 1].items()
         )
 
         embed = discord.Embed(type="rich", colour=discord.Color.blurple())
@@ -124,30 +133,30 @@ class Score(commands.Cog):
         if user_score is not None:
             if database_key is not None:
                 placement = int(database.zrevrank(database_key, str(ctx.author.id))) + 1
-                distance = (
-                    int(database.zrevrange(database_key, placement - 2, placement - 2, True)[0][1]) -
-                    int(user_score))
+                distance = int(
+                    database.zrevrange(database_key, placement - 2, placement - 2, True)[0][1]
+                ) - int(user_score)
             else:
                 placement = int(data.rank(ascending=False)[str(ctx.author.id)])
-                distance = int(data.iloc[placement-2] - user_score)
+                distance = int(data.iloc[placement - 2] - user_score)
 
             if placement == 1:
                 embed.add_field(
                     name="You:",
                     value=f"You are #{placement} on the leaderboard.\nYou are in first place.",
-                    inline=False
+                    inline=False,
                 )
             elif distance == 0:
                 embed.add_field(
                     name="You:",
                     value=f"You are #{placement} on the leaderboard.\nYou are tied with #{placement-1}",
-                    inline=False
+                    inline=False,
                 )
             else:
                 embed.add_field(
                     name="You:",
                     value=f"You are #{placement} on the leaderboard.\nYou are {distance} away from #{placement-1}",
-                    inline=False
+                    inline=False,
                 )
         else:
             embed.add_field(name="You:", value="You haven't answered any correctly.")
@@ -158,7 +167,8 @@ class Score(commands.Cog):
     @commands.command(
         brief="- Total correct answers in a channel or server",
         help="- Total correct answers in a channel or server. Defaults to channel.",
-        usage="[total|server|t|s]")
+        usage="[total|server|t|s]",
+    )
     @commands.check(CustomCooldown(8.0, bucket=commands.BucketType.channel))
     async def score(self, ctx, scope=""):
         logger.info("command: score")
@@ -166,25 +176,27 @@ class Score(commands.Cog):
         if scope in ("total", "server", "t", "s"):
             total_correct = self._server_total(ctx)
             await ctx.send(
-                f"Wow, looks like a total of `{total_correct}` {config.options['id_type']} have been answered correctly in this **server**!\n" +
-                "Good job everyone!"
+                f"Wow, looks like a total of `{total_correct}` {config.options['id_type']} have been answered correctly in this **server**!\n"
+                + "Good job everyone!"
             )
         else:
             total_correct = int(database.zscore("score:global", str(ctx.channel.id)))
             await ctx.send(
-                f"Wow, looks like a total of `{total_correct}` {config.options['id_type']} have been answered correctly in this **channel**!\n" +
-                "Good job everyone!"
+                f"Wow, looks like a total of `{total_correct}` {config.options['id_type']} have been answered correctly in this **channel**!\n"
+                + "Good job everyone!"
             )
 
     # sends correct answers by a user
     @commands.command(
         brief="- How many correct answers given by a user",
-        help="- Gives the amount of correct answers by a user.\n" +
-        "Mention someone to get their score, don't mention anyone to get your score.",
-        aliases=["us"]
+        help="- Gives the amount of correct answers by a user.\n"
+        + "Mention someone to get their score, don't mention anyone to get your score.",
+        aliases=["us"],
     )
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.user))
-    async def userscore(self, ctx, *, user: typing.Optional[typing.Union[discord.Member, str]] = None):
+    async def userscore(
+        self, ctx, *, user: typing.Optional[typing.Union[discord.Member, str]] = None
+    ):
         logger.info("command: userscore")
 
         if user is not None:
@@ -210,11 +222,13 @@ class Score(commands.Cog):
 
         embed = discord.Embed(type="rich", colour=discord.Color.blurple())
         embed.set_author(name=config.options["bot_signature"])
-        embed.add_field(name="User Score:", value=f"{user} has answered correctly {score} times.")
+        embed.add_field(
+            name="User Score:", value=f"{user} has answered correctly {score} times."
+        )
         await ctx.send(embed=embed)
 
     # gives streak of a user
-    @commands.group(help='- Gives your current/max streak', aliases=["streaks", "stk"])
+    @commands.group(help="- Gives your current/max streak", aliases=["streaks", "stk"])
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.user))
     async def streak(self, ctx):
         if ctx.invoked_subcommand is not None:
@@ -232,8 +246,8 @@ class Score(commands.Cog):
                 return
             usera = user.id
             logger.info(usera)
-            streak = database.zscore('streak:global', str(usera))
-            max_streak = database.zscore('streak.max:global', str(usera))
+            streak = database.zscore("streak:global", str(usera))
+            max_streak = database.zscore("streak.max:global", str(usera))
             if streak is not None and max_streak is not None:
                 streak = int(streak)
                 max_streak = int(max_streak)
@@ -243,10 +257,12 @@ class Score(commands.Cog):
                 return
         else:
             user = f"<@{ctx.author.id}>"
-            streak = int(database.zscore('streak:global', str(ctx.author.id)))
-            max_streak = int(database.zscore('streak.max:global', str(ctx.author.id)))
+            streak = int(database.zscore("streak:global", str(ctx.author.id)))
+            max_streak = int(database.zscore("streak.max:global", str(ctx.author.id)))
 
-        embed = discord.Embed(type="rich", colour=discord.Color.blurple(), title="**User Streaks**")
+        embed = discord.Embed(
+            type="rich", colour=discord.Color.blurple(), title="**User Streaks**"
+        )
         embed.set_author(name=config.options["bot_signature"])
         current_streak = f"{user} has answered `{streak}` in a row!"
         max_streak = f"{user}'s max was `{max_streak}` in a row!"
@@ -261,7 +277,7 @@ class Score(commands.Cog):
         help="- Top streaks, either current (default) or max.",
         usage="[max|m] [page]",
         name="leaderboard",
-        aliases=["lb"]
+        aliases=["lb"],
     )
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.user))
     async def streak_leaderboard(self, ctx, scope="", page=1):
@@ -298,7 +314,7 @@ class Score(commands.Cog):
         brief="- Top scores",
         help="- Top scores, either global, server, or monthly.",
         usage="[global|g server|s month|monthly|m] [page]",
-        aliases=["lb"]
+        aliases=["lb"],
     )
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.user))
     async def leaderboard(self, ctx, scope="", page=1):
@@ -318,7 +334,9 @@ class Score(commands.Cog):
 
         if not scope in ("global", "server", "month", "monthly", "m", "g", "s"):
             logger.info("invalid scope")
-            await ctx.send(f"**{scope} is not a valid scope!**\n*Valid Scopes:* `global, server, month`")
+            await ctx.send(
+                f"**{scope} is not a valid scope!**\n*Valid Scopes:* `global, server, month`"
+            )
             return
 
         if scope in ("server", "s"):
@@ -347,8 +365,8 @@ class Score(commands.Cog):
     # missed - returns top 1-10 missed items
     @commands.command(
         brief=f"- Top incorrect {config.options['id_type']}",
-        help=f"- Top incorrect {config.options['id_type']}, " +
-        "scope is either global, server, personal, or monthly",
+        help=f"- Top incorrect {config.options['id_type']}, "
+        + "scope is either global, server, personal, or monthly",
         usage="[global|g server|s me|m month|monthly|mo] [page]",
         aliases=["m"],
     )
@@ -370,7 +388,9 @@ class Score(commands.Cog):
 
         if not scope in ("global", "server", "me", "month", "monthly", "mo", "g", "s", "m"):
             logger.info("invalid scope")
-            await ctx.send(f"**{scope} is not a valid scope!**\n*Valid Scopes:* `global, server, me, month`")
+            await ctx.send(
+                f"**{scope} is not a valid scope!**\n*Valid Scopes:* `global, server, me, month`"
+            )
             return
 
         if scope in ("server", "s"):
@@ -399,7 +419,11 @@ class Score(commands.Cog):
             data = None
 
         await send_leaderboard(
-            ctx, f"Top Missed {config.options['id_type'].title()} ({scope})", page, database_key, data
+            ctx,
+            f"Top Missed {config.options['id_type'].title()} ({scope})",
+            page,
+            database_key,
+            data,
         )
 
 

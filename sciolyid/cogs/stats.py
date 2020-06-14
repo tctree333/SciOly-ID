@@ -33,7 +33,9 @@ class Stats(commands.Cog):
         """Generates a pandas.Series from a Redis sorted set."""
         logger.info("generating series")
         data = database.zrevrangebyscore(database_key, "+inf", "-inf", withscores=True)
-        return pd.Series({e[0]:e[1] for e in map(lambda x: (x[0].decode("utf-8"), int(x[1])), data)})
+        return pd.Series(
+            {e[0]: e[1] for e in map(lambda x: (x[0].decode("utf-8"), int(x[1])), data)}
+        )
 
     def generate_dataframe(self, database_keys, titles):
         """Generates a pandas.DataFrame from multiple Redis sorted sets."""
@@ -43,7 +45,16 @@ class Stats(commands.Cog):
         result = pipe.execute()
         df = pd.DataFrame()
         for i, item in enumerate(result):
-            df.insert(len(df.columns), titles[i], pd.Series({e[0]:e[1] for e in map(lambda x: (x[0].decode("utf-8"), int(x[1])), item)}))
+            df.insert(
+                len(df.columns),
+                titles[i],
+                pd.Series(
+                    {
+                        e[0]: e[1]
+                        for e in map(lambda x: (x[0].decode("utf-8"), int(x[1])), item)
+                    }
+                ),
+            )
         df = df.fillna(value=0).astype(int)
         return df
 
@@ -61,7 +72,10 @@ class Stats(commands.Cog):
         return df
 
     # give frequency stats
-    @commands.command(help=f"- Gives info on command/{config.options['id_type']} frequencies", aliases=["freq"])
+    @commands.command(
+        help=f"- Gives info on command/{config.options['id_type']} frequencies",
+        aliases=["freq"],
+    )
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.channel))
     async def frequency(self, ctx, scope="", page=1):
         logger.info("command: frequency")
@@ -69,11 +83,13 @@ class Stats(commands.Cog):
         if scope in ("command", "commands", "c"):
             database_key = "frequency.command:global"
             title = "Most Frequently Used Commands"
-        elif scope in (config.options['id_type'], config.options['id_type'][0]):
+        elif scope in (config.options["id_type"], config.options["id_type"][0]):
             database_key = "frequency.item:global"
             title = f"Most Frequent {config.options['id_type'].title()}"
         else:
-            await ctx.send(f"**Invalid Scope!**\n*Valid Scopes:* `commands, {config.options['id_type']}`")
+            await ctx.send(
+                f"**Invalid Scope!**\n*Valid Scopes:* `commands, {config.options['id_type']}`"
+            )
             return
 
         await send_leaderboard(ctx, title, page, database_key)
@@ -90,7 +106,7 @@ class Stats(commands.Cog):
             if not isinstance(database_keys, str) and len(database_keys) > 1:
                 data = self.generate_dataframe(database_keys, header.strip().split(",")[1:])
             else:
-                key = (database_keys if isinstance(database_keys, str) else database_keys[0])
+                key = database_keys if isinstance(database_keys, str) else database_keys[0]
                 data = self.generate_series(key)
             if users:
                 data = self.convert_users(data)
@@ -101,27 +117,59 @@ class Stats(commands.Cog):
                     files.append(discord.File(b, filename))
 
         logger.info("exporting freq command")
-        _export_helper("frequency.command:global", "command,amount used\n", "command_frequency.csv", users=False)
+        _export_helper(
+            "frequency.command:global",
+            "command,amount used\n",
+            "command_frequency.csv",
+            users=False,
+        )
 
         logger.info(f"exporting freq item")
-        _export_helper("frequency.item:global", f"{config.options['id_type']},amounts seen\n", f"{config.options['id_type']}_frequency.csv", users=False)
+        _export_helper(
+            "frequency.item:global",
+            f"{config.options['id_type']},amounts seen\n",
+            f"{config.options['id_type']}_frequency.csv",
+            users=False,
+        )
 
         logger.info("exporting streaks")
-        _export_helper(["streak:global", "streak.max:global"], "username#discrim,current streak,max streak\n", "streaks.csv", True)
+        _export_helper(
+            ["streak:global", "streak.max:global"],
+            "username#discrim,current streak,max streak\n",
+            "streaks.csv",
+            True,
+        )
 
         logger.info("exporting missed")
-        keys = list(map(lambda x: x.decode("utf-8"), database.scan_iter(match="daily.incorrect:????-??-??", count=5000)))
+        keys = list(
+            map(
+                lambda x: x.decode("utf-8"),
+                database.scan_iter(match="daily.incorrect:????-??-??", count=5000),
+            )
+        )
         keys.sort()
         titles = ",".join(map(lambda x: x.split(":")[1], keys))
         keys = ["incorrect:global"] + keys
-        _export_helper(keys, f"{config.options['id_type']},total missed,{titles}\n", "missed.csv", users=False)
+        _export_helper(
+            keys,
+            f"{config.options['id_type']},total missed,{titles}\n",
+            "missed.csv",
+            users=False,
+        )
 
         logger.info("exporting scores")
-        keys = list(map(lambda x: x.decode("utf-8"), database.scan_iter(match="daily.score:????-??-??", count=5000)))
+        keys = list(
+            map(
+                lambda x: x.decode("utf-8"),
+                database.scan_iter(match="daily.score:????-??-??", count=5000),
+            )
+        )
         keys.sort()
         titles = ",".join(map(lambda x: x.split(":")[1], keys))
         keys = ["users:global"] + keys
-        _export_helper(keys, f"username#discrim,total score,{titles}\n", "scores.csv", users=True)
+        _export_helper(
+            keys, f"username#discrim,total score,{titles}\n", "scores.csv", users=True
+        )
 
         await ctx.send(files=files)
 

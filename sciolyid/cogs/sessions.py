@@ -30,15 +30,18 @@ class Sessions(commands.Cog):
         self.bot = bot
 
     def _get_options(self, ctx):
-        bw, group, wiki, strict = database.hmget(f"session.data:{ctx.author.id}", ["bw", "group", "wiki", "strict"])
+        bw, group, wiki, strict = database.hmget(
+            f"session.data:{ctx.author.id}", ["bw", "group", "wiki", "strict"]
+        )
         options = (
-            f"**Black & White:** {bw==b'bw'}\n" +
-            (
+            f"**Black & White:** {bw==b'bw'}\n"
+            + (
                 f"**{config.options['category_name']}:** {group.decode('utf-8') if group else 'None'}\n"
-                if config.options["id_groups"] else ""
-            ) +
-            f"**Wiki Embeds**: {wiki==b'wiki'}\n" +
-            f"**Strict Spelling**: {strict==b'strict'}"
+                if config.options["id_groups"]
+                else ""
+            )
+            + f"**Wiki Embeds**: {wiki==b'wiki'}\n"
+            + f"**Strict Spelling**: {strict==b'strict'}"
         )
 
         return options
@@ -47,8 +50,7 @@ class Sessions(commands.Cog):
         start, correct, incorrect, total = map(
             int,
             database.hmget(
-                f"session.data:{ctx.author.id}",
-                ["start", "correct", "incorrect", "total"],
+                f"session.data:{ctx.author.id}", ["start", "correct", "incorrect", "total"],
             ),
         )
         elapsed = str(datetime.timedelta(seconds=round(time.time()) - start))
@@ -58,8 +60,11 @@ class Sessions(commands.Cog):
             accuracy = 0
 
         stats = (
-            f"**Duration:** `{elapsed}`\n" + f"**# Correct:** {correct}\n" +
-            f"**# Incorrect:** {incorrect}\n" + f"**Total:** {total}\n" + f"**Accuracy:** {accuracy}%\n"
+            f"**Duration:** `{elapsed}`\n"
+            + f"**# Correct:** {correct}\n"
+            + f"**# Incorrect:** {incorrect}\n"
+            + f"**Total:** {total}\n"
+            + f"**Accuracy:** {accuracy}%\n"
         )
         return stats
 
@@ -70,11 +75,13 @@ class Sessions(commands.Cog):
         embed.set_author(name=config.options["bot_signature"])
 
         if database.zcard(database_key) != 0:
-            leaderboard_list = database.zrevrangebyscore(database_key, "+inf", "-inf", 0, 5, True)
+            leaderboard_list = database.zrevrangebyscore(
+                database_key, "+inf", "-inf", 0, 5, True
+            )
             leaderboard = ""
 
             for i, stats in enumerate(leaderboard_list):
-                leaderboard += (f"{i+1}. **{stats[0].decode('utf-8')}** - {int(stats[1])}\n")
+                leaderboard += f"{i+1}. **{stats[0].decode('utf-8')}** - {int(stats[1])}\n"
         else:
             logger.info(f"no items in {database_key}")
             leaderboard = f"**There are no missed {config.options['id_type']}.**"
@@ -91,24 +98,26 @@ class Sessions(commands.Cog):
 
     @commands.group(
         brief=f"- Base session command. Use '{config.options['prefixes'][0]}help session' for more info.",
-        help="- Base session command\nSessions will record your activity for an amount of time and " +
-        "will give you stats on how your performance and " +
-        "also set global variables such as black and white" +
-        (" or specific categories." if config.options["id_groups"] else "."),
+        help="- Base session command\nSessions will record your activity for an amount of time and "
+        + "will give you stats on how your performance and "
+        + "also set global variables such as black and white"
+        + (" or specific categories." if config.options["id_groups"] else "."),
         aliases=["ses", "sesh"],
     )
     async def session(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.send("**Invalid subcommand passed.**\n*Valid Subcommands:* `start, view, stop`")
+            await ctx.send(
+                "**Invalid subcommand passed.**\n*Valid Subcommands:* `start, view, stop`"
+            )
 
     # starts session
     @session.command(
         brief="- Starts session",
-        help="- Starts session.\n" +
-        f"Arguments passed will become the default arguments to '{config.options['prefixes'][0]}{config.options['id_type'][:-1]}', "
-        + "but can be manually overwritten during use.\n" +
-        f"These settings can be changed at any time with '{config.options['prefixes'][0]}session edit', " +
-        "and arguments can be passed in any order.\n",
+        help="- Starts session.\n"
+        + f"Arguments passed will become the default arguments to '{config.options['prefixes'][0]}{config.options['id_type'][:-1]}', "
+        + "but can be manually overwritten during use.\n"
+        + f"These settings can be changed at any time with '{config.options['prefixes'][0]}session edit', "
+        + "and arguments can be passed in any order.\n",
         aliases=["st"],
         usage=("[bw] [category]" if config.options["id_groups"] else "[bw]"),
     )
@@ -143,12 +152,18 @@ class Sessions(commands.Cog):
 
             group_args = []
             for category in set(
-                list(groups.keys()) +
-                [item for group in groups.keys() for item in config.options["category_aliases"][group]]
+                list(groups.keys())
+                + [
+                    item
+                    for group in groups.keys()
+                    for item in config.options["category_aliases"][group]
+                ]
             ).intersection({arg.lower() for arg in args}):
                 if category not in groups.keys():
                     category = next(
-                        key for key, value in config.options["category_aliases"].items() if category in value
+                        key
+                        for key, value in config.options["category_aliases"].items()
+                        if category in value
                     )
                 group_args.append(category)
             if group_args and config.options["id_groups"]:
@@ -177,10 +192,10 @@ class Sessions(commands.Cog):
     # views session
     @session.command(
         brief="- Views session",
-        help="- Views session\nSessions will record your activity for an amount of time and " +
-        "will give you stats on how your performance and " +
-        "also set global variables such as black and white" +
-        (" or specific categories." if config.options["id_groups"] else "."),
+        help="- Views session\nSessions will record your activity for an amount of time and "
+        + "will give you stats on how your performance and "
+        + "also set global variables such as black and white"
+        + (" or specific categories." if config.options["id_groups"] else "."),
         aliases=["view"],
         usage=("[bw] [category]" if config.options["id_groups"] else "[bw]"),
     )
@@ -207,7 +222,7 @@ class Sessions(commands.Cog):
                 else:
                     logger.info("enabling wiki embeds")
                     database.hset(f"session.data:{ctx.author.id}", "wiki", "wiki")
-            
+
             if "strict" in args:
                 if database.hget(f"session.data:{ctx.author.id}", "strict"):
                     logger.info("disabling strict spelling")
@@ -218,19 +233,26 @@ class Sessions(commands.Cog):
 
             group_args = []
             for category in set(
-                list(groups.keys()) +
-                [item for group in groups.keys() for item in config.options["category_aliases"][group]]
-            ).intersection({arg.lower()
-                            for arg in args}):
+                list(groups.keys())
+                + [
+                    item
+                    for group in groups.keys()
+                    for item in config.options["category_aliases"][group]
+                ]
+            ).intersection({arg.lower() for arg in args}):
                 if category not in groups.keys():
                     category = next(
-                        key for key, value in config.options["category_aliases"].items() if category in value
+                        key
+                        for key, value in config.options["category_aliases"].items()
+                        if category in value
                     )
                 group_args.append(category)
             if group_args and config.options["id_groups"]:
                 toggle_group = list(group_args)
                 current_group = (
-                    database.hget(f"session.data:{ctx.author.id}", "group").decode("utf-8").split(" ")
+                    database.hget(f"session.data:{ctx.author.id}", "group")
+                    .decode("utf-8")
+                    .split(" ")
                 )
                 add_group = []
                 logger.info(f"toggle group: {toggle_group}")
@@ -239,9 +261,7 @@ class Sessions(commands.Cog):
                     add_group.append(o)
                 logger.info(f"adding groups: {add_group}")
                 database.hset(
-                    f"session.data:{ctx.author.id}",
-                    "group",
-                    " ".join(add_group).strip(),
+                    f"session.data:{ctx.author.id}", "group", " ".join(add_group).strip(),
                 )
             await self._send_stats(ctx, f"**Session started previously.**\n")
         else:
@@ -265,6 +285,7 @@ class Sessions(commands.Cog):
             await ctx.send(
                 f"**There is no session running.** *You can start one with `{config.options['prefixes'][0]}session start`*"
             )
+
 
 def setup(bot):
     bot.add_cog(Sessions(bot))

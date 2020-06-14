@@ -37,8 +37,9 @@ bot = commands.Bot(
     command_prefix=config.options["prefixes"],
     case_insensitive=True,
     description=config.options["bot_description"],
-    help_command=commands.DefaultHelpCommand(verify_checks=False)
+    help_command=commands.DefaultHelpCommand(verify_checks=False),
 )
+
 
 @bot.event
 async def on_ready():
@@ -47,12 +48,15 @@ async def on_ready():
     logger.info(bot.user.name)
     logger.info(bot.user.id)
     # Change discord activity
-    await bot.change_presence(activity=discord.Activity(type=3, name=config.options["id_type"]))
+    await bot.change_presence(
+        activity=discord.Activity(type=3, name=config.options["id_type"])
+    )
 
     # start tasks
     update_images.start()
     if config.options["backups_channel"]:
         refresh_backup.start()
+
 
 # Here we load our extensions(cogs) that are located in the cogs directory, each cog is a collection of commands
 initial_extensions = [
@@ -79,10 +83,17 @@ initial_extensions = list(set(initial_extensions))
 for extension in initial_extensions:
     try:
         bot.load_extension(extension)
-    except (discord.ClientException, ModuleNotFoundError, commands.errors.ExtensionFailed) as e:
-        if isinstance(e, commands.errors.ExtensionFailed
-                     ) and e.args[0].endswith("is already an existing command or alias."):
-            raise config.BotConfigError(f"short_id_type conflicts with a prexisting command in {extension}")
+    except (
+        discord.ClientException,
+        ModuleNotFoundError,
+        commands.errors.ExtensionFailed,
+    ) as e:
+        if isinstance(e, commands.errors.ExtensionFailed) and e.args[0].endswith(
+            "is already an existing command or alias."
+        ):
+            raise config.BotConfigError(
+                f"short_id_type conflicts with a prexisting command in {extension}"
+            )
 
         raise GenericError(f"Failed to load extension {extension}.", 999) from e
 if sys.platform == "win32":
@@ -97,6 +108,7 @@ def log_command_frequency(ctx):
     logger.info("global check: logging command frequency")
     database.zincrby("frequency.command:global", 1, str(ctx.command))
     return True
+
 
 @bot.check
 def moderation_check(ctx):
@@ -114,6 +126,7 @@ def moderation_check(ctx):
     else:
         return True
 
+
 @bot.check
 async def bot_has_permissions(ctx):
     """Checks if the bot has correct permissions."""
@@ -125,7 +138,9 @@ async def bot_has_permissions(ctx):
         me = guild.me if guild is not None else ctx.bot.user
         permissions = ctx.channel.permissions_for(me)
 
-        missing = [perm for perm, value in perms.items() if getattr(permissions, perm, None) != value]
+        missing = [
+            perm for perm, value in perms.items() if getattr(permissions, perm, None) != value
+        ]
 
         if not missing:
             return True
@@ -133,6 +148,7 @@ async def bot_has_permissions(ctx):
         raise commands.BotMissingPermissions(missing)
     else:
         return True
+
 
 @bot.check
 async def database_setup(ctx):
@@ -143,7 +159,9 @@ async def database_setup(ctx):
     await user_setup(ctx)
     return True
 
+
 if config.options["holidays"]:
+
     @bot.check
     async def is_holiday(ctx):
         """April Fools Prank.
@@ -191,26 +209,26 @@ async def on_command_error(ctx, error):
 
     elif isinstance(error, commands.BotMissingPermissions):
         await ctx.send(
-            "**The bot does not have enough permissions to fully function.**\n" +
-            f"**Permissions Missing:** `{', '.join(map(str, error.missing_perms))}`\n" +
-            "*Please try again once the correct permissions are set.*"
+            "**The bot does not have enough permissions to fully function.**\n"
+            + f"**Permissions Missing:** `{', '.join(map(str, error.missing_perms))}`\n"
+            + "*Please try again once the correct permissions are set.*"
         )
 
     elif isinstance(error, commands.MissingPermissions):
         await ctx.send(
-            "You do not have the required permissions to use this command.\n" +
-            f"**Required Perms:** `{'`, `'.join(error.missing_perms)}`"
+            "You do not have the required permissions to use this command.\n"
+            + f"**Required Perms:** `{'`, `'.join(error.missing_perms)}`"
         )
 
     elif isinstance(error, commands.NoPrivateMessage):
         await ctx.send("**This command is unavaliable in DMs!**")
 
     elif isinstance(error, commands.PrivateMessageOnly):
-            await ctx.send("**This command is only avaliable in DMs!**")
+        await ctx.send("**This command is only avaliable in DMs!**")
 
     elif isinstance(error, GenericError):
         if error.code == 192:
-            #channel is ignored
+            # channel is ignored
             return
         elif error.code == 842:
             await ctx.send("**Sorry, you cannot use this command.**")
@@ -224,9 +242,10 @@ async def on_command_error(ctx, error):
             logger.info("uncaught generic error")
             capture_exception(error)
             await ctx.send(
-                "**An uncaught generic error has occurred.**\n" +
-                "*Please log this message in #support in the support server below, or try again.*\n" +
-                "**Error:** " + str(error)
+                "**An uncaught generic error has occurred.**\n"
+                + "*Please log this message in #support in the support server below, or try again.*\n"
+                + "**Error:** "
+                + str(error)
             )
             await ctx.send(config.options["support_server"])
             raise error
@@ -236,9 +255,10 @@ async def on_command_error(ctx, error):
             capture_exception(error.original)
             if database.exists(f"channel:{ctx.channel.id}"):
                 await ctx.send(
-                    "**An unexpected ResponseError has occurred.**\n" +
-                    "*Please log this message in #support in the support server below, or try again.*\n" +
-                    "**Error:** " + str(error)
+                    "**An unexpected ResponseError has occurred.**\n"
+                    + "*Please log this message in #support in the support server below, or try again.*\n"
+                    + "**Error:** "
+                    + str(error)
                 )
                 await ctx.send(config.options["support_server"])
             else:
@@ -259,7 +279,9 @@ async def on_command_error(ctx, error):
             if error.original.code == 50007:
                 await ctx.send("I was unable to DM you. Check if I was blocked and try again.")
             elif error.original.code == 50013:
-                await ctx.send("There was an error with permissions. Check the bot has proper permissions and try again.")
+                await ctx.send(
+                    "There was an error with permissions. Check the bot has proper permissions and try again."
+                )
             else:
                 capture_exception(error)
                 await ctx.send(
@@ -271,25 +293,32 @@ async def on_command_error(ctx, error):
 
         elif isinstance(error.original, discord.HTTPException):
             if error.original.status == 502:
-                await ctx.send("**An error has occured with discord. :(**\n*Please try again.*")
+                await ctx.send(
+                    "**An error has occured with discord. :(**\n*Please try again.*"
+                )
             else:
                 capture_exception(error.original)
                 await ctx.send(
-                    "**An unexpected HTTPException has occurred.**\n" +
-                    "*Please log this message in #support in the support server below, or try again*\n" +
-                    "**Error:** " + str(error.original)
+                    "**An unexpected HTTPException has occurred.**\n"
+                    + "*Please log this message in #support in the support server below, or try again*\n"
+                    + "**Error:** "
+                    + str(error.original)
                 )
                 await ctx.send(config.options["support_server"])
 
         elif isinstance(error.original, aiohttp.ClientOSError):
             if error.original.errno == errno.ECONNRESET:
-                await ctx.send("**An error has occured with discord. :(**\n*Please try again.*")
+                await ctx.send(
+                    "**An error has occured with discord. :(**\n*Please try again.*"
+                )
             else:
                 capture_exception(error.original)
                 await ctx.send(
-                    "**An unexpected ClientOSError has occurred.**\n" +
-                    "*Please log this message in #support in the support server below, or try again.*\n" +
-                    "**Error:** " + str(error.original))
+                    "**An unexpected ClientOSError has occurred.**\n"
+                    + "*Please log this message in #support in the support server below, or try again.*\n"
+                    + "**Error:** "
+                    + str(error.original)
+                )
                 await ctx.send(config.options["support_server"])
 
         elif isinstance(error.original, aiohttp.ServerDisconnectedError):
@@ -304,9 +333,10 @@ async def on_command_error(ctx, error):
             logger.info("uncaught command error")
             capture_exception(error.original)
             await ctx.send(
-                "**An uncaught command error has occurred.**\n" +
-                "*Please log this message in #support in the support server below, or try again.*\n" +
-                "**Error:**  " + str(error)
+                "**An uncaught command error has occurred.**\n"
+                + "*Please log this message in #support in the support server below, or try again.*\n"
+                + "**Error:**  "
+                + str(error)
             )
             await ctx.send(config.options["support_server"])
             raise error
@@ -315,12 +345,14 @@ async def on_command_error(ctx, error):
         logger.info("uncaught non-command")
         capture_exception(error)
         await ctx.send(
-            "**An uncaught non-command error has occurred.**\n" +
-            "*Please log this message in #support in the support server below, or try again.*\n" +
-            "**Error:** " + str(error)
+            "**An uncaught non-command error has occurred.**\n"
+            + "*Please log this message in #support in the support server below, or try again.*\n"
+            + "**Error:** "
+            + str(error)
         )
         await ctx.send(config.options["support_server"])
         raise error
+
 
 @tasks.loop(hours=24.0)
 async def update_images():
@@ -328,6 +360,7 @@ async def update_images():
     logger.info("updating images")
     await config.options["download_func"]()
     logger.info("done updating images!")
+
 
 @tasks.loop(hours=6.0)
 async def refresh_backup():
@@ -339,7 +372,7 @@ async def refresh_backup():
     except FileNotFoundError:
         logger.info("Already cleared backup dump")
     try:
-        os.remove(config.options["backups_dir"] + 'keys.txt')
+        os.remove(config.options["backups_dir"] + "keys.txt")
         logger.info("Cleared backup keys")
     except FileNotFoundError:
         logger.info("Already cleared backup keys")
@@ -350,11 +383,12 @@ async def refresh_backup():
 
     logger.info("Sending backup files")
     channel = bot.get_channel(config.options["backups_channel"])
-    with open(config.options["backups_dir"] + "dump.dump", 'rb') as f:
+    with open(config.options["backups_dir"] + "dump.dump", "rb") as f:
         await channel.send(file=discord.File(f, filename="dump"))
-    with open(config.options["backups_dir"] + "keys.txt", 'r') as f:
+    with open(config.options["backups_dir"] + "keys.txt", "r") as f:
         await channel.send(file=discord.File(f, filename="keys.txt"))
     logger.info("Backup Files Sent!")
+
 
 # Actually run the bot
 token = os.getenv(config.options["bot_token_env"])

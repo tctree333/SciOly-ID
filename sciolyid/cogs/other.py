@@ -35,7 +35,9 @@ class Other(commands.Cog):
         self.bot = bot
 
     # Info - Gives image
-    @commands.command(help=f"- Gives images of specific {config.options['id_type']}", aliases=["i"])
+    @commands.command(
+        help=f"- Gives images of specific {config.options['id_type']}", aliases=["i"]
+    )
     @commands.check(CustomCooldown(10.0, bucket=commands.BucketType.user))
     async def info(self, ctx, *, arg):
         logger.info("command: info")
@@ -96,11 +98,15 @@ class Other(commands.Cog):
 
     # Group command - lists groups
     if config.options["id_groups"]:
+
         @commands.command(
             help="- Prints a list of all available groups.",
             aliases=[
-                config.options['category_name'].lower(), config.options['category_name'].lower() + "s", "group",
-                "category", "categories"
+                config.options["category_name"].lower(),
+                config.options["category_name"].lower() + "s",
+                "group",
+                "category",
+                "categories",
             ],
         )
         @commands.check(CustomCooldown(8.0, bucket=commands.BucketType.user))
@@ -125,7 +131,9 @@ class Other(commands.Cog):
 
     if config.options["meme_file"]:
         # meme command - sends a random item video/gif
-        @commands.command(help=f"- Sends a funny {config.options['id_type'][:-1]} video/image!")
+        @commands.command(
+            help=f"- Sends a funny {config.options['id_type'][:-1]} video/image!"
+        )
         @commands.cooldown(1, 300.0, type=commands.BucketType.user)
         async def meme(self, ctx):
             logger.info("command: meme")
@@ -165,6 +173,7 @@ class Other(commands.Cog):
     async def error(self, ctx):
         logger.info("command: error")
         await ctx.send(1 / 0)
+
 
 def setup(bot):
     bot.add_cog(Other(bot))

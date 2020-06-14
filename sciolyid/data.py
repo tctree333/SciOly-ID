@@ -37,6 +37,7 @@ elif config.options["redis_env"] is not None:
 else:
     raise ValueError("redis_env must be set if local_redis is False")
 
+
 def before_sentry_send(event, hint):
     """Fingerprint certain events before sending to Sentry."""
     if "exc_info" in hint:
@@ -46,6 +47,7 @@ def before_sentry_send(event, hint):
         elif isinstance(error, commands.CommandOnCooldown):
             event["fingerprint"] = ["command-cooldown"]
     return event
+
 
 # add sentry logging
 if config.options["sentry"]:
@@ -139,7 +141,7 @@ if config.options["sentry"]:
 logger = logging.getLogger(config.options["name"])
 if config.options["logs"]:
     logger.setLevel(logging.DEBUG)
-    os.makedirs(config.options['log_dir'], exist_ok=True)
+    os.makedirs(config.options["log_dir"], exist_ok=True)
 
     file_handler = logging.handlers.TimedRotatingFileHandler(
         f"{config.options['log_dir']}log.txt", backupCount=4, when="midnight"
@@ -151,7 +153,9 @@ if config.options["logs"]:
     file_handler.setFormatter(
         logging.Formatter("{asctime} - {filename:10} -  {levelname:8} - {message}", style="{")
     )
-    stream_handler.setFormatter(logging.Formatter("{filename:10} -  {levelname:8} - {message}", style="{"))
+    stream_handler.setFormatter(
+        logging.Formatter("{filename:10} -  {levelname:8} - {message}", style="{")
+    )
 
     logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
@@ -166,6 +170,7 @@ if config.options["logs"]:
 
     sys.excepthook = handle_exception
 
+
 class GenericError(commands.CommandError):
     """A custom error class.
 
@@ -179,9 +184,11 @@ class GenericError(commands.CommandError):
         842 - Banned User
         666 - No output error
     """
+
     def __init__(self, message=None, code=0):
         self.code = code
         super().__init__(message=message)
+
 
 # Error codes: (can add more if needed)
 # 0 - no code
@@ -193,15 +200,17 @@ class GenericError(commands.CommandError):
 # 842 - Banned User
 # 666 - No output error
 
+
 def _wiki_urls():
     logger.info("Working on wiki urls")
     urls = {}
-    with open(f'{config.options["wikipedia_file"]}', 'r') as f:
+    with open(f'{config.options["wikipedia_file"]}', "r") as f:
         reader = csv.reader(f)
         for item, url in reader:
             urls[item.lower()] = url
     logger.info("Done with wiki urls")
     return urls
+
 
 def get_wiki_url(ctx, item: str):
     logger.info("fetching wiki url")
@@ -210,10 +219,11 @@ def get_wiki_url(ctx, item: str):
         return f"<{wikipedia_urls[item.lower()]}>"
     return wikipedia_urls[item.lower()]
 
+
 def _generate_aliases():
     logger.info("Working on aliases")
     aliases = {}
-    with open(f'{config.options["alias_file"]}', 'r') as f:
+    with open(f'{config.options["alias_file"]}', "r") as f:
         reader = csv.reader(f)
         for raw_aliases in reader:
             raw_aliases = list(map(str.lower, raw_aliases))
@@ -221,6 +231,7 @@ def _generate_aliases():
             aliases[item] = raw_aliases
     logger.info("Done with aliases")
     return aliases
+
 
 def get_aliases(item: str):
     logger.info(f"getting aliases for {item}")
@@ -232,6 +243,7 @@ def get_aliases(item: str):
         logger.info("no aliases")
         return [item]
 
+
 def get_category(item: str):
     logger.info(f"getting category for item {item}")
     item = item.lower()
@@ -242,12 +254,15 @@ def get_category(item: str):
     logger.info(f"no category found for item {item}")
     return None
 
+
 def _groups():
     """Converts txt files of data into lists."""
-    filenames = [name.split(".")[0] for name in os.listdir(config.options['list_dir'])]
+    filenames = [name.split(".")[0] for name in os.listdir(config.options["list_dir"])]
     restricted_filenames = []
     if config.options["restricted_list_dir"]:
-        restricted_filenames = [name.split(".")[0] for name in os.listdir(config.options['restricted_list_dir'])]
+        restricted_filenames = [
+            name.split(".")[0] for name in os.listdir(config.options["restricted_list_dir"])
+        ]
 
     # Converts txt file of data into lists
     lists = {}
@@ -259,22 +274,26 @@ def _groups():
 
     for restricted_filename in restricted_filenames:
         logger.info(f"Working on {restricted_filename}")
-        with open(f'{config.options["restricted_list_dir"]}{restricted_filename}.txt', "r") as f:
+        with open(
+            f'{config.options["restricted_list_dir"]}{restricted_filename}.txt', "r"
+        ) as f:
             lists[restricted_filename] = [line.strip().lower() for line in f]
         logger.info(f"Done with {restricted_filename}")
 
     logger.info("Done with lists!")
     return lists
 
+
 def _memes():
     """Converts a txt file of memes/video urls into a list."""
     logger.info("Working on memes")
     if config.options["meme_file"]:
-        with open(f'{config.options["meme_file"]}', 'r') as f:
+        with open(f'{config.options["meme_file"]}', "r") as f:
             memes = [line.strip() for line in f]
         logger.info("Done with memes")
         return memes
     return []
+
 
 def _all_lists():
     """Compiles lists into master lists."""
@@ -282,7 +301,9 @@ def _all_lists():
     master_id_list = []
     restricted = []
     if config.options["restricted_list_dir"]:
-        restricted = [name.split(".")[0] for name in os.listdir(config.options['restricted_list_dir'])]
+        restricted = [
+            name.split(".")[0] for name in os.listdir(config.options["restricted_list_dir"])
+        ]
     for group in groups:
         if group in restricted:
             for item in groups[group]:
@@ -295,18 +316,23 @@ def _all_lists():
     master_id_list = list(set(master_id_list))
     return id_list, master_id_list
 
+
 def _config():
     for group in groups:
         if group not in config.options["category_aliases"].keys():
             config.options["category_aliases"][group] = [group]
 
-    _aliases = [item for group in groups.keys() for item in config.options["category_aliases"][group]]
+    _aliases = [
+        item for group in groups.keys() for item in config.options["category_aliases"][group]
+    ]
     if len(_aliases) != len(set(_aliases)):
         raise config.BotConfigError("Aliases in category_aliases not unique")
 
     if config.options["download_func"] is None:
         from sciolyid.github import download_github
+
         config.options["download_func"] = download_github
+
 
 groups = _groups()
 meme_list = _memes()

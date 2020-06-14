@@ -27,6 +27,7 @@ from sciolyid.functions import black_and_white
 # Valid file types
 valid_image_extensions = {"jpg", "png", "jpeg", "gif"}
 
+
 async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
     """Gets a picture and sends it to the user.
 
@@ -88,6 +89,7 @@ async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
         await ctx.send(file=file_obj)
         await delete.delete()
 
+
 async def get_image(ctx, item):
     """Chooses an image from a list of images.
 
@@ -117,8 +119,8 @@ async def get_image(ctx, item):
             stat_info = os.stat(image_link)
             logger.info("size: " + str(stat_info.st_size))
             if (
-                extension.lower() in valid_image_extensions and
-                stat_info.st_size < 4000000  # keep files less than 4mb
+                extension.lower() in valid_image_extensions
+                and stat_info.st_size < 4000000  # keep files less than 4mb
             ):
                 logger.info("found one!")
                 break
@@ -130,6 +132,7 @@ async def get_image(ctx, item):
         raise GenericError("No Images Found", code=100)
 
     return [image_link, extension]
+
 
 async def get_files(item, retries=0):
     """Returns a list of image/song filenames.

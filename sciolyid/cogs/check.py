@@ -71,8 +71,9 @@ class Check(commands.Cog):
                 streak_increment(ctx, 1)
 
                 await ctx.send(
-                    "Correct! Good job!" if not database.exists(f"race.data:{ctx.channel.id}") else
-                    f"**{ctx.author.mention}**, you are correct!"
+                    "Correct! Good job!"
+                    if not database.exists(f"race.data:{ctx.channel.id}")
+                    else f"**{ctx.author.mention}**, you are correct!"
                 )
                 url = get_wiki_url(ctx, current_item)
                 await ctx.send(
@@ -89,7 +90,9 @@ class Check(commands.Cog):
                         await race.stop_race_(ctx)
                     else:
                         logger.info("auto sending next image")
-                        group, bw = database.hmget(f"race.data:{ctx.channel.id}", ["group", "bw"])
+                        group, bw = database.hmget(
+                            f"race.data:{ctx.channel.id}", ["group", "bw"]
+                        )
                         media = self.bot.get_cog("Media")
                         await media.send_pic_(ctx, group.decode("utf-8"), bw.decode("utf-8"))
 
@@ -108,6 +111,7 @@ class Check(commands.Cog):
                     await ctx.send("Sorry, the image was actually " + current_item + ".")
                     url = get_wiki_url(ctx, current_item)
                     await ctx.send(url)
+
 
 def setup(bot):
     bot.add_cog(Check(bot))

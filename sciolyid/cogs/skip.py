@@ -30,7 +30,7 @@ class Skip(commands.Cog):
     async def skip(self, ctx):
         logger.info("command: skip")
 
-        current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode('utf-8')
+        current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8")
         database.hset(f"channel:{ctx.channel.id}", "item", "")
         database.hset(f"channel:{ctx.channel.id}", "answered", "1")
         if current_item:  # check if there is image
@@ -39,7 +39,7 @@ class Skip(commands.Cog):
             await ctx.send(
                 url if not database.exists(f"race.data:{ctx.channel.id}") else f"<{url}>"
             )  # sends wiki page
-            streak_increment(ctx, None) # reset streak
+            streak_increment(ctx, None)  # reset streak
             if database.exists(f"race.data:{ctx.channel.id}"):
 
                 limit = int(database.hget(f"race.data:{ctx.channel.id}", "limit"))
@@ -55,6 +55,7 @@ class Skip(commands.Cog):
                     await media.send_pic_(ctx, group.decode("utf-8"), bw.decode("utf-8"))
         else:
             await ctx.send("You need to ask for an image first!")
+
 
 def setup(bot):
     bot.add_cog(Skip(bot))

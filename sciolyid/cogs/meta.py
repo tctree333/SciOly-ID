@@ -41,21 +41,21 @@ class Meta(commands.Cog):
         embed.set_author(name=config.options["bot_signature"])
         embed.add_field(
             name="Bot Info",
-            value=f"This bot was created by {config.options['authors']}" +
-            f" for helping people practice {config.options['id_type'][:-1]} identification for Science Olympiad.\n"
+            value=f"This bot was created by {config.options['authors']}"
+            + f" for helping people practice {config.options['id_type'][:-1]} identification for Science Olympiad.\n"
             + f"The bot's source can be found here: {config.options['source_link']}",
             inline=False,
         )
         embed.add_field(
             name="Support",
-            value="If you are experiencing any issues, have feature requests, " +
-            "or want to get updates on bot status, join our support server below.",
+            value="If you are experiencing any issues, have feature requests, "
+            + "or want to get updates on bot status, join our support server below.",
             inline=False,
         )
         embed.add_field(
             name="Stats",
-            value=f"This bot can see {len(self.bot.users)} users and is in {len(self.bot.guilds)} servers. " +
-            f"There are {int(database.zcard('users:global'))} active users in {int(database.zcard('score:global'))} channels. "
+            value=f"This bot can see {len(self.bot.users)} users and is in {len(self.bot.guilds)} servers. "
+            + f"There are {int(database.zcard('users:global'))} active users in {int(database.zcard('score:global'))} channels. "
             + f"The WebSocket latency is {round(self.bot.latency*1000)} ms.",
             inline=False,
         )
@@ -72,8 +72,7 @@ class Meta(commands.Cog):
         embed.set_author(name=config.options["bot_signature"])
         embed.add_field(
             name="Invite",
-            value=
-            f"To invite this bot to your own server, use the following invite links.\n {config.options['invite']}",
+            value=f"To invite this bot to your own server, use the following invite links.\n {config.options['invite']}",
             inline=False,
         )
         await ctx.send(embed=embed)
