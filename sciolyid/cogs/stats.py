@@ -132,10 +132,10 @@ class Stats(commands.Cog):
             )
             embed.add_field(
                 name="Scores",
-                value="`b!stats [scores|score|s]`\n*Displays stats about scores.*",
+                value=f"`{config.options['prefixes'][0]}stats [scores|score|s]`\n*Displays stats about scores.*",
             ).add_field(
                 name="Usage",
-                value="`b!stats [usage|u]`\n*Displays stats about usage.*",
+                value=f"`{config.options['prefixes'][0]}stats [usage|u]`\n*Displays stats about usage.*",
             )
 
         elif topic == "scores":
