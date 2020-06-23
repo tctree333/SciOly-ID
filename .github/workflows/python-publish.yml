@@ -15,8 +15,8 @@ jobs:
     if: github.event_name == 'release' || contains(join(github.event.commits.*.message, ' '), 'bump version')
 
     steps:
-        - name: test
-          run: echo "hello"
+      - name: test
+        run: echo "hello"
       # - uses: actions/checkout@v2
       # - name: Set up Python
       #   uses: actions/setup-python@v2
