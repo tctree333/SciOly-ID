@@ -169,8 +169,7 @@ if config.options["holidays"]:
         Can be extended to other holidays as well.
         """
         logger.info("global check: checking holiday")
-        now = datetime.now(tz=timezone(-timedelta(hours=4)))
-        now = date(now.year, now.month, now.day)
+        now = datetime.now(tz=timezone(-timedelta(hours=4))).date()
         if now == date(now.year, 4, 1):
             return await fools(ctx)
         return True
