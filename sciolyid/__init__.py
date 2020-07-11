@@ -17,10 +17,13 @@
 import sciolyid.config as config
 
 
-def setup(**kwargs):
+def setup(*args, **kwargs):
     required = config.required.keys()
     optional = config.optional.keys()
     id_required = config.id_required.keys()
+
+    if len(args) == 1 and isinstance(args[0], dict):
+        kwargs = args[0]
 
     for option in required:
         try:
