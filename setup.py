@@ -33,6 +33,13 @@ setuptools.setup(
         "hiredis>=1.0.1, <1.1.0",
         "pandas>=1.0.0, <1.1.0",
     ],
+    extras_require={
+        "web": [
+            "Flask>=1.1.2, <1.2.0",
+            "Authlib==0.14.1",
+            "gunicorn>=20.0.4, <21.0.0",
+        ]
+    },
     py_modules=["config", "core", "data", "functions", "github", "start_bot"],
     python_requires="~=3.7",
 )

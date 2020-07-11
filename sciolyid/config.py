@@ -14,7 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-required = {
+from typing import Dict, Optional
+
+required: Dict[str, Optional[str]] = {
     "bot_description": None,  # short bot description
     "bot_signature": None,  # signature for embeds
     "prefixes": None,  # bot prefixes, primary prefix is first in list
@@ -24,11 +26,16 @@ required = {
     "source_link": None,  # link to source code (may be hosted on github)
 }
 
-id_required = {
+id_required: Dict[str, Optional[str]] = {
     "category_name": None,  # space thing, bird order, muscle group - what you are splitting groups by
 }
 
-optional = {
+web_required: Dict[str, Optional[str]] = {
+    "client_id": None,  # discord client id
+    "server_id": None,  # discord server that users must be a part of
+}
+
+optional: dict = {
     "name": "id-bot",  # all lowercase, no spaces, doesn't really matter what this is
     "download_func": None,  # asyncronous function that downloads images locally to download_dir
     "download_dir": "github_download/",  # local directory containing media (images)
@@ -59,9 +66,14 @@ optional = {
     "sendas": True,  # enable the "sendas" command
 }
 
-options = {
-    d: e
-    for d, e in list(required.items()) + list(id_required.items()) + list(optional.items())
+web_optional: dict = {
+
+}
+
+options: dict = {
+    k: v
+    for d in (required, id_required, web_required, optional, web_optional)
+    for k, v in list(d.items())
 }
 
 

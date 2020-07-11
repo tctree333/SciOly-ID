@@ -19,8 +19,9 @@ import sciolyid.config as config
 
 def setup(*args, **kwargs):
     required = config.required.keys()
-    optional = config.optional.keys()
     id_required = config.id_required.keys()
+    web_required = config.web_required.keys()
+    optional = tuple(config.optional.keys()) + tuple(config.web_optional.keys())
 
     if len(args) == 1 and isinstance(args[0], dict):
         kwargs = args[0]
@@ -36,6 +37,13 @@ def setup(*args, **kwargs):
             config.options[option] = kwargs[option]
         except KeyError:
             continue
+
+    if kwargs.get("web", None):
+        for option in web_required:
+            try:
+                config.options[option] = kwargs[option]
+            except KeyError:
+                raise config.BotConfigError(f"Required web setup argument {option}")
 
     if config.options["id_groups"]:
         for option in id_required:
