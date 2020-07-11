@@ -1,7 +1,8 @@
 import os
+from typing import Dict, Union
 
-import requests
 import flask
+import requests
 
 import sciolyid.config as config
 
@@ -17,19 +18,19 @@ class DiscordBotAuth(requests.auth.AuthBase):
         return request
 
 
-def fetch_profile(user_id):
+def fetch_profile(user_id: Union[int, str]) -> Dict[str, str]:
     url = PROFILE_URL.format(id=user_id)
     resp = requests.get(url, auth=DiscordBotAuth())
     if resp.status_code != 200:
         flask.abort(500, "Failed to fetch profile")
-    resp = resp.json()
+    json: dict = resp.json()
 
-    profile = dict()
-    profile["username"] = f"{resp['username']}#{resp['discriminator']}"
+    profile: Dict[str, str] = dict()
+    profile["username"] = f"{json['username']}#{json['discriminator']}"
     profile["avatar"] = AVATAR_URL.format(
         id=user_id,
-        avatar=resp["avatar"],
-        ext=("gif" if resp["avatar"].startswith("a_") else "png"),
+        avatar=json["avatar"],
+        ext=("gif" if json["avatar"].startswith("a_") else "png"),
     )
 
     return profile

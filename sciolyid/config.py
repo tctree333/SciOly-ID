@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 required: Dict[str, Optional[str]] = {
     "bot_description": None,  # short bot description
@@ -35,7 +35,7 @@ web_required: Dict[str, Optional[str]] = {
     "server_id": None,  # discord server that users must be a part of
 }
 
-optional: dict = {
+optional: Dict[str, Any] = {
     "name": "id-bot",  # all lowercase, no spaces, doesn't really matter what this is
     "download_func": None,  # asyncronous function that downloads images locally to download_dir
     "download_dir": "github_download/",  # local directory containing media (images)
@@ -66,11 +66,11 @@ optional: dict = {
     "sendas": True,  # enable the "sendas" command
 }
 
-web_optional: dict = {
+web_optional: Dict[str, Any] = {
 
 }
 
-options: dict = {
+options: Dict[str, Any] = {
     k: v
     for d in (required, id_required, web_required, optional, web_optional)
     for k, v in list(d.items())
