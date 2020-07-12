@@ -5,10 +5,11 @@ import urllib.parse
 import flask
 from sentry_sdk import capture_exception
 
-from sciolyid.web import user
+from sciolyid.web import user, media
 from sciolyid.web.config import app, logger
 
 app.register_blueprint(user.bp)
+app.register_blueprint(media.bp)
 
 
 @app.route("/")

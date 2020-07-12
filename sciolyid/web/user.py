@@ -9,10 +9,9 @@ from flask import (Blueprint, abort, jsonify, make_response, redirect, request,
 from sentry_sdk import capture_exception
 
 import sciolyid.config as config
-from sciolyid.web.config import app, logger
+from sciolyid.web.config import FRONTEND_URL, app, logger
 from sciolyid.web.functions import fetch_profile
 
-FRONTEND_URL: str = os.getenv("FRONTEND_URL", "")
 SESSION_EXPIRE: int = 432000  # time (seconds) before expiring the session
 
 bp = Blueprint("user", __name__, url_prefix="/user")
@@ -35,14 +34,6 @@ oauth.register(
     client_kwargs={"scope": "identify guilds", "prompt": "consent"},
 )
 discord = oauth.discord
-
-
-@bp.after_request  # enable CORS
-def after_request(response):
-    header = response.headers
-    header["Access-Control-Allow-Origin"] = FRONTEND_URL
-    header["Access-Control-Allow-Credentials"] = "true"
-    return response
 
 
 @bp.route("/login", methods=["GET"])
@@ -108,7 +99,7 @@ def logout():
 @bp.route("/profile")
 def profile():
     logger.info("endpoint: profile")
-    date:int = int(session["date"])
+    date: int = int(session.get("date", 0))
     if (time.time() - date) > SESSION_EXPIRE:
         abort(403, "Your session expired")
 

@@ -67,7 +67,7 @@ optional: Dict[str, Any] = {
 }
 
 web_optional: Dict[str, Any] = {
-
+    "upload_dir": ""
 }
 
 options: Dict[str, Any] = {

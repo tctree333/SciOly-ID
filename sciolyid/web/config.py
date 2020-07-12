@@ -26,4 +26,11 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 app.config["SESSION_COOKIE_SAMESITE"] = "Strict"
 app.config["SESSION_COOKIE_SECURE"] = True
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
+FRONTEND_URL: str = os.getenv("FRONTEND_URL", "")
 
+@app.after_request  # enable CORS
+def after_request(response):
+    header = response.headers
+    header["Access-Control-Allow-Origin"] = FRONTEND_URL
+    header["Access-Control-Allow-Credentials"] = "true"
+    return response
