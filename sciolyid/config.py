@@ -33,10 +33,12 @@ id_required: Dict[str, Optional[str]] = {
 web_required: Dict[str, Optional[str]] = {
     "client_id": None,  # discord client id
     "server_id": None,  # discord server that users must be a part of
+    "base_image_url": None  # root of where images are hosted
 }
 
 optional: Dict[str, Any] = {
     "name": "id-bot",  # all lowercase, no spaces, doesn't really matter what this is
+    "website": None,  # full url to the root of the website
     "download_func": None,  # asyncronous function that downloads images locally to download_dir
     "download_dir": "github_download/",  # local directory containing media (images)
     "data_dir": "data/",  # local directory containing the id data
@@ -67,7 +69,7 @@ optional: Dict[str, Any] = {
 }
 
 web_optional: Dict[str, Any] = {
-    "upload_dir": ""
+    "tmp_upload_dir": "tmp/"
 }
 
 options: Dict[str, Any] = {

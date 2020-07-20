@@ -78,6 +78,17 @@ def setup(*args, **kwargs):
     if config.options["log_dir"] and not config.options["log_dir"].endswith("/"):
         config.options["log_dir"] += "/"
 
+    if config.options["website"] and not config.options["website"].endswith("/"):
+        config.options["website"] += "/"
+
+    if config.options["base_image_url"] and not config.options["base_image_url"].endswith("/"):
+        config.options["base_image_url"] += "/"
+
+    if config.options["tmp_upload_dir"] and not config.options["tmp_upload_dir"].endswith("/"):
+        config.options["tmp_upload_dir"] += "/"
+
+    config.options["tmp_upload_dir"] = f"{config.options['bot_files_dir']}{config.options['tmp_upload_dir']}"
+
     config.options["log_dir"] = f"{config.options['bot_files_dir']}{config.options['log_dir']}"
     config.options[
         "download_dir"

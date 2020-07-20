@@ -36,6 +36,14 @@ oauth.register(
 discord = oauth.discord
 
 
+def get_user_id():
+    date: int = int(session.get("date", 0))
+    if (time.time() - date) > SESSION_EXPIRE:
+        abort(403, "Your session expired")
+    uid: str = session["uid"]
+    return uid
+
+
 @bp.route("/login", methods=["GET"])
 def login():
     logger.info("endpoint: login")
@@ -99,11 +107,7 @@ def logout():
 @bp.route("/profile")
 def profile():
     logger.info("endpoint: profile")
-    date: int = int(session.get("date", 0))
-    if (time.time() - date) > SESSION_EXPIRE:
-        abort(403, "Your session expired")
-
-    uid: str = session["uid"]
+    uid = get_user_id()
     profile = fetch_profile(uid)
     return jsonify(profile)
 
