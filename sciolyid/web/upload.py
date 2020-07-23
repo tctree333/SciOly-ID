@@ -14,10 +14,10 @@ from sciolyid.web.config import FRONTEND_URL, app, logger
 from sciolyid.web.functions import verify_image
 from sciolyid.web.user import get_user_id
 
-bp = Blueprint("media", __name__, url_prefix="/media")
+bp = Blueprint("upload", __name__, url_prefix="/upload")
 
 
-@bp.route("/upload", methods=["GET", "POST"])
+@bp.route("/", methods=["GET", "POST"])
 def login():
     logger.info("endpoint: upload")
     user_id = get_user_id()
@@ -37,9 +37,9 @@ def login():
                     output["duplicates"][upload.filename] = dupes
                 f.seek(0)
                 sha1 = hashlib.sha1(f.read()).hexdigest()
-                save_filename = f"{config.options['tmp_upload_dir']}{user_id}/{request.form['item']}/"
-                os.makedirs(save_filename, exist_ok=True)
-                upload.save(f"{save_filename}{sha1}.{ext}")
+                save_path = f"{config.options['tmp_upload_dir']}{user_id}/{request.form['item']}/"
+                os.makedirs(save_path, exist_ok=True)
+                upload.save(f"{save_path}{sha1}.{ext}")
 
         return jsonify(output)
 

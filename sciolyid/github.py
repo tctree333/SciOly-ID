@@ -44,7 +44,7 @@ async def download_github():
         logger.info("done syncing")
 
 
-def find_duplicates(image, distance: int = 5):
+def find_duplicates(image, distance: int = 5) -> list:
     if isinstance(image, str):
         image = Image.open(image)
     current_hash = imagehash.phash(image)
