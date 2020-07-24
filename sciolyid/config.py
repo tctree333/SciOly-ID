@@ -33,7 +33,8 @@ id_required: Dict[str, Optional[str]] = {
 web_required: Dict[str, Optional[str]] = {
     "client_id": None,  # discord client id
     "server_id": None,  # discord server that users must be a part of
-    "base_image_url": None  # root of where images are hosted
+    "base_image_url": None,  # root of where images are hosted
+    "validation_repo_id": None, # github repo where images are temporarily held
 }
 
 optional: Dict[str, Any] = {
@@ -69,7 +70,8 @@ optional: Dict[str, Any] = {
 }
 
 web_optional: Dict[str, Any] = {
-    "tmp_upload_dir": "tmp/"
+    "tmp_upload_dir": "tmp/",  # directory for temporary file storage
+    "github_token_env": "GITHUB_TOKEN",  # environment variable with github auth token
 }
 
 options: Dict[str, Any] = {

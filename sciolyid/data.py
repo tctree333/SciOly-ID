@@ -329,7 +329,7 @@ def _config():
         raise config.BotConfigError("Aliases in category_aliases not unique")
 
     if config.options["download_func"] is None:
-        from sciolyid.github import download_github
+        from sciolyid.downloads import download_github
 
         config.options["download_func"] = download_github
 
