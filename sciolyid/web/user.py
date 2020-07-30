@@ -36,7 +36,7 @@ oauth.register(
 discord = oauth.discord
 
 
-def get_user_id():
+def get_user_id() -> str:
     date: int = int(session.get("date", 0))
     if (time.time() - date) > SESSION_EXPIRE:
         abort(403, "Your session expired")
