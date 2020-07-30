@@ -64,7 +64,7 @@ optional: Dict[str, Any] = {
     "sentry_dsn_env": "SENTRY_DISCORD_DSN",  # name of environment variable containing the sentry dsn
     "redis_env": "REDIS_URL",  # name of environment variable containing the redis database url
     "backups_channel": None,  # discord channel id to upload database backups (None/False to disable)
-    "backups_dir": "backups",  # directory to put database backup files before uploading
+    "backups_dir": "backups/",  # directory to put database backup files before uploading
     "holidays": True,  # enable special features on select holidays
     "sendas": True,  # enable the "sendas" command
 }
@@ -72,6 +72,7 @@ optional: Dict[str, Any] = {
 web_optional: Dict[str, Any] = {
     "tmp_upload_dir": "tmp/",  # directory for temporary file storage
     "github_token_env": "GITHUB_TOKEN",  # environment variable with github auth token
+    "validation_repo_dir": "",  # directory in validation repo to store files
 }
 
 options: Dict[str, Any] = {

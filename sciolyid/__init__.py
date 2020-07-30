@@ -55,65 +55,45 @@ def setup(*args, **kwargs):
                 )
         config.options["category_name"] = config.options["category_name"].title()
 
-    if config.options["bot_files_dir"] and not config.options["bot_files_dir"].endswith("/"):
-        config.options["bot_files_dir"] += "/"
+    directory_config_items = (
+        "backups_dir",
+        "base_image_url",
+        "bot_files_dir",
+        "data_dir",
+        "download_dir",
+        "list_dir",
+        "log_dir",
+        "restricted_list_dir",
+        "tmp_upload_dir",
+        "validation_repo_dir",
+        "website",
+    )
+    for item in directory_config_items:
+        if config.options[item] and not config.options[item].endswith("/"):
+            config.options[item] += "/"
 
-    if config.options["data_dir"] and not config.options["data_dir"].endswith("/"):
-        config.options["data_dir"] += "/"
+    bot_files_subdirs = (
+        "backups_dir",
+        "download_dir",
+        "log_dir",
+        "tmp_upload_dir"
+    )
+    for item in bot_files_subdirs:
+        if config.options[item]:
+            config.options[
+                item
+            ] = f"{config.options['bot_files_dir']}{config.options[item]}"
 
-    if config.options["backups_dir"] and not config.options["backups_dir"].endswith("/"):
-        config.options["backups_dir"] += "/"
-
-    if config.options["download_dir"] and not config.options["download_dir"].endswith("/"):
-        config.options["download_dir"] += "/"
-
-    if config.options["list_dir"] and not config.options["list_dir"].endswith("/"):
-        config.options["list_dir"] += "/"
-
-    if config.options["restricted_list_dir"] and not config.options[
-        "restricted_list_dir"
-    ].endswith("/"):
-        config.options["restricted_list_dir"] += "/"
-
-    if config.options["log_dir"] and not config.options["log_dir"].endswith("/"):
-        config.options["log_dir"] += "/"
-
-    if config.options["website"] and not config.options["website"].endswith("/"):
-        config.options["website"] += "/"
-
-    if config.options["base_image_url"] and not config.options["base_image_url"].endswith("/"):
-        config.options["base_image_url"] += "/"
-
-    if config.options["tmp_upload_dir"] and not config.options["tmp_upload_dir"].endswith("/"):
-        config.options["tmp_upload_dir"] += "/"
-
-    config.options["tmp_upload_dir"] = f"{config.options['bot_files_dir']}{config.options['tmp_upload_dir']}"
-
-    config.options["log_dir"] = f"{config.options['bot_files_dir']}{config.options['log_dir']}"
-    config.options[
-        "download_dir"
-    ] = f"{config.options['bot_files_dir']}{config.options['download_dir']}"
-    config.options[
-        "backups_dir"
-    ] = f"{config.options['bot_files_dir']}{config.options['backups_dir']}"
-
-    config.options["list_dir"] = f"{config.options['data_dir']}{config.options['list_dir']}"
-
-    if config.options["restricted_list_dir"]:
-        config.options[
-            "restricted_list_dir"
-        ] = f"{config.options['data_dir']}{config.options['restricted_list_dir']}"
-
-    config.options[
-        "wikipedia_file"
-    ] = f"{config.options['data_dir']}{config.options['wikipedia_file']}"
-    config.options[
-        "alias_file"
-    ] = f"{config.options['data_dir']}{config.options['alias_file']}"
-    if config.options["meme_file"]:
-        config.options[
-            "meme_file"
-        ] = f"{config.options['data_dir']}{config.options['meme_file']}"
+    data_subdirs = (
+        "alias_file",
+        "list_dir",
+        "meme_file",
+        "restricted_list_dir",
+        "wikipedia_file",
+    )
+    for item in data_subdirs:
+        if config.options[item]:
+            config.options[item] = f"{config.options['data_dir']}{config.options[item]}"
 
     config.options["id_type"] = config.options["id_type"].lower()
 
