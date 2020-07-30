@@ -33,13 +33,13 @@ def upload():
             </form>
             """
 
-    user_id = get_user_id()
+    user_id: str = get_user_id()
     if not request.files:
         abort(415, "Missing Files")
     if len(request.files) > 100:
         abort(413, "You can only upload 100 files at a time!")
     files = chain.from_iterable(request.files.listvalues())
-    output = {"invalid": [], "duplicates": {}, "sha1": {}}
+    output: dict = {"invalid": [], "duplicates": {}, "sha1": {}}
     for upload in files:
         with copy.deepcopy(upload.stream) as f:
             ext = verify_image(f, upload.mimetype)
@@ -64,9 +64,9 @@ def upload():
 @bp.route("/save", methods=["GET", "POST"])
 def save():
     logger.info("endpoint: upload.save")
-    user_id = get_user_id()
-    username = fetch_profile(user_id)["username"]
-    save_path = config.options["tmp_upload_dir"] + user_id + "/"
+    user_id: str = get_user_id()
+    username: str = fetch_profile(user_id)["username"]
+    save_path: str = config.options["tmp_upload_dir"] + user_id + "/"
     sources: list = []
     destinations: list = []
     for directory in os.listdir(save_path):
@@ -76,5 +76,22 @@ def save():
             sources.append(current_path + filename)
             destinations.append(remote_path)
     url = add_images(sources, destinations, user_id, username)
+    if url is None:
+        abort(500, "Pushing the changes failed.")
     shutil.rmtree(save_path)
     return jsonify({"url": url})
+
+
+@bp.route("/uploaded", methods=["GET"])
+def uploaded():
+    logger.info("endpoint: upload.uploaded")
+    user_id: str = get_user_id()
+    save_path: str = config.options["tmp_upload_dir"] + user_id + "/"
+    if not os.path.exists(save_path) or not len(os.listdir(save_path)) > 0:
+        abort(500, "No uploaded files")
+    output: dict = dict()
+    for directory in os.listdir(save_path):
+        output[directory] = []
+        for filename in os.listdir(save_path + directory + "/"):
+            output[directory].append(filename)
+    return jsonify(output)

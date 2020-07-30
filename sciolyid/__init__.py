@@ -65,6 +65,7 @@ def setup(*args, **kwargs):
         "log_dir",
         "restricted_list_dir",
         "tmp_upload_dir",
+        "validation_local_dir",
         "validation_repo_dir",
         "website",
     )
@@ -76,7 +77,8 @@ def setup(*args, **kwargs):
         "backups_dir",
         "download_dir",
         "log_dir",
-        "tmp_upload_dir"
+        "tmp_upload_dir",
+        "validation_local_dir",
     )
     for item in bot_files_subdirs:
         if config.options[item]:
@@ -96,10 +98,18 @@ def setup(*args, **kwargs):
             config.options[item] = f"{config.options['data_dir']}{config.options[item]}"
 
     config.options["id_type"] = config.options["id_type"].lower()
-
     config.options["short_id_type"] = (
         config.options["short_id_type"] or config.options["id_type"][0]
     )
+
+    config.options["hashes_url"] = (
+        config.options["hashes_url"]
+        or "https://raw.githubusercontent.com/"
+        + "/".join(config.options["github_image_repo_url"].split("/")[-2:]).split(".")[
+            0
+        ]
+        + "/master/hashes.csv"
+    )  # default hashes_url is https://raw.githubusercontent.com/{user}/{repo}/master/hashes.csv
 
 
 def start():

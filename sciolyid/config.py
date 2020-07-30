@@ -34,7 +34,7 @@ web_required: Dict[str, Optional[str]] = {
     "client_id": None,  # discord client id
     "server_id": None,  # discord server that users must be a part of
     "base_image_url": None,  # root of where images are hosted
-    "validation_repo_id": None, # github repo where images are temporarily held
+    "validation_repo_url": None, # github repo where images are temporarily held
 }
 
 optional: Dict[str, Any] = {
@@ -70,9 +70,12 @@ optional: Dict[str, Any] = {
 }
 
 web_optional: Dict[str, Any] = {
-    "tmp_upload_dir": "tmp/",  # directory for temporary file storage
-    "github_token_env": "GITHUB_TOKEN",  # environment variable with github auth token
+    "tmp_upload_dir": "uploaded/",  # directory for temporary file storage
+    "validation_local_dir": "validation_repo/",  # directory for cloning the validation repo
+    "git_token_env": "GIT_TOKEN",  # environment variable with github auth token
+    "git_user_env": "GIT_USERNAME",  # environment variable with github auth token
     "validation_repo_dir": "",  # directory in validation repo to store files
+    "hashes_url": "",  # url to raw hashes.csv file in the image repo
 }
 
 options: Dict[str, Any] = {
