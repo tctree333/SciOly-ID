@@ -74,6 +74,7 @@ web_optional: Dict[str, Any] = {
     "validation_local_dir": "validation_repo/",  # directory for cloning the validation repo
     "git_token_env": "GIT_TOKEN",  # environment variable with github auth token
     "git_user_env": "GIT_USERNAME",  # environment variable with github auth token
+    "git_email_env": "GIT_EMAIL",  # environment variable with github auth token
     "validation_repo_dir": "",  # directory in validation repo to store files
     "hashes_url": "",  # url to raw hashes.csv file in the image repo
 }

@@ -42,6 +42,9 @@ else:
 os.remove(config.options["bot_files_dir"] + "git.lock")
 logger.info("done!")
 
+with verify_repo.config_writer() as cw:
+    cw.set("user.email", os.environ[config.options["git_email_env"]])
+    cw.set("user.name", os.environ[config.options["git_user_env"]])
 
 def add_images(
     sources: list,
@@ -70,7 +73,7 @@ def add_images(
 
     index = verify_repo.index
     index.add(config.options["validation_local_dir"] + "*")
-    index.commit(f"add images: id-{user_id}\n\nUsername: {username}")
+    index.commit(f"add images: id-{user_id}\n\nUsername: {username}", )
     push = verify_repo.remote("origin").push()
 
     if len(push) == 0:
