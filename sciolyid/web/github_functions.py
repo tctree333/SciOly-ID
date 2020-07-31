@@ -14,6 +14,7 @@ from PIL import Image
 import sciolyid.config as config
 from sciolyid.web.config import logger
 
+time.sleep(random.random())
 while os.path.exists(config.options["bot_files_dir"] + "git.lock"):
     logger.info("waiting...")
     time.sleep(random.random())
@@ -73,15 +74,13 @@ def add_images(
         shutil.copyfile(item, destination_path + filename)
 
     index = verify_repo.index
-    index.add(config.options["validation_local_dir"] + "*")
+    index.add(".")
     index.commit(f"add images: id-{user_id}\n\nUsername: {username}")
     push = verify_repo.remote("origin").push()
 
     if len(push) == 0:
         return None
-    for p in push:
-        print(p, p.remote_ref_string)
-    return push[0].remote_ref_string
+    return ""
 
 
 def find_duplicates(image, distance: int = 5) -> list:
