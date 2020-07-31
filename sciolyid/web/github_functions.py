@@ -74,7 +74,7 @@ def add_images(
         shutil.copyfile(item, destination_path + filename)
 
     index = verify_repo.index
-    index.add(".")
+    index.add("*")
     index.commit(f"add images: id-{user_id}\n\nUsername: {username}")
     push = verify_repo.remote("origin").push()
 
