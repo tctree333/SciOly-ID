@@ -19,8 +19,8 @@ MAX_FILESIZE = 4000000  # 4 mb
 
 class DiscordBotAuth(requests.auth.AuthBase):
     def __call__(self, request):
-        request.headers["Authorization"] = "Bot " + os.getenv(
-            config.options["bot_token_env"]
+        request.headers["Authorization"] = (
+            "Bot " + os.environ[config.options["bot_token_env"]]
         )
         return request
 

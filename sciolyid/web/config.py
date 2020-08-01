@@ -17,7 +17,7 @@ if config.options["sentry"]:
             if os.getenv("CURRENT_PLATFORM") != "Heroku"
             else f"{os.getenv('HEROKU_RELEASE_VERSION')}:{os.getenv('HEROKU_SLUG_DESCRIPTION')}"
         ),
-        dsn=os.getenv("SENTRY_API_DSN"),
+        dsn=os.getenv(config.options["sentry_web_dsn_env"]),
         integrations=[FlaskIntegration()],
     )
 
@@ -25,8 +25,8 @@ app = Flask(__name__)
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 app.config["SESSION_COOKIE_SAMESITE"] = "Strict"
 app.config["SESSION_COOKIE_SECURE"] = True
-app.secret_key = os.getenv("FLASK_SECRET_KEY")
-FRONTEND_URL: str = os.getenv("FRONTEND_URL", "")
+app.secret_key = os.getenv(config.options["secret_key_env"])
+FRONTEND_URL: str = os.getenv(config.options["frontend_url_env"], "")
 
 @app.after_request  # enable CORS
 def after_request(response):

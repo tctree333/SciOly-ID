@@ -77,6 +77,11 @@ web_optional: Dict[str, Any] = {
     "git_email_env": "GIT_EMAIL",  # environment variable with github auth token
     "validation_repo_dir": "",  # directory in validation repo to store files
     "hashes_url": "",  # url to raw hashes.csv file in the image repo
+    "sentry_web_dsn_env": "SENTRY_API_DSN",  # name of environment variable containing the sentry dsn
+    "celery_broker_env": "CELERY_BROKER_URL",  # name of environment variable with the database url for celery (broker)
+    "secret_key_env": "FLASK_SECRET_KEY",  # name of environment variable for signed cookies secret key
+    "frontend_url_env": "FRONTEND_URL",  # name of environment variable for frontend url
+    "client_secret_env": "DISCORD_CLIENT_SECRET",  # name of environment variable for discord client secret
 }
 
 options: Dict[str, Any] = {
