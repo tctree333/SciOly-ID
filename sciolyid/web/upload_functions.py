@@ -1,51 +1,22 @@
 import csv
+import imghdr
 import os
-import time
 import random
 import shutil
-from typing import Union, Optional
-
 import time
+from typing import Callable, Optional, Union
+
 import imagehash
 import requests
-from git import Repo
 from PIL import Image
 
 import sciolyid.config as config
 from sciolyid.web.config import logger
+from sciolyid.web.git import verify_repo
 
-time.sleep(random.random())
-while os.path.exists(config.options["bot_files_dir"] + "git.lock"):
-    logger.info("waiting...")
-    time.sleep(random.random())
-with open(config.options["bot_files_dir"] + "git.lock", "w") as f:
-    f.write("locked")
-logger.info("locked")
-
-verify_repo: Repo
-if os.path.exists(config.options["validation_local_dir"]):
-    verify_repo = Repo(config.options["validation_local_dir"])
-    verify_repo.remote("origin").fetch()
-    verify_repo.head.reset(working_tree=True)
-else:
-    os.makedirs(config.options["validation_local_dir"])
-    repo_url = config.options["validation_repo_url"].split("/")
-    repo_url[2] = (
-        os.environ[config.options["git_user_env"]]
-        + ":"
-        + os.environ[config.options["git_token_env"]]
-        + "@"
-        + repo_url[2]
-    )
-    verify_repo = Repo.clone_from(
-        "/".join(repo_url), config.options["validation_local_dir"]
-    )
-os.remove(config.options["bot_files_dir"] + "git.lock")
-logger.info("done!")
-
-with verify_repo.config_writer() as cw:
-    cw.set_value("user", "email", os.environ[config.options["git_email_env"]])
-    cw.set_value("user", "name", os.environ[config.options["git_user_env"]])
+VALID_MIMETYPES = ("image/jpeg", "image/png")
+VALID_IMG_TYPES = ("jpeg", "png")
+MAX_FILESIZE = 4000000  # 4 mb
 
 
 def add_images(
@@ -76,11 +47,27 @@ def add_images(
     index = verify_repo.index
     index.add("*")
     index.commit(f"add images: id-{user_id}\n\nUsername: {username}")
-    push = verify_repo.remote("origin").push()
+    push = verify_repo.remote("origin").push(progress=gen_progress(user_id))
 
     if len(push) == 0:
         return None
     return ""
+
+
+def gen_progress(user_id: Union[int, str]) -> Callable:
+    if isinstance(user_id, int):
+        user_id = str(user_id)
+
+    def wrapped_progress(op_code, cur_count, max_count=None, message=""):
+        nonlocal user_id
+        print("user_id", user_id)
+        print("op_code", op_code)
+        print("cur_count", cur_count)
+        print("max_count", max_count)
+        print("message", message, "\n")
+        return
+
+    return wrapped_progress
 
 
 def find_duplicates(image, distance: int = 5) -> list:
@@ -96,3 +83,25 @@ def find_duplicates(image, distance: int = 5) -> list:
         if current_hash - imagehash.hex_to_hash(hash_value) <= distance:
             matches.append(config.options["base_image_url"] + filename.strip("./"))
     return matches
+
+
+def verify_image(f, mimetype) -> Union[bool, str]:
+    if mimetype not in VALID_MIMETYPES:
+        return False
+
+    f.seek(0, 2)
+    size = f.tell()
+    f.seek(0)
+    if not size <= MAX_FILESIZE:
+        return False
+
+    ext = imghdr.what(None, h=f.read())
+    if ext not in VALID_IMG_TYPES:
+        return False
+
+    try:
+        Image.open(f).verify()
+    except:
+        return False
+
+    return ext

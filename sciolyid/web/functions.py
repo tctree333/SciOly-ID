@@ -12,10 +12,6 @@ import sciolyid.config as config
 PROFILE_URL = "https://discord.com/api/users/{id}"
 AVATAR_URL = "https://cdn.discordapp.com/avatars/{id}/{avatar}.{ext}"
 
-VALID_MIMETYPES = ("image/jpeg", "image/png")
-VALID_IMG_TYPES = ("jpeg", "png")
-MAX_FILESIZE = 4000000  # 4 mb
-
 
 class DiscordBotAuth(requests.auth.AuthBase):
     def __call__(self, request):
@@ -41,25 +37,3 @@ def fetch_profile(user_id: Union[int, str]) -> Dict[str, str]:
     )
 
     return profile
-
-
-def verify_image(f, mimetype) -> Union[bool, str]:
-    if mimetype not in VALID_MIMETYPES:
-        return False
-
-    f.seek(0, 2)
-    size = f.tell()
-    f.seek(0)
-    if not size <= MAX_FILESIZE:
-        return False
-
-    ext = imghdr.what(None, h=f.read())
-    if ext not in VALID_IMG_TYPES:
-        return False
-
-    try:
-        Image.open(f).verify()
-    except:
-        return False
-
-    return ext

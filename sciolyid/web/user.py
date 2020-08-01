@@ -104,8 +104,8 @@ def logout():
     return redirect(redirect_url)
 
 
-@bp.route("/profile")
-def profile():
+@bp.route("/profile", methods=["GET"])
+def get_profile():
     logger.info("endpoint: profile")
     uid = get_user_id()
     profile = fetch_profile(uid)

@@ -12,8 +12,9 @@ from sentry_sdk import capture_exception
 
 import sciolyid.config as config
 from sciolyid.web.config import FRONTEND_URL, app, logger
-from sciolyid.web.functions import fetch_profile, verify_image
-from sciolyid.web.github_functions import add_images, find_duplicates
+from sciolyid.web.functions import fetch_profile
+from sciolyid.web.upload_functions import (add_images, find_duplicates,
+                                           verify_image)
 from sciolyid.web.user import get_user_id
 
 bp = Blueprint("upload", __name__, url_prefix="/upload")
