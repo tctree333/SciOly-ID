@@ -1,11 +1,8 @@
-import imghdr
 import os
-import time
 from typing import Dict, Union
 
 import flask
 import requests
-from PIL import Image
 
 import sciolyid.config as config
 

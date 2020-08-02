@@ -113,4 +113,4 @@ def setup(*args, **kwargs):
 
 
 def start():
-    import sciolyid.start_bot  # pylint: disable=unused-import
+    import sciolyid.start_bot  # pylint: disable=unused-import,import-outside-toplevel

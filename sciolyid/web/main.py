@@ -1,11 +1,7 @@
-import asyncio
-import random
-import urllib.parse
-
 import flask
 from sentry_sdk import capture_exception
 
-from sciolyid.web import user, upload
+from sciolyid.web import upload, user
 from sciolyid.web.config import app, logger
 
 app.register_blueprint(user.bp)

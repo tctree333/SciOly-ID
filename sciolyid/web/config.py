@@ -1,12 +1,10 @@
-import asyncio
 import os
-import random
 
 import sentry_sdk
-from flask import Flask, session
+from flask import Flask
 from sentry_sdk.integrations.flask import FlaskIntegration
 
-from sciolyid.data import logger
+from sciolyid.data import logger  # pylint: disable=unused-import
 import sciolyid.config as config
 
 if config.options["sentry"]:
