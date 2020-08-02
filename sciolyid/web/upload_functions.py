@@ -26,7 +26,7 @@ def add_images(
     user_id: int,
     username: str,
     use_filenames: bool = True,
-) -> Optional[str]:
+):
     different_dests = False
     if isinstance(destinations, list):
         if len(destinations) != len(sources):
@@ -46,8 +46,6 @@ def add_images(
         shutil.copyfile(item, destination_path + filename)
 
     git_tasks.push.delay(f"add images: id-{user_id}\n\nUsername: {username}", user_id)
-
-    return ""
 
 
 def find_duplicates(image, distance: int = 5) -> list:

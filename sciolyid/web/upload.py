@@ -93,9 +93,12 @@ def save():
             sources.append(current_path + filename)
             destinations.append(remote_path)
 
-    url = add_images(sources, destinations, user_id, username)
+    add_images(sources, destinations, user_id, username)
     shutil.rmtree(save_path)
-    return jsonify({"url": url})
+
+    status: dict = database.hgetall(f"sciolyid.upload.status:{user_id}")
+    status = {x[0].decode() : json.loads(x[1].decode()) for x in status.items()}
+    return jsonify(status)
 
 
 @bp.route("/status", methods=["GET"])

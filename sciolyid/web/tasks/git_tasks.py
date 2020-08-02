@@ -80,8 +80,12 @@ def gen_progress(user_id: Union[int, str]) -> Callable:
             "message": json.dumps(message),
         }
         database.hset(f"sciolyid.upload.status:{user_id}", mapping=data)
-        if random.randint(0, 1) == 0:
-            # only log 50% of the time
+        if (
+            random.randint(1, 4) == 1  # 25%
+            or "BEGIN" in readable_opcode
+            or "END" in readable_opcode
+        ):
+            # only log occasionally
             logger.info(data)
 
     return wrapped_progress
