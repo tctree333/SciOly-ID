@@ -1,10 +1,10 @@
 import csv
 import imghdr
 import os
-import random
+
 import shutil
-import time
-from typing import Callable, Optional, Union
+
+from typing import Union, Optional
 
 import imagehash
 import requests
@@ -13,6 +13,7 @@ from PIL import Image
 import sciolyid.config as config
 from sciolyid.web.config import logger
 from sciolyid.web.git import verify_repo
+import sciolyid.web.tasks.git_tasks as git_tasks
 
 VALID_MIMETYPES = ("image/jpeg", "image/png")
 VALID_IMG_TYPES = ("jpeg", "png")
@@ -44,30 +45,9 @@ def add_images(
         os.makedirs(destination_path, exist_ok=True)
         shutil.copyfile(item, destination_path + filename)
 
-    index = verify_repo.index
-    index.add("*")
-    index.commit(f"add images: id-{user_id}\n\nUsername: {username}")
-    push = verify_repo.remote("origin").push(progress=gen_progress(user_id))
+    git_tasks.push.delay(f"add images: id-{user_id}\n\nUsername: {username}", user_id)
 
-    if len(push) == 0:
-        return None
     return ""
-
-
-def gen_progress(user_id: Union[int, str]) -> Callable:
-    if isinstance(user_id, int):
-        user_id = str(user_id)
-
-    def wrapped_progress(op_code, cur_count, max_count=None, message=""):
-        nonlocal user_id
-        print("user_id", user_id)
-        print("op_code", op_code)
-        print("cur_count", cur_count)
-        print("max_count", max_count)
-        print("message", message, "\n")
-        return
-
-    return wrapped_progress
 
 
 def find_duplicates(image, distance: int = 5) -> list:

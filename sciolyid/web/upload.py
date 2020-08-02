@@ -1,27 +1,26 @@
 import copy
 import hashlib
+import json
 import os
 import shutil
 import time
 from itertools import chain
 
-from flask import (Blueprint, abort, jsonify, make_response, redirect, request,
-                   session, url_for)
+from flask import Blueprint, abort, jsonify, request
 from PIL import Image
-from sentry_sdk import capture_exception
 
 import sciolyid.config as config
-from sciolyid.web.config import FRONTEND_URL, app, logger
+from sciolyid.web.config import logger
 from sciolyid.web.functions import fetch_profile
-from sciolyid.web.upload_functions import (add_images, find_duplicates,
-                                           verify_image)
+from sciolyid.web.tasks import database
+from sciolyid.web.upload_functions import add_images, find_duplicates, verify_image
 from sciolyid.web.user import get_user_id
 
 bp = Blueprint("upload", __name__, url_prefix="/upload")
 
 
 @bp.route("/", methods=["GET", "POST"])
-def upload():
+def upload_files():
     logger.info("endpoint: upload")
 
     if request.method == "GET":
@@ -66,8 +65,25 @@ def upload():
 def save():
     logger.info("endpoint: upload.save")
     user_id: str = get_user_id()
+
+    if database.exists(f"sciolyid.upload.save:{user_id}"):
+        abort(500, "save already in progress!")
+    database.set(f"sciolyid.upload.save:{user_id}", "1")
+    database.delete(f"sciolyid.upload.status:{user_id}")
+    database.hset(
+        f"sciolyid.upload.status:{user_id}",
+        mapping={"start": int(time.time()), "status": json.dumps(["IN_PROGRESS"])},
+    )
+
     username: str = fetch_profile(user_id)["username"]
+
     save_path: str = config.options["tmp_upload_dir"] + user_id + "/"
+    if not os.path.exists(save_path):
+        database.delete(
+            f"sciolyid.upload.save:{user_id}", f"sciolyid.upload.status:{user_id}"
+        )
+        abort(500, "No images uploaded")
+
     sources: list = []
     destinations: list = []
     for directory in os.listdir(save_path):
@@ -76,11 +92,21 @@ def save():
         for filename in os.listdir(current_path):
             sources.append(current_path + filename)
             destinations.append(remote_path)
+
     url = add_images(sources, destinations, user_id, username)
-    if url is None:
-        abort(500, "Pushing the changes failed.")
     shutil.rmtree(save_path)
     return jsonify({"url": url})
+
+
+@bp.route("/status", methods=["GET"])
+def upload_status():
+    logger.info("endpoint: upload.save")
+    user_id: str = get_user_id()
+    if not database.exists(f"sciolyid.upload.status:{user_id}"):
+        abort(500, "no current save")
+    status: dict = database.hgetall(f"sciolyid.upload.status:{user_id}")
+    status = {x[0].decode() : json.loads(x[1].decode()) for x in status.items()}
+    return jsonify(status)
 
 
 @bp.route("/uploaded", methods=["GET"])

@@ -39,6 +39,7 @@ setuptools.setup(
             "Authlib==0.14.1",
             "gunicorn>=20.0.4, <21.0.0",
             "ImageHash>=4.0.0, <5.0.0",
+            "Celery>=4.4.3, <4.5.0",
         ]
     },
     py_modules=["config", "core", "data", "functions", "github", "start_bot"],
