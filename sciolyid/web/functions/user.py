@@ -1,13 +1,17 @@
 import os
+import time
 from typing import Dict, Union
 
 import flask
 import requests
+from flask import abort, session
 
 import sciolyid.config as config
 
 PROFILE_URL = "https://discord.com/api/users/{id}"
 AVATAR_URL = "https://cdn.discordapp.com/avatars/{id}/{avatar}.{ext}"
+
+SESSION_EXPIRE: int = 432000  # time (seconds) before expiring the session
 
 
 class DiscordBotAuth(requests.auth.AuthBase):
@@ -34,3 +38,11 @@ def fetch_profile(user_id: Union[int, str]) -> Dict[str, str]:
     )
 
     return profile
+
+
+def get_user_id() -> str:
+    date: int = int(session.get("date", 0))
+    if (time.time() - date) > SESSION_EXPIRE:
+        abort(403, "Your session expired")
+    uid: str = session["uid"]
+    return uid

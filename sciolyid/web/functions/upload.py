@@ -4,7 +4,7 @@ import os
 
 import shutil
 
-from typing import Union, Optional
+from typing import Union
 
 import imagehash
 import requests

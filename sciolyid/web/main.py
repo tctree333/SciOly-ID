@@ -1,7 +1,7 @@
 import flask
 from sentry_sdk import capture_exception
 
-from sciolyid.web import upload, user
+from sciolyid.web.blueprints import upload, user
 from sciolyid.web.config import app, logger
 
 app.register_blueprint(user.bp)

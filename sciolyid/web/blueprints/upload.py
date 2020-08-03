@@ -11,10 +11,9 @@ from PIL import Image
 
 import sciolyid.config as config
 from sciolyid.web.config import logger
-from sciolyid.web.functions import fetch_profile
 from sciolyid.web.tasks import database
-from sciolyid.web.upload_functions import add_images, find_duplicates, verify_image
-from sciolyid.web.user import get_user_id
+from sciolyid.web.functions.upload import add_images, find_duplicates, verify_image
+from sciolyid.web.functions.user import fetch_profile, get_user_id
 
 bp = Blueprint("upload", __name__, url_prefix="/upload")
 
@@ -97,7 +96,7 @@ def save():
     shutil.rmtree(save_path)
 
     status: dict = database.hgetall(f"sciolyid.upload.status:{user_id}")
-    status = {x[0].decode() : json.loads(x[1].decode()) for x in status.items()}
+    status = {x[0].decode(): json.loads(x[1].decode()) for x in status.items()}
     return jsonify(status)
 
 
@@ -108,7 +107,7 @@ def upload_status():
     if not database.exists(f"sciolyid.upload.status:{user_id}"):
         abort(500, "no current save")
     status: dict = database.hgetall(f"sciolyid.upload.status:{user_id}")
-    status = {x[0].decode() : json.loads(x[1].decode()) for x in status.items()}
+    status = {x[0].decode(): json.loads(x[1].decode()) for x in status.items()}
     return jsonify(status)
 
 

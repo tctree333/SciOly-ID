@@ -10,9 +10,7 @@ from sentry_sdk import capture_exception
 
 import sciolyid.config as config
 from sciolyid.web.config import FRONTEND_URL, app, logger
-from sciolyid.web.functions import fetch_profile
-
-SESSION_EXPIRE: int = 432000  # time (seconds) before expiring the session
+from sciolyid.web.functions.user import fetch_profile, get_user_id
 
 bp = Blueprint("user", __name__, url_prefix="/user")
 oauth = OAuth(app)
@@ -34,14 +32,6 @@ oauth.register(
     client_kwargs={"scope": "identify guilds", "prompt": "consent"},
 )
 discord = oauth.discord
-
-
-def get_user_id() -> str:
-    date: int = int(session.get("date", 0))
-    if (time.time() - date) > SESSION_EXPIRE:
-        abort(403, "Your session expired")
-    uid: str = session["uid"]
-    return uid
 
 
 @bp.route("/login", methods=["GET"])

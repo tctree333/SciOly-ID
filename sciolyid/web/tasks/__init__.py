@@ -17,6 +17,11 @@ celery_app = Celery(
 
 worker = celery.bin.worker.worker(app=celery_app)
 
+
+def run(args: list):
+    worker.run_from_argv("celery", args, "worker")
+
+
 ### Database communication definitions ###
 
 # sciolyid.upload.save:{user_id} = 1  # set if save in progress
