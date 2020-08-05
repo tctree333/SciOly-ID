@@ -1,3 +1,4 @@
+#!/usr/local/bin/python
 import os
 
 from github import Github, Repository

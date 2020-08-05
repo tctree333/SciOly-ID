@@ -5,5 +5,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-ENTRYPOINT [ "ls" ]
+ENTRYPOINT [ "./main.py" ]
 # [ "python", "./main.py" ]
