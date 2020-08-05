@@ -8,7 +8,7 @@ on:
       - master
 
 jobs:
-  pipeline:
+  update:
     runs-on: ubuntu-latest
 
     steps:
