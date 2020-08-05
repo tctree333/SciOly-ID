@@ -42,6 +42,6 @@ setuptools.setup(
             "Celery>=4.4.3, <4.5.0",
         ]
     },
-    py_modules=["config", "core", "data", "functions", "github", "start_bot"],
+    py_modules=["config", "core", "data", "functions", "downloads", "start_bot"],
     python_requires="~=3.7",
 )
