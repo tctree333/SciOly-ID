@@ -1,0 +1,22 @@
+name: "SciOlyID Web Image Actions - Update files"
+author: "Tomi Chen"
+description: "Custom action for updating image index files for sciolyid web."
+
+branding:
+  icon: "refresh-cw"
+  color: "blue"
+
+inputs:
+  github token:
+    description: "Your Github Token"
+    required: true
+  current repo:
+    description: "Repository id: {owner}/{name}"
+    required: true
+  subfolder:
+    description: "Are multiple image sets stored in this repo?"
+    required: false
+
+runs:
+  using: "docker"
+  image: "Dockerfile"

@@ -1,4 +1,5 @@
 import csv
+import hashlib
 import imghdr
 import os
 
@@ -47,6 +48,16 @@ def calculate_image_hashes(images, start_path, base_url):
     return hashes
 
 
+def calculate_image_ids(images, start_path):
+    ids = []
+    for path in images:
+        with open(path, "rb") as f:
+            image_id = hashlib.sha1(f.read()).hexdigest()
+            path = path.strip(start_path)
+            ids.append(("." + path, str(image_id)))
+    return ids
+
+
 def write_hashes(start_path, base_url):
     images = get_image_files(start_path)
     hashes = calculate_image_hashes(images, start_path, base_url)
@@ -55,4 +66,13 @@ def write_hashes(start_path, base_url):
         writer.writerows(hashes)
 
 
-write_hashes(".", "./")
+def write_ids(start_path):
+    images = get_image_files(start_path)
+    ids = calculate_image_ids(images, start_path)
+    with open("ids.csv", "w") as f:
+        writer = csv.writer(f)
+        writer.writerows(ids)
+
+
+# write_hashes(".", "./")
+# write_ids(".")
