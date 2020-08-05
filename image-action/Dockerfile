@@ -1,9 +1,8 @@
-FROM python:3.7-slim
+FROM python:3.7
 
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY main.py .
-COPY generate_hashes_ids.py .
+COPY . .
 
-ENTRYPOINT [ "/usr/bin/python", "main.py" ]
+ENTRYPOINT [ "python", "./main.py" ]
