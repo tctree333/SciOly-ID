@@ -6,4 +6,4 @@ RUN pip install -r requirements.txt
 COPY main.py .
 COPY generate_hashes_ids.py .
 
-ENTRYPOINT [ "python", "main.py" ]
+ENTRYPOINT [ "python", "./main.py" ]
