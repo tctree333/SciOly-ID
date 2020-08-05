@@ -12,7 +12,7 @@ from PIL import Image
 import sciolyid.config as config
 from sciolyid.web.config import logger
 from sciolyid.web.tasks import database
-from sciolyid.web.functions.upload import add_images, find_duplicates, verify_image
+from sciolyid.web.functions.images import add_images, find_duplicates, verify_image
 from sciolyid.web.functions.user import fetch_profile, get_user_id
 
 bp = Blueprint("upload", __name__, url_prefix="/upload")
