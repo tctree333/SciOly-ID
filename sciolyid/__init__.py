@@ -102,14 +102,25 @@ def setup(*args, **kwargs):
         config.options["short_id_type"] or config.options["id_type"][0]
     )
 
-    config.options["hashes_url"] = (
-        config.options["hashes_url"]
-        or "https://raw.githubusercontent.com/"
-        + "/".join(config.options["github_image_repo_url"].split("/")[-2:]).split(".")[
-            0
-        ]
-        + "/master/hashes.csv"
-    )  # default hashes_url is https://raw.githubusercontent.com/{user}/{repo}/master/hashes.csv
+    config.options["hashes_url"] = config.options["hashes_url"] or [
+        "https://raw.githubusercontent.com/"
+        + "/".join(url.split("/")[-2:]).split(".")[0]
+        + f"/master/{path}hashes.csv"
+        for url, path in (
+            (config.options["github_image_repo_url"], ""),
+            (config.options["validation_repo_url"], config.options["validation_repo_dir"]),
+        )
+    ]  # default hashes_url is https://raw.githubusercontent.com/{user}/{repo}/master/hashes.csv
+
+    config.options["ids_url"] = config.options["ids_url"] or [
+        "https://raw.githubusercontent.com/"
+        + "/".join(url.split("/")[-2:]).split(".")[0]
+        + f"/master/{path}ids.csv"
+        for url, path in (
+            (config.options["github_image_repo_url"], ""),
+            (config.options["validation_repo_url"], config.options["validation_repo_dir"]),
+        )
+    ]  # default ids_url is https://raw.githubusercontent.com/{user}/{repo}/master/{path}ids.csv
 
 
 def start():
