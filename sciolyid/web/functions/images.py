@@ -1,19 +1,17 @@
 import csv
 import imghdr
 import os
-
 import shutil
-
-from typing import Union
+from typing import Dict, Optional, Set, Union
 
 import imagehash
 import requests
 from PIL import Image
 
 import sciolyid.config as config
+import sciolyid.web.tasks.git_tasks as git_tasks
 from sciolyid.web.config import logger
 from sciolyid.web.git import verify_repo
-import sciolyid.web.tasks.git_tasks as git_tasks
 
 VALID_MIMETYPES = ("image/jpeg", "image/png")
 VALID_IMG_TYPES = ("jpeg", "png")
@@ -49,18 +47,37 @@ def add_images(
 
 
 def find_duplicates(image, distance: int = 5) -> list:
-    resp = requests.get(config.options["hashes_url"])
-    if resp.status_code != 200:
-        return ["Failed to get hashes file."]
+    files: Set[str] = set()
+    for url in config.options["hashes_url"]:
+        resp = requests.get(url, timeout=10)
+        if resp.status_code != 200:
+            return ["Failed to get hashes file."]
+        files.union(set(resp.text.strip().split("\n")))
+
     if isinstance(image, str):
         image = Image.open(image)
     current_hash = imagehash.phash(image)
     matches = []
-    r = csv.reader(resp.text.strip().split("\n"))
-    for filename, hash_value in r:
-        if current_hash - imagehash.hex_to_hash(hash_value) <= distance:
-            matches.append(config.options["base_image_url"] + filename.strip("./"))
+    r = csv.reader(files)
+    for url, image_hash in r:
+        if current_hash - imagehash.hex_to_hash(image_hash) <= distance:
+            matches.append(url)
     return matches
+
+
+def generate_id_lookup() -> Optional[Dict[str, str]]:
+    files: Set[str] = set()
+    for url in config.options["ids_url"]:
+        resp = requests.get(url, timeout=10)
+        if resp.status_code != 200:
+            return None
+        files.union(set(resp.text.strip().split("\n")))
+
+    lookup = {}
+    r = csv.reader(files)
+    for filename, image_id in r:
+        lookup[filename] = image_id
+    return lookup
 
 
 def verify_image(f, mimetype) -> Union[bool, str]:
@@ -79,7 +96,7 @@ def verify_image(f, mimetype) -> Union[bool, str]:
 
     try:
         Image.open(f).verify()
-    except:
+    except:  # pylint: disable=bare-except
         return False
 
     return ext
