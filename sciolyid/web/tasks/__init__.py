@@ -34,3 +34,18 @@ def run(args: list):
 #     message: message
 #     status:  # "IN_PROGRESS" during, push result flags after
 # }
+
+
+# sciolyid.verify.images:valid = {  # sorted set
+#     image_id: num of times
+# }
+# sciolyid.verify.images:invalid = {  # sorted set
+#     image_id: num of times
+# }
+# sciolyid.verify.images:duplicate = {  # sorted set
+#     image_id: num of times
+# }
+
+# sciolyid.verify.user:{user_id} = [  # set
+#     image_id...
+# ]
