@@ -46,13 +46,27 @@ def add_images(
     git_tasks.push.delay(f"add images: id-{user_id}\n\nUsername: {username}", user_id)
 
 
-def find_duplicates(image, distance: int = 5) -> list:
+def find_duplicates(image, distance: int = 5, ignore_verify=False) -> list:
+    logger.info("find duplicates")
     files: Set[str] = set()
     for url in config.options["hashes_url"]:
+        if (
+            ignore_verify
+            and "/".join(config.options["validation_repo_url"].split("/")[-2:-1]).split(
+                ".git"
+            )[0]
+            in url
+        ):
+            continue
         resp = requests.get(url, timeout=10)
         if resp.status_code != 200:
+            logger.info(
+                f"hashes lookup failed: status {resp.status_code}; url {resp.url}"
+            )
             return ["Failed to get hashes file."]
-        files.union(set(resp.text.strip().split("\n")))
+        files = files.union(
+            set(map(lambda x: x.strip(), resp.text.strip().split("\n")))
+        )
 
     if isinstance(image, str):
         image = Image.open(image)
@@ -66,12 +80,16 @@ def find_duplicates(image, distance: int = 5) -> list:
 
 
 def generate_id_lookup() -> Optional[Dict[str, str]]:
+    logger.info("generate id lookup")
     files: Set[str] = set()
     for url in config.options["ids_url"]:
         resp = requests.get(url, timeout=10)
         if resp.status_code != 200:
+            logger.info(f"id lookup failed: status {resp.status_code}; url {resp.url}")
             return None
-        files.union(set(resp.text.strip().split("\n")))
+        files = files.union(
+            set(map(lambda x: x.strip(), resp.text.strip().split("\n")))
+        )
 
     lookup = {}
     r = csv.reader(files)
