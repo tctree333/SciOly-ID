@@ -34,7 +34,7 @@ oauth.register(
 discord = oauth.discord
 
 
-@bp.route("/login", methods=["GET"])
+@bp.route("/login", methods=("GET",))
 def login():
     logger.info("endpoint: login")
     redirect_uri = url_for("user.authorize", _external=True, _scheme="https")
@@ -79,7 +79,7 @@ def authorize():
     return redirect(redirection)
 
 
-@bp.route("/logout", methods=["GET"])
+@bp.route("/logout", methods=("GET",))
 def logout():
     logger.info("endpoint: logout")
 
@@ -94,7 +94,7 @@ def logout():
     return redirect(redirect_url)
 
 
-@bp.route("/profile", methods=["GET"])
+@bp.route("/profile", methods=("GET",))
 def get_profile():
     logger.info("endpoint: profile")
     uid = get_user_id()

@@ -1,3 +1,4 @@
+import imghdr
 import os
 import random
 
@@ -5,14 +6,15 @@ from flask import Blueprint, abort, jsonify, request, send_file, url_for
 
 import sciolyid.config as config
 from sciolyid.web.config import logger
-from sciolyid.web.functions.images import find_duplicates, generate_id_lookup
+from sciolyid.web.functions.images import (VALID_IMG_TYPES, find_duplicates,
+                                           generate_id_lookup)
 from sciolyid.web.functions.user import get_user_id
 from sciolyid.web.tasks import database
 
 bp = Blueprint("verify", __name__, url_prefix="/verify")
 
 
-@bp.route("/", methods=["GET"])
+@bp.route("/", methods=("GET",))
 def verify_files():
     logger.info("endpoint: verify")
     user_id: str = get_user_id()
@@ -23,19 +25,19 @@ def verify_files():
             + config.options["validation_repo_dir"][:-1]
         )
     )
-    image_id = random.choice(lookup.keys())
+    image_id = random.choice(tuple(lookup))
     while database.sismember(f"sciolyid.verify.user:{user_id}", image_id):
-        image_id = random.choice(lookup.keys())
+        image_id = random.choice(tuple(lookup))
 
     output = {}
     output["url"] = url_for(".send_image", image_id=image_id)
-    output["duplicates"] = find_duplicates(request.form["item"])
+    output["duplicates"] = find_duplicates(lookup[image_id], ignore_verify=True)
     output["item"] = lookup[image_id].split("/")[-2]
     output["id"] = image_id
     return jsonify(output)
 
 
-@bp.route("/image/<string:image_id>", methods=["GET"])
+@bp.route("/image/<string:image_id>", methods=("GET",))
 def send_image(image_id: str):
     logger.info("endpoint: verify.send_image")
     get_user_id()
@@ -65,13 +67,14 @@ def filename_lookup(start_path: str) -> dict:
             child_path = current + "/" + child_filename
             if os.path.isdir(child_path):
                 stack.append(child_path)
-            else:
-                image_id = id_lookup["./" + child_path.strip(start_path).strip("/")]
+                continue
+            if imghdr.what(child_path) in VALID_IMG_TYPES:
+                image_id = id_lookup["./" + os.path.relpath(child_path, start_path)]
                 result[image_id] = child_path
     return result
 
 
-@bp.route("/confirm", methods=["POST"])
+@bp.route("/confirm", methods=("POST",))
 def confirm():
     logger.info("endpoint: verify.confirm")
     user_id: str = get_user_id()
@@ -80,19 +83,25 @@ def confirm():
     if confirmation not in ("valid", "invalid", "duplicate"):
         abort(400, "invalid confirmation field")
 
-    lookup = os.path.abspath(
-        config.options["validation_local_dir"]
-        + config.options["validation_repo_dir"][:-1]
+    lookup = filename_lookup(
+        os.path.abspath(
+            config.options["validation_local_dir"]
+            + config.options["validation_repo_dir"][:-1]
+        )
     )
     image_id = request.form["id"]
     if image_id not in lookup.keys():
         abort(400, "invalid id")
 
+    if database.sismember(f"sciolyid.verify.user:{user_id}", image_id):
+        abort(400, "You've already confirmed this image!")
+
     database.zincrby(f"sciolyid.verify.images:{confirmation}", 1, image_id)
     database.sadd(f"sciolyid.verify.user:{user_id}", image_id)
+    return jsonify({"success": True})
 
 
-# @bp.route("/save", methods=["GET", "POST"])
+# @bp.route("/save", methods=("GET", "POST"))
 # def save():
 #     logger.info("endpoint: upload.save")
 #     user_id: str = get_user_id()
@@ -132,7 +141,7 @@ def confirm():
 #     return jsonify(status)
 
 
-# @bp.route("/status", methods=["GET"])
+# @bp.route("/status", methods=("GET",))
 # def upload_status():
 #     logger.info("endpoint: upload.save")
 #     user_id: str = get_user_id()
@@ -143,7 +152,7 @@ def confirm():
 #     return jsonify(status)
 
 
-# @bp.route("/uploaded", methods=["GET"])
+# @bp.route("/uploaded", methods=("GET",))
 # def uploaded():
 #     logger.info("endpoint: upload.uploaded")
 #     user_id: str = get_user_id()
