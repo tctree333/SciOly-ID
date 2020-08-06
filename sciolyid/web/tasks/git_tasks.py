@@ -60,6 +60,7 @@ def push(commit_message: str, user_id: Union[int, str]):
         )
         logger.info(set_flags)
     database.delete(f"sciolyid.upload.save:{user_id}")
+    database.expire(f"sciolyid.upload.status:{user_id}", 60)
 
 
 def gen_progress(user_id: Union[int, str]) -> Callable:
