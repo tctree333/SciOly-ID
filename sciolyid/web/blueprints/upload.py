@@ -11,14 +11,15 @@ from PIL import Image
 
 import sciolyid.config as config
 from sciolyid.web.config import logger
-from sciolyid.web.tasks import database
-from sciolyid.web.functions.images import add_images, find_duplicates, verify_image
+from sciolyid.web.functions.images import (add_images, find_duplicates,
+                                           generate_id_lookup, verify_image)
 from sciolyid.web.functions.user import fetch_profile, get_user_id
+from sciolyid.web.tasks import database
 
 bp = Blueprint("upload", __name__, url_prefix="/upload")
 
 
-@bp.route("/", methods=["GET", "POST"])
+@bp.route("/", methods=("GET", "POST"))
 def upload_files():
     logger.info("endpoint: upload")
 
@@ -38,29 +39,60 @@ def upload_files():
     if len(request.files) > 100:
         abort(413, "You can only upload 100 files at a time!")
     files = chain.from_iterable(request.files.listvalues())
-    output: dict = {"invalid": [], "duplicates": {}, "sha1": {}}
+    output: dict = {"invalid": [], "duplicates": {}, "sha1": {}, "rejected": []}
+    id_lookup = generate_id_lookup()
     for upload in files:
-        with copy.deepcopy(upload.stream) as f:
-            ext = verify_image(f, upload.mimetype)
-            if not ext:
-                output["invalid"].append(upload.filename)
-                continue
-            dupes = find_duplicates(Image.open(f))
-            if dupes:
-                output["duplicates"][upload.filename] = dupes
-            f.seek(0)
-            sha1 = hashlib.sha1(f.read()).hexdigest()
-        output["sha1"][upload.filename] = sha1
         save_path = (
             f"{config.options['tmp_upload_dir']}{user_id}/{request.form['item']}/"
         )
         os.makedirs(save_path, exist_ok=True)
-        upload.save(f"{save_path}{sha1}.{ext}")
+        tmp_path = f"{save_path}tmp"
+        upload.save(tmp_path)
+        with open(tmp_path, "rb") as f:
+            sha1 = hashlib.sha1(f.read()).hexdigest()
+            if sha1 in id_lookup.values():
+                output["rejected"].append(upload.filename)
+                os.remove(tmp_path)
+                continue
+
+            f.seek(0)
+            ext = verify_image(f, upload.mimetype)
+            if not ext:
+                output["invalid"].append(upload.filename)
+                os.remove(tmp_path)
+                continue
+
+            dupes = find_duplicates(Image.open(f))
+            if dupes:
+                output["duplicates"][upload.filename] = dupes
+
+        output["sha1"][upload.filename] = sha1
+        os.rename(tmp_path, f"{save_path}{sha1}.{ext}")
 
     return jsonify(output)
 
 
-@bp.route("/save", methods=["GET", "POST"])
+@bp.route("/delete/<string:image_id>", methods=("DELETE",))
+def delete(image_id):
+    logger.info("endpoint: upload.delete")
+    user_id: str = get_user_id()
+    tmp = f"{config.options['tmp_upload_dir']}{user_id}/"
+    images = []
+    for directory in os.listdir(tmp):
+        if os.path.isdir(tmp + directory):
+            images += list(map(lambda x, d=directory: (x, d), os.listdir(tmp + directory)))
+    found = False
+    for filename in images:
+        if os.path.splitext(filename[0])[0] == image_id:
+            found = os.path.join(filename[1], filename[0])
+            break
+    if not found:
+        abort(404, "image id not found!")
+    os.remove(tmp + found)
+    return jsonify({"deleted": True})
+
+
+@bp.route("/save", methods=("GET", "POST"))
 def save():
     logger.info("endpoint: upload.save")
     user_id: str = get_user_id()
@@ -100,7 +132,7 @@ def save():
     return jsonify(status)
 
 
-@bp.route("/status", methods=["GET"])
+@bp.route("/status", methods=("GET",))
 def upload_status():
     logger.info("endpoint: upload.save")
     user_id: str = get_user_id()
@@ -111,7 +143,7 @@ def upload_status():
     return jsonify(status)
 
 
-@bp.route("/uploaded", methods=["GET"])
+@bp.route("/uploaded", methods=("GET",))
 def uploaded():
     logger.info("endpoint: upload.uploaded")
     user_id: str = get_user_id()
