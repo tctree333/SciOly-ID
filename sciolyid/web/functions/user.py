@@ -2,7 +2,6 @@ import os
 import time
 from typing import Dict, Union
 
-import flask
 import requests
 from flask import abort, session
 
@@ -26,7 +25,7 @@ def fetch_profile(user_id: Union[int, str]) -> Dict[str, str]:
     url = PROFILE_URL.format(id=user_id)
     resp = requests.get(url, auth=DiscordBotAuth(), timeout=10)
     if resp.status_code != 200:
-        flask.abort(500, "Failed to fetch profile")
+        abort(500, "Failed to fetch profile")
     json: dict = resp.json()
 
     profile: Dict[str, str] = dict()
