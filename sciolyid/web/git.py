@@ -18,25 +18,25 @@ def _lock():
     logger.info("locked")
 
 
-def _setup_repo() -> Repo:
+def _setup_repo(repo_url: str, repo_dir: str) -> Repo:
     _lock()
     repo: Repo
-    if os.path.exists(config.options["validation_local_dir"]):
-        repo = Repo(config.options["validation_local_dir"])
+    if os.path.exists(repo_dir):
+        repo = Repo(repo_dir)
         repo.remote("origin").fetch()
         repo.head.reset(working_tree=True)
     else:
-        os.makedirs(config.options["validation_local_dir"])
-        repo_url = config.options["validation_repo_url"].split("/")
-        repo_url[2] = (
+        os.makedirs(repo_dir)
+        new_repo_url = repo_url.split("/")
+        new_repo_url[2] = (
             os.environ[config.options["git_user_env"]]
             + ":"
             + os.environ[config.options["git_token_env"]]
             + "@"
-            + repo_url[2]
+            + new_repo_url[2]
         )
         repo = Repo.clone_from(
-            "/".join(repo_url), config.options["validation_local_dir"]
+            "/".join(new_repo_url), repo_dir
         )
     os.remove(config.options["bot_files_dir"] + "git.lock")
     logger.info("done!")
@@ -47,4 +47,5 @@ def _setup_repo() -> Repo:
     return repo
 
 
-verify_repo: Repo = _setup_repo()
+verify_repo: Repo = _setup_repo(config.options["validation_repo_url"], config.options["validation_local_dir"])
+image_repo: Repo = _setup_repo(config.options["github_image_repo_url"], config.options["download_dir"])
