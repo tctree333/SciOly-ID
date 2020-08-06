@@ -23,8 +23,8 @@ def update_files(start_path, base_url):
     )
     ids = "\n".join(map(",".join, calculate_image_ids(images, start_path)))
 
-    hashes_csv = repo.get_contents(f"{start_path.strip('.').strip('/')}/hashes.csv")
-    ids_csv = repo.get_contents(f"{start_path.strip('.').strip('/')}/ids.csv")
+    hashes_csv = repo.get_contents(f"{os.path.normpath(start_path)}/hashes.csv")
+    ids_csv = repo.get_contents(f"{os.path.normpath(start_path)}/ids.csv")
 
     repo.update_file(hashes_csv.path, "Update hashes.csv", hashes, hashes_csv.sha)
     repo.update_file(ids_csv.path, "Update ids.csv", ids, ids_csv.sha)

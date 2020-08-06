@@ -14,13 +14,13 @@ def file_type(filename):
         return None
     try:
         Image.open(filename).verify()
-    except:
+    except:  # pylint: disable=bare-except
         return None
     return "img"
 
 
 def get_image_files(start_path):
-    start_path = start_path[:-1] if start_path[-1] == "/" else start_path
+    os.path.normpath(start_path)
     image_paths = []
     stack = []
     visited = []
@@ -42,19 +42,20 @@ def get_image_files(start_path):
 
 def calculate_image_hashes(images, start_path, base_url):
     hashes = []
+    os.path.normpath(start_path)
     for path in images:
         image_hash = imagehash.phash(Image.open(path))
-        hashes.append((base_url + path.strip(start_path).strip("/"), str(image_hash)))
+        hashes.append((base_url + os.path.relpath(path, start_path), str(image_hash)))
     return hashes
 
 
 def calculate_image_ids(images, start_path):
     ids = []
+    os.path.normpath(start_path)
     for path in images:
         with open(path, "rb") as f:
             image_id = hashlib.sha1(f.read()).hexdigest()
-            path = path.strip(start_path)
-            ids.append(("." + path, str(image_id)))
+            ids.append(("./" + os.path.relpath(path, start_path), str(image_id)))
     return ids
 
 
