@@ -1,4 +1,3 @@
-import imghdr
 import os
 import random
 
@@ -6,8 +5,7 @@ from flask import Blueprint, abort, jsonify, request, send_file, url_for
 
 import sciolyid.config as config
 from sciolyid.web.config import logger
-from sciolyid.web.functions.images import (VALID_IMG_TYPES, find_duplicates,
-                                           generate_id_lookup)
+from sciolyid.web.functions.images import filename_lookup, find_duplicates
 from sciolyid.web.functions.user import get_user_id
 from sciolyid.web.tasks import database
 
@@ -22,7 +20,7 @@ def verify_files():
     lookup = filename_lookup(
         os.path.abspath(
             config.options["validation_local_dir"]
-            + config.options["validation_repo_dir"][:-1]
+            + config.options["validation_repo_dir"]
         )
     )
     image_id = random.choice(tuple(lookup))
@@ -45,33 +43,13 @@ def send_image(image_id: str):
     lookup = filename_lookup(
         os.path.abspath(
             config.options["validation_local_dir"]
-            + config.options["validation_repo_dir"][:-1]
+            + config.options["validation_repo_dir"]
         )
     )
     image_path = lookup.get(image_id, None)
     if not image_path:
         abort(404, "Filename not found!")
     return send_file(image_path)
-
-
-def filename_lookup(start_path: str) -> dict:
-    id_lookup = generate_id_lookup()
-    if not id_lookup:
-        abort(500, "filename lookup failed!")
-    result = {}
-    stack = []
-    stack.append(start_path)
-    while stack:
-        current = stack.pop()
-        for child_filename in os.listdir(current):
-            child_path = current + "/" + child_filename
-            if os.path.isdir(child_path):
-                stack.append(child_path)
-                continue
-            if imghdr.what(child_path) in VALID_IMG_TYPES:
-                image_id = id_lookup["./" + os.path.relpath(child_path, start_path)]
-                result[image_id] = child_path
-    return result
 
 
 @bp.route("/confirm", methods=("POST",))
@@ -86,7 +64,7 @@ def confirm():
     lookup = filename_lookup(
         os.path.abspath(
             config.options["validation_local_dir"]
-            + config.options["validation_repo_dir"][:-1]
+            + config.options["validation_repo_dir"]
         )
     )
     image_id = request.form["id"]

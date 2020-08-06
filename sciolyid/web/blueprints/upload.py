@@ -5,18 +5,49 @@ import os
 import shutil
 import time
 from itertools import chain
+from typing import Union
 
 from flask import Blueprint, abort, jsonify, request
 from PIL import Image
 
 import sciolyid.config as config
+import sciolyid.web.tasks.git_tasks as git_tasks
 from sciolyid.web.config import logger
-from sciolyid.web.functions.images import (add_images, find_duplicates,
-                                           generate_id_lookup, verify_image)
+from sciolyid.web.functions.images import (find_duplicates, generate_id_lookup,
+                                           verify_image)
 from sciolyid.web.functions.user import fetch_profile, get_user_id
+from sciolyid.web.git import verify_repo
 from sciolyid.web.tasks import database
 
 bp = Blueprint("upload", __name__, url_prefix="/upload")
+
+
+def add_images(
+    sources: list,
+    destinations: Union[str, list],
+    user_id: int,
+    username: str,
+    use_filenames: bool = True,
+):
+    different_dests = False
+    if isinstance(destinations, list):
+        if len(destinations) != len(sources):
+            logger.info("source/dest invalid")
+            raise IndexError("sources and destinations are not the same length")
+        different_dests = True
+
+    verify_repo.remote("origin").pull()
+    for i, item in enumerate(sources):
+        filename = item.split("/")[-1] if use_filenames else ""
+        destination_path = (
+            config.options["validation_local_dir"] + destinations[i]
+            if different_dests
+            else destinations
+        )
+        os.makedirs(destination_path, exist_ok=True)
+        shutil.copyfile(item, destination_path + filename)
+
+    git_tasks.push.delay(f"add images: id-{user_id}\n\nUsername: {username}", user_id)
 
 
 @bp.route("/", methods=("GET", "POST"))
@@ -80,7 +111,9 @@ def delete(image_id):
     images = []
     for directory in os.listdir(tmp):
         if os.path.isdir(tmp + directory):
-            images += list(map(lambda x, d=directory: (x, d), os.listdir(tmp + directory)))
+            images += list(
+                map(lambda x, d=directory: (x, d), os.listdir(tmp + directory))
+            )
     found = False
     for filename in images:
         if os.path.splitext(filename[0])[0] == image_id:
