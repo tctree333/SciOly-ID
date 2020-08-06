@@ -39,7 +39,6 @@ GIT_PUSH_OPCODES = (
     "END",  # 2
     "BEGIN",  # 1
 )
-CHECK_INTERVAL = 10  # 60*15
 
 
 def _push_helper(repo, commit_message, progress=None):
@@ -120,10 +119,11 @@ def move_images():
             + database.zrangebyscore("sciolyid.verify.images:duplicate", 3, "+inf"),
         )
     )
-    database.zremrangebyscore("sciolyid.verify.images:invalid", 3, "+inf")
-    database.zremrangebyscore("sciolyid.verify.images:duplicate", 3, "+inf")
-    for image in delete:
-        os.remove(lookup[image])
+    if delete:
+        database.zremrangebyscore("sciolyid.verify.images:invalid", 3, "+inf")
+        database.zremrangebyscore("sciolyid.verify.images:duplicate", 3, "+inf")
+        for image in delete:
+            os.remove(lookup[image])
 
     valid = set(
         map(
@@ -131,21 +131,25 @@ def move_images():
             database.zrangebyscore("sciolyid.verify.images:valid", 3, "+inf"),
         )
     )
-    database.zremrangebyscore("sciolyid.verify.images:valid", 3, "+inf")
-    for image in valid:
-        if image in delete:
-            continue
-        path = lookup[image]
-        item = os.path.dirname(os.path.relpath(path, root))
-        category = get_category(item)
-        shutil.copy(path, os.path.join(image_repo.working_tree_dir, category))
-        os.remove(path)
+    if valid:
+        database.zremrangebyscore("sciolyid.verify.images:valid", 3, "+inf")
+        for image in valid:
+            if image in delete:
+                continue
+            path = lookup[image]
+            item = os.path.dirname(os.path.relpath(path, root))
+            category = get_category(item)
+            shutil.copy(path, os.path.join(image_repo.working_tree_dir, category))
+            os.remove(path)
 
-    verify_push = _push_helper(verify_repo, "Update through verification!")
-    image_push = _push_helper(image_repo, "Update through verification!")
+    if valid or delete:
+        verify_push = _push_helper(verify_repo, "Update through verification!")
+        image_push = _push_helper(image_repo, "Update through verification!")
 
-    for result in (("verify repo", verify_push), ("image repo", image_push)):
-        if result[1] is None:
-            logger.info(result[0] + " failed completely!")
-        else:
-            logger.info(result[0] + " push success!")
+        for result in (("verify repo", verify_push), ("image repo", image_push)):
+            if result[1] is None:
+                logger.info(result[0] + " failed completely!")
+            else:
+                logger.info(result[0] + " push success!")
+    else:
+        logger.info("no changes to update!")

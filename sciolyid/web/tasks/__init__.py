@@ -1,5 +1,6 @@
 import os
 
+import celery.bin.beat
 import celery.bin.worker
 import redis
 from celery import Celery
@@ -15,11 +16,34 @@ celery_app = Celery(
     include=("sciolyid.web.tasks.git_tasks"),
 )
 
+CHECK_INTERVAL = 60 * 15
+celery_app.conf.beat_schedule = {
+    "update_repos": {
+        "task": "sciolyid.web.tasks.git_tasks.move_images",
+        "schedule": CHECK_INTERVAL,
+        "args": tuple(),
+    },
+}
+
+
 worker = celery.bin.worker.worker(app=celery_app)
+beat = celery.bin.beat.beat(app=celery_app)
 
 
-def run(args: list):
+def run_worker(args: list):
     worker.run_from_argv("celery", args, "worker")
+
+
+def run_beat(args: list):
+    beat.run_from_argv(
+        "celery",
+        args
+        + [
+            f"--schedule={config.options['bot_files_dir']}celerybeat-schedule",
+            f"--max-interval={CHECK_INTERVAL + 10}",
+        ],
+        "beat",
+    )
 
 
 ### Database communication definitions ###
