@@ -84,8 +84,8 @@ def send(type_of: str, **opt):
             "duplicate": Color.gold(),
         }
 
-        name = "Images verified!"
-        content = f"<@{opt['user_id']}> ({username}) marked an image as {opt['action']}"
+        name = "Image verified!"
+        content = f"<@{opt['user_id']}> ({username}) marked an image as {opt['action']}."
         color = color_options[opt["action"]]
 
     elif type_of == "valid":
@@ -108,11 +108,11 @@ def send(type_of: str, **opt):
     elif type_of == "error":
         name = "An error occurred!"
         content = opt["message"]
+        color = Color.dark_red()
 
-    embed = Embed(type="rich", color=color)
+    embed = Embed(type="rich", color=color, title=name, description=content)
     embed.set_footer(
         text=datetime.datetime.now().strftime("%a, %b %d, %Y at %I:%M:%S %p")
-    ).set_author(name=f"{BOT_NAME} Web")
-    embed.add_field(name=name, value=content, inline=False)
+    )
 
     webhook.send(username=f"{BOT_NAME} Web", avatar_url=BOT_AVATAR, embed=embed)
