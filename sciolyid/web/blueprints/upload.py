@@ -4,12 +4,13 @@ import os
 import shutil
 import time
 from itertools import chain
-from typing import Union
+from typing import Union, Set
 
 from flask import Blueprint, abort, jsonify, request
 from PIL import Image
 
 import sciolyid.config as config
+import sciolyid.web.functions.webhooks as webhooks
 import sciolyid.web.tasks.git_tasks as git_tasks
 from sciolyid.web.config import logger
 from sciolyid.web.functions.images import (find_duplicates, generate_id_lookup,
@@ -24,7 +25,7 @@ bp = Blueprint("upload", __name__, url_prefix="/upload")
 def add_images(
     sources: list,
     destinations: Union[str, list],
-    user_id: int,
+    user_id: str,
     username: str,
     use_filenames: bool = True,
 ):
@@ -36,6 +37,7 @@ def add_images(
         different_dests = True
 
     verify_repo.remote("origin").pull()
+    items: Set[str] = set()
     for i, item in enumerate(sources):
         filename = item.split("/")[-1] if use_filenames else ""
         destination_path = (
@@ -45,7 +47,9 @@ def add_images(
         )
         os.makedirs(destination_path, exist_ok=True)
         shutil.copyfile(item, destination_path + filename)
+        items.add(item.split("/")[-2])
 
+    webhooks.send("add", user_id=user_id, num=len(sources), items=list(items))
     git_tasks.push.delay(f"add images: id-{user_id}\n\nUsername: {username}", user_id)
 
 

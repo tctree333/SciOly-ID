@@ -78,11 +78,13 @@ web_optional: Dict[str, Any] = {
     "validation_repo_dir": "",  # directory in validation repo to store files
     "hashes_url": [],  # urls to raw hashes.csv file in both image repos
     "ids_url": [],  # urls to raw ids.csv file in both image repos
+    "commit_url_format": [],  # a format string for commit urls to both repos - image repo is first, validation repo is second
     "sentry_web_dsn_env": "SENTRY_API_DSN",  # name of environment variable containing the sentry dsn
     "celery_broker_env": "CELERY_BROKER_URL",  # name of environment variable with the database url for celery (broker)
     "secret_key_env": "FLASK_SECRET_KEY",  # name of environment variable for signed cookies secret key
     "frontend_url_env": "FRONTEND_URL",  # name of environment variable for frontend url
     "client_secret_env": "DISCORD_CLIENT_SECRET",  # name of environment variable for discord client secret
+    "discord_webhook_url": None,  # webhook url for discord notification log
 }
 
 options: Dict[str, Any] = {

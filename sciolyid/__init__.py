@@ -123,6 +123,16 @@ def setup(*args, **kwargs):
             )
         ]  # default ids_url is https://raw.githubusercontent.com/{user}/{repo}/master/{path}ids.csv
 
+        config.options["commit_url_format"] = config.options["commit_url_format"] or [
+            "https://github.com/"
+            + "/".join(url.split("/")[-2:]).split(".")[0]
+            + "/commit/{id}"
+            for url in (
+                config.options["github_image_repo_url"],
+                config.options["validation_repo_url"],
+            )
+        ]  # default commit_url_format is https://github.com/{user}/{repo}/commit/{id}
+
 
 def start():
     import sciolyid.start_bot  # pylint: disable=unused-import,import-outside-toplevel

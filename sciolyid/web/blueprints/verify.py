@@ -4,6 +4,7 @@ import random
 from flask import Blueprint, abort, jsonify, request, send_file, url_for
 
 import sciolyid.config as config
+import sciolyid.web.functions.webhooks as webhooks
 from sciolyid.web.config import logger
 from sciolyid.web.functions.images import filename_lookup, find_duplicates
 from sciolyid.web.functions.user import get_user_id
@@ -76,6 +77,7 @@ def confirm():
 
     database.zincrby(f"sciolyid.verify.images:{confirmation}", 1, image_id)
     database.sadd(f"sciolyid.verify.user:{user_id}", image_id)
+    webhooks.send("verify", user_id=user_id, action=confirmation)
     return jsonify({"success": True})
 
 
