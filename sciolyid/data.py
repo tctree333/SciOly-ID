@@ -28,6 +28,7 @@ from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 
 import sciolyid.config as config
+from sciolyid.downloads import download_github, download_logger
 
 # define database for one connection
 if config.options["local_redis"]:
@@ -159,6 +160,9 @@ if config.options["logs"]:
 
     logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
+    if config.options["download_func"] is None:
+        download_logger.addHandler(file_handler)
+        download_logger.addHandler(stream_handler)
 
     # log uncaught exceptions
     def handle_exception(exc_type, exc_value, exc_traceback):
@@ -323,14 +327,12 @@ def _config():
             config.options["category_aliases"][group] = [group]
 
     _aliases = [
-        item for group in groups.keys() for item in config.options["category_aliases"][group]
+        item for group in groups for item in config.options["category_aliases"][group]
     ]
     if len(_aliases) != len(set(_aliases)):
         raise config.BotConfigError("Aliases in category_aliases not unique")
 
     if config.options["download_func"] is None:
-        from sciolyid.downloads import download_github
-
         config.options["download_func"] = download_github
 
 
