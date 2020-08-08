@@ -79,3 +79,27 @@ def confirm():
     database.sadd(f"sciolyid.verify.user:{user_id}", image_id)
     webhooks.send("verify", user_id=user_id, action=confirmation)
     return jsonify({"success": True})
+
+
+@bp.route("/stats", methods=("GET",))
+def stats():
+    logger.info("endpoint: verify.stats")
+    get_user_id()
+
+    image_id = request.args.get("id", "", str)
+    lookup = filename_lookup(
+        os.path.abspath(
+            config.options["validation_local_dir"]
+            + config.options["validation_repo_dir"]
+        )
+    )
+    if image_id not in lookup.keys():
+        abort(400, "invalid id")
+
+    output = dict()
+    for confirmation in ("valid", "duplicate", "invalid"):
+        output[confirmation] = int(
+            database.zscore(f"sciolyid.verify.images:{confirmation}", image_id) or 0
+        )
+
+    return jsonify(output)
