@@ -4,14 +4,15 @@ import os
 import shutil
 import time
 from itertools import chain
-from typing import Union, Set
+from typing import Set, Union
 
-from flask import Blueprint, abort, jsonify, request
+from flask import Blueprint, abort, jsonify, request, send_file
 from PIL import Image
 
 import sciolyid.config as config
 import sciolyid.web.functions.webhooks as webhooks
 import sciolyid.web.tasks.git_tasks as git_tasks
+from sciolyid.data import master_id_list
 from sciolyid.web.config import logger
 from sciolyid.web.functions.images import (find_duplicates, generate_id_lookup,
                                            verify_image)
@@ -70,14 +71,17 @@ def upload_files():
     user_id: str = get_user_id()
     if not request.files:
         abort(415, "Missing Files")
-    if len(request.files) > 100:
-        abort(413, "You can only upload 100 files at a time!")
+    if len(request.files) > 10:
+        abort(413, "You can only upload 10 files at a time!")
+    item = request.form['item']
+    if item not in master_id_list:
+        abort(400, "item is invalid")
     files = chain.from_iterable(request.files.listvalues())
     output: dict = {"invalid": [], "duplicates": {}, "sha1": {}, "rejected": []}
     id_lookup = generate_id_lookup()
     for upload in files:
         save_path = (
-            f"{config.options['tmp_upload_dir']}{user_id}/{request.form['item']}/"
+            f"{config.options['tmp_upload_dir']}{user_id}/{item}/"
         )
         os.makedirs(save_path, exist_ok=True)
         tmp_path = f"{save_path}tmp"
@@ -111,6 +115,8 @@ def delete(image_id):
     logger.info("endpoint: upload.delete")
     user_id: str = get_user_id()
     tmp = f"{config.options['tmp_upload_dir']}{user_id}/"
+    if not os.path.exists(tmp):
+        abort(404, 'no uploaded images')
     images = []
     for directory in os.listdir(tmp):
         if os.path.isdir(tmp + directory):
@@ -125,6 +131,8 @@ def delete(image_id):
     if not found:
         abort(404, "image id not found!")
     os.remove(tmp + found)
+    if not os.listdir(tmp + os.path.split(found)[0]):
+        os.rmdir(tmp + os.path.split(found)[0])
     return jsonify({"deleted": True})
 
 
@@ -134,7 +142,7 @@ def save():
     user_id: str = get_user_id()
 
     if database.exists(f"sciolyid.upload.save:{user_id}"):
-        abort(500, "save already in progress!")
+        abort(400, "save already in progress!")
     database.set(f"sciolyid.upload.save:{user_id}", "1")
     database.delete(f"sciolyid.upload.status:{user_id}")
     database.hset(
@@ -149,7 +157,7 @@ def save():
         database.delete(
             f"sciolyid.upload.save:{user_id}", f"sciolyid.upload.status:{user_id}"
         )
-        abort(500, "No images uploaded")
+        abort(404, "No images uploaded")
 
     sources: list = []
     destinations: list = []
@@ -170,10 +178,10 @@ def save():
 
 @bp.route("/status", methods=("GET",))
 def upload_status():
-    logger.info("endpoint: upload.save")
+    logger.info("endpoint: upload.status")
     user_id: str = get_user_id()
     if not database.exists(f"sciolyid.upload.status:{user_id}"):
-        abort(500, "no current save")
+        abort(404, "no current save")
     status: dict = database.hgetall(f"sciolyid.upload.status:{user_id}")
     status = {x[0].decode(): json.loads(x[1].decode()) for x in status.items()}
     return jsonify(status)
@@ -185,10 +193,22 @@ def uploaded():
     user_id: str = get_user_id()
     save_path: str = config.options["tmp_upload_dir"] + user_id + "/"
     if not os.path.exists(save_path) or not len(os.listdir(save_path)) > 0:
-        abort(500, "No uploaded files")
+        abort(404, "No uploaded files")
     output: dict = dict()
     for directory in os.listdir(save_path):
         output[directory] = []
         for filename in os.listdir(save_path + directory + "/"):
             output[directory].append(filename)
     return jsonify(output)
+
+@bp.route("/image/<path:image_path>", methods=("GET",))
+def send_image(image_path: str):
+    logger.info("endpoint: verify.send_image")
+    user_id: str = get_user_id()
+    save_path: str = os.path.abspath(config.options["tmp_upload_dir"] + user_id)
+    item, filename = os.path.split(image_path)
+    if not os.path.exists(save_path) or item not in os.listdir(save_path):
+        abort(404, "item not found")
+    if filename not in os.listdir(os.path.join(save_path, item)):
+        abort(404, "filename not found")
+    return send_file(os.path.join(save_path, item, filename))

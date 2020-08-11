@@ -71,7 +71,7 @@ def generate_id_lookup() -> Optional[Dict[str, str]]:
 def filename_lookup(start_path: str) -> dict:
     id_lookup = generate_id_lookup()
     if not id_lookup:
-        abort(500, "filename lookup failed!")
+        abort(404, "filename lookup failed!")
     result = {}
     stack = []
     stack.append(start_path)
@@ -95,7 +95,7 @@ def verify_image(f, mimetype) -> Union[bool, str]:
     f.seek(0, 2)
     size = f.tell()
     f.seek(0)
-    if not size <= MAX_FILESIZE:
+    if size > MAX_FILESIZE:
         return False
 
     ext = imghdr.what(None, h=f.read())

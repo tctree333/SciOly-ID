@@ -1,7 +1,7 @@
 import os
 
 import sentry_sdk
-from flask import Flask
+from flask import Flask, request
 from sentry_sdk.integrations.flask import FlaskIntegration
 
 from sciolyid.data import logger  # pylint: disable=unused-import
@@ -31,4 +31,6 @@ def after_request(response):
     header = response.headers
     header["Access-Control-Allow-Origin"] = FRONTEND_URL
     header["Access-Control-Allow-Credentials"] = "true"
+    header["Access-Control-Allow-Headers"] = request.access_control_request_headers
+    header["Access-Control-Allow-Methods"] = "HEAD, GET, OPTIONS, POST, DELETE"
     return response
