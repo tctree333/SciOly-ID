@@ -7,6 +7,7 @@ import sciolyid.web.functions.webhooks as webhooks
 from sciolyid.web.config import logger
 from sciolyid.web.functions.images import filename_lookup, find_duplicates
 from sciolyid.web.functions.user import get_user_id
+from sciolyid.web.git import verify_repo
 from sciolyid.web.tasks import database
 
 bp = Blueprint("verify", __name__, url_prefix="/verify")
@@ -16,6 +17,7 @@ bp = Blueprint("verify", __name__, url_prefix="/verify")
 def verify_files():
     logger.info("endpoint: verify")
     user_id: str = get_user_id()
+    verify_repo.remote("origin").pull()
 
     lookup = filename_lookup(
         os.path.abspath(
