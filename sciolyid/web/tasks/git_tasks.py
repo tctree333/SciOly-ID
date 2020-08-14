@@ -147,7 +147,7 @@ def move_images():
             item = os.path.dirname(os.path.relpath(path, root))
             added_items.append(item)
             category = get_category(item)
-            shutil.copy(path, os.path.join(image_repo.working_tree_dir, category))
+            shutil.copy(path, os.path.join(image_repo.working_tree_dir, category, ''))
             os.remove(path)
 
     if valid or delete:

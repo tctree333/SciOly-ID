@@ -1,5 +1,4 @@
 import os
-import random
 
 from flask import Blueprint, abort, jsonify, request, send_file, url_for
 
@@ -24,11 +23,25 @@ def verify_files():
             + config.options["validation_repo_dir"]
         )
     )
-    image_id = random.choice(tuple(lookup))
-    while database.sismember(f"sciolyid.verify.user:{user_id}", image_id):
-        image_id = random.choice(tuple(lookup))
+    ids: tuple = tuple(lookup.keys())
+
+    offset: int = request.args.get("offset", 0, int)
+
+    seen: set = set(
+        map(lambda x: x.decode(), database.smembers(f"sciolyid.verify.user:{user_id}"))
+    )
+    image_id: str = ""
+    for i in range(len(ids)):
+        offset = (i + offset) % len(ids)
+        id_ = ids[offset]
+        if id_ not in seen:
+            image_id = id_
+            break
+        if i == len(ids) - 1:
+            return jsonify({"end": True})
 
     output = {}
+    output["offset"] = offset
     output["url"] = url_for(".send_image", image_id=image_id)
     output["duplicates"] = find_duplicates(lookup[image_id], ignore_verify=True)
     output["item"] = lookup[image_id].split("/")[-2]

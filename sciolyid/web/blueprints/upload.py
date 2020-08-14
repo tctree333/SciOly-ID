@@ -3,9 +3,12 @@ import json
 import os
 import shutil
 import time
+import urllib.parse
+from io import BytesIO
 from itertools import chain
 from typing import Set, Union
 
+import requests
 from flask import Blueprint, abort, jsonify, request, send_file
 from PIL import Image
 
@@ -73,16 +76,14 @@ def upload_files():
         abort(415, "Missing Files")
     if len(request.files) > 10:
         abort(413, "You can only upload 10 files at a time!")
-    item = request.form['item']
+    item = request.form["item"]
     if item not in master_id_list:
         abort(400, "item is invalid")
     files = chain.from_iterable(request.files.listvalues())
     output: dict = {"invalid": [], "duplicates": {}, "sha1": {}, "rejected": []}
     id_lookup = generate_id_lookup()
     for upload in files:
-        save_path = (
-            f"{config.options['tmp_upload_dir']}{user_id}/{item}/"
-        )
+        save_path = f"{config.options['tmp_upload_dir']}{user_id}/{item}/"
         os.makedirs(save_path, exist_ok=True)
         tmp_path = f"{save_path}tmp"
         upload.save(tmp_path)
@@ -116,7 +117,7 @@ def delete(image_id):
     user_id: str = get_user_id()
     tmp = f"{config.options['tmp_upload_dir']}{user_id}/"
     if not os.path.exists(tmp):
-        abort(404, 'no uploaded images')
+        abort(404, "no uploaded images")
     images = []
     for directory in os.listdir(tmp):
         if os.path.isdir(tmp + directory):
@@ -201,9 +202,10 @@ def uploaded():
             output[directory].append(filename)
     return jsonify(output)
 
+
 @bp.route("/image/<path:image_path>", methods=("GET",))
 def send_image(image_path: str):
-    logger.info("endpoint: verify.send_image")
+    logger.info("endpoint: upload.send_image")
     user_id: str = get_user_id()
     save_path: str = os.path.abspath(config.options["tmp_upload_dir"] + user_id)
     item, filename = os.path.split(image_path)
@@ -212,3 +214,25 @@ def send_image(image_path: str):
     if filename not in os.listdir(os.path.join(save_path, item)):
         abort(404, "filename not found")
     return send_file(os.path.join(save_path, item, filename))
+
+
+@bp.route("/remote", methods=("GET",))
+def get_remote_image():
+    logger.info("endpoint: upload.get_remote_image")
+    get_user_id()
+    url: str = request.args.get("url", "", str)
+    if not url:
+        abort(400, "No url passed.")
+    parsed = urllib.parse.urlparse(url)
+    if not parsed.scheme or not parsed.netloc:
+        abort(400, "Invalid Url")
+    requests.get(urllib.parse.urlunparse(parsed), timeout=10)
+    resp = requests.get(url, timeout=10)
+    if resp.status_code != 200:
+        abort(404, "No image found at that location.")
+    content = BytesIO(resp.content)
+    ext = verify_image(content, resp.headers.get("content-type"))
+    if ext is False:
+        abort(404, "Invalid image")
+    content.seek(0)
+    return send_file(content, attachment_filename=f"file.{ext}")

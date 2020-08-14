@@ -301,8 +301,8 @@ def _memes():
 
 def _all_lists():
     """Compiles lists into master lists."""
-    id_list = []
-    master_id_list = []
+    id_list_ = []
+    master_id_list_ = []
     restricted = []
     if config.options["restricted_list_dir"]:
         restricted = [
@@ -311,14 +311,14 @@ def _all_lists():
     for group in groups:
         if group in restricted:
             for item in groups[group]:
-                master_id_list.append(item)
+                master_id_list_.append(item)
         else:
             for item in groups[group]:
-                id_list.append(item)
-                master_id_list.append(item)
-    id_list = list(set(id_list))
-    master_id_list = list(set(master_id_list))
-    return id_list, master_id_list
+                id_list_.append(item)
+                master_id_list_.append(item)
+    id_list_ = list(set(id_list_))
+    master_id_list_ = list(set(master_id_list_))
+    return id_list_, master_id_list_
 
 
 def _config():

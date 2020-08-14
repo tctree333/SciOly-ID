@@ -34,9 +34,8 @@ def find_duplicates(image, distance: int = 5, ignore_verify=False) -> list:
                 f"hashes lookup failed: status {resp.status_code}; url {resp.url}"
             )
             return ["Failed to get hashes file."]
-        files = files.union(
-            set(map(lambda x: x.strip(), resp.text.strip().split("\n")))
-        )
+        files = files.union(set(map(lambda x: x.strip(), resp.text.split("\n"))))
+    files.discard("")
 
     if isinstance(image, str):
         image = Image.open(image)
@@ -57,9 +56,8 @@ def generate_id_lookup() -> Optional[Dict[str, str]]:
         if resp.status_code != 200:
             logger.info(f"id lookup failed: status {resp.status_code}; url {resp.url}")
             return None
-        files = files.union(
-            set(map(lambda x: x.strip(), resp.text.strip().split("\n")))
-        )
+        files = files.union(set(map(lambda x: x.strip(), resp.text.split("\n"))))
+    files.discard("")
 
     lookup = {}
     r = csv.reader(files)
