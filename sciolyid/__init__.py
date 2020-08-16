@@ -109,7 +109,10 @@ def setup(*args, **kwargs):
             + f"/master/{path}hashes.csv"
             for url, path in (
                 (config.options["github_image_repo_url"], ""),
-                (config.options["validation_repo_url"], config.options["validation_repo_dir"]),
+                (
+                    config.options["validation_repo_url"],
+                    config.options["validation_repo_dir"],
+                ),
             )
         ]  # default hashes_url is https://raw.githubusercontent.com/{user}/{repo}/master/hashes.csv
 
@@ -119,7 +122,10 @@ def setup(*args, **kwargs):
             + f"/master/{path}ids.csv"
             for url, path in (
                 (config.options["github_image_repo_url"], ""),
-                (config.options["validation_repo_url"], config.options["validation_repo_dir"]),
+                (
+                    config.options["validation_repo_url"],
+                    config.options["validation_repo_dir"],
+                ),
             )
         ]  # default ids_url is https://raw.githubusercontent.com/{user}/{repo}/master/{path}ids.csv
 
@@ -132,6 +138,10 @@ def setup(*args, **kwargs):
                 config.options["validation_repo_url"],
             )
         ]  # default commit_url_format is https://github.com/{user}/{repo}/commit/{id}
+
+        config.options["verification_server"] = (
+            config.options["verification_server"] or config.options["support_server"]
+        )
 
 
 def start():

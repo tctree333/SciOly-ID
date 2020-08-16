@@ -9,6 +9,7 @@ import sciolyid.config as config
 
 PROFILE_URL = "https://discord.com/api/users/{id}"
 AVATAR_URL = "https://cdn.discordapp.com/avatars/{id}/{avatar}.{ext}"
+INVITE_TO_ID_URL = "https://discord.com/api/invites/{code}"
 
 SESSION_EXPIRE: int = 432000  # time (seconds) before expiring the session
 
@@ -37,6 +38,20 @@ def fetch_profile(user_id: Union[int, str]) -> Dict[str, str]:
     )
 
     return profile
+
+
+def fetch_server_id():
+    if config.options.get("verification_server_id", None):
+        return config.options.get("verification_server_id")
+    url = INVITE_TO_ID_URL.format(
+        code=config.options["verification_server"].split("/")[-1]
+    )
+    resp = requests.get(url, auth=DiscordBotAuth(), timeout=10)
+    if resp.status_code != 200:
+        abort(404, "Failed to fetch id")
+    json: dict = resp.json()
+    config.options["verification_server_id"] = json["guild"]["id"]
+    return json["guild"]["id"]
 
 
 def get_user_id() -> str:

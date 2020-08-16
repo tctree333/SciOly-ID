@@ -10,7 +10,7 @@ from sentry_sdk import capture_exception
 
 import sciolyid.config as config
 from sciolyid.web.config import FRONTEND_URL, app, logger
-from sciolyid.web.functions.user import fetch_profile, get_user_id
+from sciolyid.web.functions.user import fetch_profile, get_user_id, fetch_server_id
 
 bp = Blueprint("user", __name__, url_prefix="/user")
 oauth = OAuth(app)
@@ -65,8 +65,8 @@ def authorize():
     user_profile: dict = oauth.discord.get("users/@me").json()
     user_guilds: dict = oauth.discord.get("users/@me/guilds").json()
 
-    if str(config.options["server_id"]) not in (guild["id"] for guild in user_guilds):
-        abort(401, "Not in server")
+    if str(fetch_server_id()) not in (guild["id"] for guild in user_guilds):
+        return redirect(config.options["verification_server"])
 
     session["uid"] = user_profile["id"]
     session["date"] = str(int(time.time()))

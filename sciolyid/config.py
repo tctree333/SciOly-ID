@@ -32,7 +32,6 @@ id_required: Dict[str, Optional[str]] = {
 
 web_required: Dict[str, Optional[str]] = {
     "client_id": None,  # discord client id
-    "server_id": None,  # discord server that users must be a part of
     "base_image_url": None,  # root of where images are hosted
     "validation_repo_url": None, # github repo where images are temporarily held
 }
@@ -85,6 +84,7 @@ web_optional: Dict[str, Any] = {
     "frontend_url_env": "FRONTEND_URL",  # name of environment variable for frontend url
     "client_secret_env": "DISCORD_CLIENT_SECRET",  # name of environment variable for discord client secret
     "discord_webhook_url": None,  # webhook url for discord notification log
+    "verification_server": None,  # invite to special discord server for people adding images, default to support server
 }
 
 options: Dict[str, Any] = {

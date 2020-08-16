@@ -81,8 +81,9 @@ def filename_lookup(start_path: str) -> dict:
                 stack.append(child_path)
                 continue
             if imghdr.what(child_path) in VALID_IMG_TYPES:
-                image_id = id_lookup["./" + os.path.relpath(child_path, start_path)]
-                result[image_id] = child_path
+                image_id = id_lookup.get("./" + os.path.relpath(child_path, start_path))
+                if image_id:
+                    result[image_id] = child_path
     return result
 
 

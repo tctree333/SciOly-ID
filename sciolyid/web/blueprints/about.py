@@ -25,6 +25,12 @@ def info():
             "idName": config.options["id_type"],
             "description": config.options["bot_description"],
             "server": config.options["support_server"],
+            "verificationServer": (
+                None
+                if config.options["verification_server"]
+                == config.options["support_server"]
+                else config.options["verification_server"]
+            ),
             "source": config.options["source_link"],
         }
     )
