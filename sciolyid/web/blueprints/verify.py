@@ -27,6 +27,9 @@ def verify_files():
     )
     ids: tuple = tuple(lookup.keys())
 
+    if len(ids) == 0:
+        return jsonify({"end": True})
+
     offset: int = request.args.get("offset", 0, int)
 
     seen: set = set(
