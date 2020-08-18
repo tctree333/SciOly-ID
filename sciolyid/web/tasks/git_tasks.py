@@ -43,9 +43,11 @@ GIT_PUSH_OPCODES = (
 
 
 def _push_helper(repo, commit_message, progress=None):
+    logger.info("pushing (helper)")
     repo.remote("origin").pull()
     index = repo.index
-    index.add("*")
+    added = index.add("*")
+    logger.info(f"added {len(added)} files")
     commit = index.commit(commit_message)
     push_result = repo.remote("origin").push(progress=progress)
     if len(push_result) == 0:

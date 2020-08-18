@@ -63,6 +63,7 @@ def generate_id_lookup() -> Optional[Dict[str, str]]:
     r = csv.reader(files)
     for filename, image_id in r:
         lookup[filename] = image_id
+    logger.info(f"num lookup ids: {len(lookup)}")
     return lookup
 
 
@@ -84,6 +85,7 @@ def filename_lookup(start_path: str) -> dict:
                 image_id = id_lookup.get("./" + os.path.relpath(child_path, start_path))
                 if image_id:
                     result[image_id] = child_path
+    logger.info(f"found {len(result)} files")
     return result
 
 
