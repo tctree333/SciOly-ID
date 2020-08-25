@@ -226,15 +226,15 @@ def get_wiki_url(ctx, item: str):
 
 def _generate_aliases():
     logger.info("Working on aliases")
-    aliases = {}
+    aliases_ = {}
     with open(f'{config.options["alias_file"]}', "r") as f:
         reader = csv.reader(f)
         for raw_aliases in reader:
             raw_aliases = list(map(str.lower, raw_aliases))
             item = raw_aliases[0]
-            aliases[item] = raw_aliases
+            aliases_[item] = raw_aliases
     logger.info("Done with aliases")
-    return aliases
+    return aliases_
 
 
 def get_aliases(item: str):
