@@ -131,7 +131,7 @@ def move_images():
         database.zremrangebyscore("sciolyid.verify.images:invalid", 3, "+inf")
         database.zremrangebyscore("sciolyid.verify.images:duplicate", 3, "+inf")
         for image in delete:
-            os.remove(lookup[image])
+            verify_repo.index.remove(lookup[image], working_tree=True)
 
     valid = set(
         map(
@@ -150,7 +150,7 @@ def move_images():
             added_items.append(item)
             category = get_category(item)
             shutil.copy(path, os.path.join(image_repo.working_tree_dir, category, item, ''))
-            os.remove(path)
+            verify_repo.index.remove(path, working_tree=True)
 
     if valid or delete:
         verify_push = _push_helper(verify_repo, "Update through verification!")
