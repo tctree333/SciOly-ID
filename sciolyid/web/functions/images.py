@@ -16,7 +16,7 @@ VALID_IMG_TYPES = ("jpeg", "png")
 MAX_FILESIZE = 4000000  # 4 mb
 
 
-def find_duplicates(image, distance: int = 5, ignore_verify=False) -> list:
+def find_duplicates(image, distance: int = 5, ignore_verify: bool = False) -> list:
     logger.info("find duplicates")
     files: Set[str] = set()
     for url in config.options["hashes_url"]:
@@ -48,10 +48,18 @@ def find_duplicates(image, distance: int = 5, ignore_verify=False) -> list:
     return matches
 
 
-def generate_id_lookup() -> Optional[Dict[str, str]]:
+def generate_id_lookup(ignore_verify: bool = False) -> Optional[Dict[str, str]]:
     logger.info("generate id lookup")
     files: Set[str] = set()
     for url in config.options["ids_url"]:
+        if (
+            ignore_verify
+            and "/".join(config.options["validation_repo_url"].split("/")[-2:-1]).split(
+                ".git"
+            )[0]
+            in url
+        ):
+            continue
         resp = requests.get(url, timeout=10)
         if resp.status_code != 200:
             logger.info(f"id lookup failed: status {resp.status_code}; url {resp.url}")
