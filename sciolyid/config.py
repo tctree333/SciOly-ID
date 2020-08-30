@@ -82,7 +82,7 @@ web_optional: Dict[str, Any] = {
     "secret_key_env": "FLASK_SECRET_KEY",  # name of environment variable for signed cookies secret key
     "frontend_url_env": "FRONTEND_URL",  # name of environment variable for frontend url
     "client_secret_env": "DISCORD_CLIENT_SECRET",  # name of environment variable for discord client secret
-    "discord_webhook_url": None,  # webhook url for discord notification log
+    "discord_webhook_env": "DISCORD_WEBHOOK_URL",  # webhook url for discord notification log
     "verification_server": None,  # invite to special discord server for people adding images, default to support server
 }
 

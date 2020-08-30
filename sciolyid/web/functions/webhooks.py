@@ -1,4 +1,5 @@
 import datetime
+import os
 
 import requests
 from discord import Color, Embed, RequestsWebhookAdapter, Webhook
@@ -7,12 +8,10 @@ import sciolyid.config as config
 from sciolyid.web.functions.user import (AVATAR_URL, PROFILE_URL,
                                          DiscordBotAuth, fetch_profile)
 
-ENABLE_WEBHOOKS = bool(config.options["discord_webhook_url"])
+WEBHOOK_URL = os.getenv(config.options["discord_webhook_env"], None)
 
-if ENABLE_WEBHOOKS:
-    webhook = Webhook.from_url(
-        config.options["discord_webhook_url"], adapter=RequestsWebhookAdapter()
-    )
+if WEBHOOK_URL:
+    webhook = Webhook.from_url(WEBHOOK_URL, adapter=RequestsWebhookAdapter())
 
     def bot_info() -> dict:
         url = PROFILE_URL.format(id="@me")
@@ -58,7 +57,7 @@ def send(type_of: str, **opt):
     - error:
         - message: str - error message
     """
-    if not ENABLE_WEBHOOKS:
+    if not WEBHOOK_URL:
         return
 
     if type_of not in ("add", "verify", "valid", "error"):
@@ -85,7 +84,9 @@ def send(type_of: str, **opt):
         }
 
         name = "Image verified!"
-        content = f"<@{opt['user_id']}> ({username}) marked an image as {opt['action']}."
+        content = (
+            f"<@{opt['user_id']}> ({username}) marked an image as {opt['action']}."
+        )
         color = color_options[opt["action"]]
 
     elif type_of == "valid":
