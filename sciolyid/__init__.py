@@ -67,7 +67,6 @@ def setup(*args, **kwargs):
         "tmp_upload_dir",
         "validation_local_dir",
         "validation_repo_dir",
-        "website",
     )
     for item in directory_config_items:
         if config.options[item] and not config.options[item].endswith("/"):

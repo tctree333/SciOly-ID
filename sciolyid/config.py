@@ -24,6 +24,7 @@ required: Dict[str, Optional[str]] = {
     "github_image_repo_url": None,  # link to github image repo
     "support_server": None,  # link to discord support server
     "source_link": None,  # link to source code (may be hosted on github)
+    "name": None,  # all lowercase, no spaces, doesn't really matter what this is
 }
 
 id_required: Dict[str, Optional[str]] = {
@@ -37,8 +38,6 @@ web_required: Dict[str, Optional[str]] = {
 }
 
 optional: Dict[str, Any] = {
-    "name": "id-bot",  # all lowercase, no spaces, doesn't really matter what this is
-    "website": None,  # full url to the root of the website
     "download_func": None,  # asyncronous function that downloads images locally to download_dir
     "download_dir": "github_download/",  # local directory containing media (images)
     "data_dir": "data/",  # local directory containing the id data
