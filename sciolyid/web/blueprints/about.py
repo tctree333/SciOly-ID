@@ -1,3 +1,5 @@
+from operator import itemgetter
+
 from flask import Blueprint, jsonify
 
 import sciolyid.config as config
@@ -41,25 +43,41 @@ def info():
 def count():
     logger.info("endpoint: about.count")
     files = generate_id_lookup(ignore_verify=True).keys()
-    output = {"total": len(files), "counts": {}}
+    counts = {}
     id_items = set(master_id_list)
     for name in files:
         split = name.split("/")[1:-1]
         if len(split) == 1:
-            output["counts"].setdefault(split[0], 0)
-            output["counts"][split[0]] += 1
+            counts.setdefault(split[0], 0)
+            counts[split[0]] += 1
             id_items.discard(split[0])
         elif len(split) == 2:
-            output["counts"].setdefault(split[0], {})
-            output["counts"][split[0]].setdefault(split[1], 0)
-            output["counts"][split[0]][split[1]] += 1
+            counts.setdefault(split[0], {})
+            counts[split[0]].setdefault(split[1], 0)
+            counts[split[0]][split[1]] += 1
             id_items.discard(split[1])
         else:
             logger.info("too many subfolders!")
     for item in id_items:
         if config.options["id_groups"]:
-            output["counts"][get_category(item)][item] = 0
+            counts[get_category(item)][item] = 0
         else:
-            output["counts"][item] = 0
-    output["none"] = list(sorted(id_items))
+            counts[item] = 0
+    out_list = [
+        {
+            "name": k,
+            "group": isinstance(v, dict),
+            "value": [
+                {"name": sub_k, "value": sub_v}
+                for sub_k, sub_v in sorted(v.items(), key=itemgetter(1, 0))
+            ]
+            if isinstance(v, dict)
+            else v,
+        }
+        for k, v in sorted(
+            counts.items(),
+            key=lambda x: (str(x[1]), x[0]) if isinstance(x[1], int) else x[0],
+        )
+    ]
+    output = {"total": len(files), "counts": out_list}
     return jsonify(output)
