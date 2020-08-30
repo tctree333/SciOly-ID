@@ -9,10 +9,14 @@ from sciolyid.data import logger
 
 
 def _lock():
+    sleep_cycle = 0
     time.sleep(random.random())
     while os.path.exists(config.options["bot_files_dir"] + "git.lock"):
         logger.info("waiting...")
+        sleep_cycle += 1
         time.sleep(random.random())
+        if sleep_cycle > 120:
+            os.remove(config.options["bot_files_dir"] + "git.lock")
     with open(config.options["bot_files_dir"] + "git.lock", "w") as f:
         f.write("locked")
     logger.info("locked")
