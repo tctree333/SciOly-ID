@@ -91,7 +91,8 @@ def send(type_of: str, **opt):
 
     elif type_of == "valid":
         items = opt["items"]
-        items[-1] = "and " + items[-1] if len(items) > 1 else items[-1]
+        if opt["added"] != 0:
+            items[-1] = "and " + items[-1] if len(items) > 1 else items[-1]
 
         name = "Updated images!"
         content = (
