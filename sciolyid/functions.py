@@ -32,7 +32,7 @@ from sciolyid.data import GenericError, database, groups, id_list, logger
 
 async def channel_setup(ctx):
     """Sets up a new discord channel.
-    
+
     `ctx` - Discord context object
     """
     logger.info("checking channel setup")
@@ -40,7 +40,8 @@ async def channel_setup(ctx):
         logger.info("channel data ok")
     else:
         database.hmset(
-            f"channel:{ctx.channel.id}", {"item": "", "answered": 1, "prevJ": 20, "prevI": ""},
+            f"channel:{ctx.channel.id}",
+            {"item": "", "answered": 1, "prevJ": 20, "prevI": ""},
         )
         # true = 1, false = 0, prevJ is 20 to define as integer
         logger.info("channel data added")
@@ -53,7 +54,10 @@ async def channel_setup(ctx):
         logger.info("channel score added")
 
     if ctx.guild is not None:
-        if database.zadd("channels:global", {f"{ctx.guild.id}:{ctx.channel.id}": 0}) is not 0:
+        if (
+            database.zadd("channels:global", {f"{ctx.guild.id}:{ctx.channel.id}": 0})
+            != 0
+        ):
             logger.info("server lookup ok")
         else:
             logger.info("server lookup added")
@@ -61,7 +65,7 @@ async def channel_setup(ctx):
 
 async def user_setup(ctx):
     """Sets up a new discord user for score tracking.
-    
+
     `ctx` - Discord context object
     """
     logger.info("checking user data")
@@ -91,8 +95,13 @@ async def user_setup(ctx):
 
     if ctx.guild is not None:
         logger.info("no dm")
-        if database.zscore(f"users.server:{ctx.guild.id}", str(ctx.author.id)) is not None:
-            server_score = database.zscore(f"users.server:{ctx.guild.id}", str(ctx.author.id))
+        if (
+            database.zscore(f"users.server:{ctx.guild.id}", str(ctx.author.id))
+            is not None
+        ):
+            server_score = database.zscore(
+                f"users.server:{ctx.guild.id}", str(ctx.author.id)
+            )
             global_score = database.zscore("users:global", str(ctx.author.id))
             if server_score is global_score:
                 logger.info("user server ok")
@@ -110,7 +119,7 @@ async def user_setup(ctx):
 
 def item_setup(ctx, item: str):
     """Sets up a new item for incorrect tracking.
-    
+
     `ctx` - Discord context object
     `item` - item to setup
     """
@@ -121,11 +130,23 @@ def item_setup(ctx, item: str):
         database.zadd("incorrect:global", {string.capwords(item): 0})
         logger.info("item global added")
 
-    if database.zscore(f"incorrect.user:{ctx.author.id}", string.capwords(item)) is not None:
-        logger.info("item user ok")
+    if (
+        database.zscore(f"incorrect.user:{ctx.author.id}", string.capwords(item))
+        is not None
+    ):
+        logger.info("incorrect item user ok")
     else:
         database.zadd(f"incorrect.user:{ctx.author.id}", {string.capwords(item): 0})
-        logger.info("item user added")
+        logger.info("incorrect item user added")
+
+    if (
+        database.zscore(f"correct.user:{ctx.author.id}", string.capwords(item))
+        is not None
+    ):
+        logger.info("correct item user ok")
+    else:
+        database.zadd(f"correct.user:{ctx.author.id}", {string.capwords(item): 0})
+        logger.info("correct item user added")
 
     date = str(datetime.datetime.now(datetime.timezone.utc).date())
     if database.zscore(f"daily.incorrect:{date}", string.capwords(item)) is not None:
@@ -148,7 +169,9 @@ def item_setup(ctx, item: str):
         ):
             logger.info("item server ok")
         else:
-            database.zadd(f"incorrect.server:{ctx.guild.id}", {string.capwords(item): 0})
+            database.zadd(
+                f"incorrect.server:{ctx.guild.id}", {string.capwords(item): 0}
+            )
             logger.info("item server added")
     else:
         logger.info("dm context")
@@ -161,7 +184,9 @@ def item_setup(ctx, item: str):
         ):
             logger.info("item session ok")
         else:
-            database.zadd(f"session.incorrect:{ctx.author.id}", {string.capwords(item): 0})
+            database.zadd(
+                f"session.incorrect:{ctx.author.id}", {string.capwords(item): 0}
+            )
             logger.info("item session added")
     else:
         logger.info("no session")
@@ -199,12 +224,16 @@ def incorrect_increment(ctx, item: str, amount: int = 1):
     database.zincrby(f"daily.incorrect:{date}", amount, string.capwords(item))
     if ctx.guild is not None:
         logger.info("no dm")
-        database.zincrby(f"incorrect.server:{ctx.guild.id}", amount, string.capwords(item))
+        database.zincrby(
+            f"incorrect.server:{ctx.guild.id}", amount, string.capwords(item)
+        )
     else:
         logger.info("dm context")
     if database.exists(f"session.data:{ctx.author.id}"):
         logger.info("session in session")
-        database.zincrby(f"session.incorrect:{ctx.author.id}", amount, string.capwords(item))
+        database.zincrby(
+            f"session.incorrect:{ctx.author.id}", amount, string.capwords(item)
+        )
     else:
         logger.info("no session")
 
@@ -268,12 +297,14 @@ def black_and_white(input_image_path) -> BytesIO:
     return final_buffer
 
 
-async def send_leaderboard(ctx, title, page, database_key=None, data=None):
+async def send_leaderboard(
+    ctx, title, page, database_key=None, data=None, items_per_page=10
+):
     logger.info("building/sending leaderboard")
 
     if database_key is None and data is None:
         raise GenericError("database_key and data are both NoneType", 990)
-    elif database_key is not None and data is not None:
+    if database_key is not None and data is not None:
         raise GenericError("database_key and data are both set", 990)
 
     if page < 1:
@@ -292,7 +323,6 @@ async def send_leaderboard(ctx, title, page, database_key=None, data=None):
     if page > entry_count:
         page = entry_count - (entry_count % 10)
 
-    items_per_page = 10
     leaderboard_list = (
         map(
             lambda x: (x[0].decode("utf-8"), x[1]),
@@ -331,7 +361,7 @@ def build_id_list(group_str: str = ""):
         list(groups.keys())
         + [
             item
-            for group in groups.keys()
+            for group in groups
             for item in config.options["category_aliases"][group]
         ]
     ).intersection({category.lower() for category in categories}):
@@ -362,7 +392,7 @@ def build_id_list(group_str: str = ""):
 
 def backup_all():
     """Backs up the database to a file.
-    
+
     This function serializes all data in the REDIS database
     into a file in the `backups` directory.
 
@@ -392,7 +422,9 @@ async def fools(ctx):
     logger.info(f"holiday check: invoked command: {str(ctx.command)}")
     if str(ctx.command) in ("leaderboard", "missed", "score", "streak", "userscore"):
         embed = discord.Embed(
-            type="rich", colour=discord.Color.blurple(), title=f"{str(ctx.command).title()}"
+            type="rich",
+            colour=discord.Color.blurple(),
+            title=f"{str(ctx.command).title()}",
         )
         embed.set_author(name=config.options["bot_signature"])
         embed.add_field(
@@ -416,7 +448,7 @@ def spellcheck_list(word_to_check, correct_list, abs_cutoff=None):
 
 def spellcheck(worda, wordb, cutoff=3):
     """Checks if two words are close to each other.
-    
+
     `worda` (str) - first word to compare
     `wordb` (str) - second word to compare
     `cutoff` (int) - allowed difference amount
@@ -425,7 +457,10 @@ def spellcheck(worda, wordb, cutoff=3):
     wordb = wordb.lower().replace("-", " ").replace("'", "")
     shorterword = min(worda, wordb, key=len)
     if worda != wordb:
-        if len(list(difflib.Differ().compare(worda, wordb))) - len(shorterword) >= cutoff:
+        if (
+            len(list(difflib.Differ().compare(worda, wordb))) - len(shorterword)
+            >= cutoff
+        ):
             return False
     return True
 
@@ -451,14 +486,18 @@ class CustomCooldown:
         self.disable = disable
         self.default_mapping = commands.CooldownMapping.from_cooldown(rate, per, bucket)
         self.dm_mapping = commands.CooldownMapping.from_cooldown(rate, dm_per, bucket)
-        self.race_mapping = commands.CooldownMapping.from_cooldown(rate, race_per, bucket)
+        self.race_mapping = commands.CooldownMapping.from_cooldown(
+            rate, race_per, bucket
+        )
 
     def __call__(self, ctx: commands.Context):
         if not self.disable and ctx.guild is None:
             # halve cooldown in DMs
             bucket = self.dm_mapping.get_bucket(ctx.message)
 
-        elif ctx.command.name.startswith("check") and ctx.channel.name.startswith("racing"):
+        elif ctx.command.name.startswith("check") and ctx.channel.name.startswith(
+            "racing"
+        ):
             # tiny check cooldown in racing channels
             bucket = self.race_mapping.get_bucket(ctx.message)
 

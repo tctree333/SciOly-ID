@@ -111,6 +111,10 @@ if config.options["sentry"]:
 #    incorrect.user:user_id: : [item name, # incorrect]
 # }
 
+# correct birds format = {
+#    correct.user:user_id : [bird name, # correct]
+# }
+
 # item frequency format = {
 #   frequency.item:global : [item name, # displayed]
 # }
