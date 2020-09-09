@@ -225,11 +225,15 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.PrivateMessageOnly):
         await ctx.send("**This command is only avaliable in DMs!**")
 
+    elif isinstance(error, commands.NotOwner):
+        logger.info("not owner")
+        await ctx.send("Sorry, the command was not found.")
+
     elif isinstance(error, GenericError):
         if error.code == 192:
             # channel is ignored
             return
-        elif error.code == 842:
+        if error.code == 842:
             await ctx.send("**Sorry, you cannot use this command.**")
         elif error.code == 666:
             logger.info("GenericError 666")
