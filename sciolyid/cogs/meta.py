@@ -169,7 +169,7 @@ class Meta(commands.Cog):
     # ban command - prevents certain users from using the bot
     @commands.command(help="- ban command", hidden=True)
     @commands.is_owner()
-    async def ban(self, ctx, *, user: typing.Optional[discord.Member] = None):
+    async def ban(self, ctx, *, user: typing.Optional[typing.Union[discord.Member, discord.User]] = None):
         logger.info("command: ban")
         if user is None:
             logger.info("no args")
@@ -182,7 +182,7 @@ class Meta(commands.Cog):
     # unban command - prevents certain users from using the bot
     @commands.command(help="- unban command", hidden=True)
     @commands.is_owner()
-    async def unban(self, ctx, *, user: typing.Optional[discord.Member] = None):
+    async def unban(self, ctx, *, user: typing.Optional[typing.Union[discord.Member, discord.User]] = None):
         logger.info("command: unban")
         if user is None:
             logger.info("no args")
@@ -195,7 +195,7 @@ class Meta(commands.Cog):
     # correct command - see how many times someone got a bird correct
     @commands.command(help="- see answered birds command", hidden=True)
     @commands.is_owner()
-    async def correct(self, ctx, *, user: typing.Optional[discord.Member] = None):
+    async def correct(self, ctx, *, user: typing.Optional[typing.Union[discord.Member, discord.User]] = None):
         logger.info("command: correct")
         if user is None:
             logger.info("no args")
