@@ -1,4 +1,4 @@
-# github.py | function for syncing a GitHub repo
+# github.py | functions for syncing a GitHub repo
 # Copyright (C) 2019-2020  EraserBird, person_v1.32, hmmm
 
 # This program is free software: you can redistribute it and/or modify
@@ -17,27 +17,29 @@
 import asyncio
 import concurrent.futures
 import os
+import logging
 
 from git import Repo
 
 import sciolyid.config as config
-from sciolyid.data import logger
+
+download_logger = logging.getLogger(config.options["name"] + ".git_downloads")
 
 
 async def download_github():
-    logger.info("syncing github")
+    download_logger.info("syncing github")
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
     loop = asyncio.get_event_loop()
     try:
         os.listdir(config.options["download_dir"])
     except FileNotFoundError:
-        logger.info("doesn't exist, cloning")
+        download_logger.info("doesn't exist, cloning")
         await loop.run_in_executor(executor, _clone)
-        logger.info("done cloning")
+        download_logger.info("done cloning")
     else:
-        logger.info("exists, syncing")
+        download_logger.info("exists, syncing")
         await loop.run_in_executor(executor, _sync)
-        logger.info("done syncing")
+        download_logger.info("done syncing")
 
 
 def _clone():

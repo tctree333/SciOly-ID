@@ -28,6 +28,7 @@ from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 
 import sciolyid.config as config
+from sciolyid.downloads import download_github, download_logger
 
 # define database for one connection
 if config.options["local_redis"]:
@@ -110,6 +111,10 @@ if config.options["sentry"]:
 #    incorrect.user:user_id: : [item name, # incorrect]
 # }
 
+# correct birds format = {
+#    correct.user:user_id : [bird name, # correct]
+# }
+
 # item frequency format = {
 #   frequency.item:global : [item name, # displayed]
 # }
@@ -159,6 +164,9 @@ if config.options["logs"]:
 
     logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
+    if config.options["download_func"] is None:
+        download_logger.addHandler(file_handler)
+        download_logger.addHandler(stream_handler)
 
     # log uncaught exceptions
     def handle_exception(exc_type, exc_value, exc_traceback):
@@ -222,15 +230,15 @@ def get_wiki_url(ctx, item: str):
 
 def _generate_aliases():
     logger.info("Working on aliases")
-    aliases = {}
+    aliases_ = {}
     with open(f'{config.options["alias_file"]}', "r") as f:
         reader = csv.reader(f)
         for raw_aliases in reader:
             raw_aliases = list(map(str.lower, raw_aliases))
             item = raw_aliases[0]
-            aliases[item] = raw_aliases
+            aliases_[item] = raw_aliases
     logger.info("Done with aliases")
-    return aliases
+    return aliases_
 
 
 def get_aliases(item: str):
@@ -297,8 +305,8 @@ def _memes():
 
 def _all_lists():
     """Compiles lists into master lists."""
-    id_list = []
-    master_id_list = []
+    id_list_ = []
+    master_id_list_ = []
     restricted = []
     if config.options["restricted_list_dir"]:
         restricted = [
@@ -307,14 +315,14 @@ def _all_lists():
     for group in groups:
         if group in restricted:
             for item in groups[group]:
-                master_id_list.append(item)
+                master_id_list_.append(item)
         else:
             for item in groups[group]:
-                id_list.append(item)
-                master_id_list.append(item)
-    id_list = list(set(id_list))
-    master_id_list = list(set(master_id_list))
-    return id_list, master_id_list
+                id_list_.append(item)
+                master_id_list_.append(item)
+    id_list_ = list(set(id_list_))
+    master_id_list_ = list(set(master_id_list_))
+    return id_list_, master_id_list_
 
 
 def _config():
@@ -323,14 +331,12 @@ def _config():
             config.options["category_aliases"][group] = [group]
 
     _aliases = [
-        item for group in groups.keys() for item in config.options["category_aliases"][group]
+        item for group in groups for item in config.options["category_aliases"][group]
     ]
     if len(_aliases) != len(set(_aliases)):
         raise config.BotConfigError("Aliases in category_aliases not unique")
 
     if config.options["download_func"] is None:
-        from sciolyid.github import download_github
-
         config.options["download_func"] = download_github
 
 

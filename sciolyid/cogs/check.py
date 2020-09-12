@@ -14,12 +14,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import string
+
 from discord.ext import commands
 
 from sciolyid.data import database, get_aliases, get_wiki_url, logger
-from sciolyid.functions import (CustomCooldown, incorrect_increment,
-                                item_setup, score_increment, session_increment,
-                                spellcheck_list, streak_increment)
+from sciolyid.functions import (
+    CustomCooldown,
+    incorrect_increment,
+    item_setup,
+    score_increment,
+    session_increment,
+    spellcheck_list,
+    streak_increment,
+)
 
 
 class Check(commands.Cog):
@@ -27,12 +35,16 @@ class Check(commands.Cog):
         self.bot = bot
 
     # Check command - argument is the guess
-    @commands.command(help="- Checks your answer.", usage="guess", aliases=["guess", "c"])
+    @commands.command(
+        help="- Checks your answer.", usage="guess", aliases=["guess", "c"]
+    )
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.user))
     async def check(self, ctx, *, arg):
         logger.info("command: check")
 
-        current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8")
+        current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode(
+            "utf-8"
+        )
         if current_item == "":  # no image
             await ctx.send("You must ask for a image first!")
         else:  # if there is a image, it checks answer
@@ -69,6 +81,11 @@ class Check(commands.Cog):
 
                 session_increment(ctx, "correct", 1)
                 streak_increment(ctx, 1)
+                database.zincrby(
+                    f"correct.user:{ctx.author.id}",
+                    1,
+                    string.capwords(str(current_item)),
+                )
 
                 await ctx.send(
                     "Correct! Good job!"
@@ -77,13 +94,17 @@ class Check(commands.Cog):
                 )
                 url = get_wiki_url(ctx, current_item)
                 await ctx.send(
-                    url if not database.exists(f"race.data:{ctx.channel.id}") else f"<{url}>"
+                    url
+                    if not database.exists(f"race.data:{ctx.channel.id}")
+                    else f"<{url}>"
                 )  # sends wiki page
                 score_increment(ctx, 1)
                 if database.exists(f"race.data:{ctx.channel.id}"):
 
                     limit = int(database.hget(f"race.data:{ctx.channel.id}", "limit"))
-                    first = database.zrevrange(f"race.scores:{ctx.channel.id}", 0, 0, True)[0]
+                    first = database.zrevrange(
+                        f"race.scores:{ctx.channel.id}", 0, 0, True
+                    )[0]
                     if int(first[1]) >= limit:
                         logger.info("race ending")
                         race = self.bot.get_cog("Race")
@@ -94,7 +115,9 @@ class Check(commands.Cog):
                             f"race.data:{ctx.channel.id}", ["group", "bw"]
                         )
                         media = self.bot.get_cog("Media")
-                        await media.send_pic_(ctx, group.decode("utf-8"), bw.decode("utf-8"))
+                        await media.send_pic_(
+                            ctx, group.decode("utf-8"), bw.decode("utf-8")
+                        )
 
             else:
                 logger.info("incorrect")
@@ -108,7 +131,9 @@ class Check(commands.Cog):
                 else:
                     database.hset(f"channel:{ctx.channel.id}", "item", "")
                     database.hset(f"channel:{ctx.channel.id}", "answered", "1")
-                    await ctx.send("Sorry, the image was actually " + current_item + ".")
+                    await ctx.send(
+                        "Sorry, the image was actually " + current_item + "."
+                    )
                     url = get_wiki_url(ctx, current_item)
                     await ctx.send(url)
 

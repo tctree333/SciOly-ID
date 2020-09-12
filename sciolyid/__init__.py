@@ -19,8 +19,9 @@ import sciolyid.config as config
 
 def setup(*args, **kwargs):
     required = config.required.keys()
-    optional = config.optional.keys()
     id_required = config.id_required.keys()
+    web_required = config.web_required.keys()
+    optional = tuple(config.optional.keys()) + tuple(config.web_optional.keys())
 
     if len(args) == 1 and isinstance(args[0], dict):
         kwargs = args[0]
@@ -37,6 +38,13 @@ def setup(*args, **kwargs):
         except KeyError:
             continue
 
+    if kwargs.get("web", None):
+        for option in web_required:
+            try:
+                config.options[option] = kwargs[option]
+            except KeyError:
+                raise config.BotConfigError(f"Required web setup argument {option}")
+
     if config.options["id_groups"]:
         for option in id_required:
             try:
@@ -47,61 +55,93 @@ def setup(*args, **kwargs):
                 )
         config.options["category_name"] = config.options["category_name"].title()
 
-    if config.options["bot_files_dir"] and not config.options["bot_files_dir"].endswith("/"):
-        config.options["bot_files_dir"] += "/"
+    directory_config_items = (
+        "backups_dir",
+        "base_image_url",
+        "bot_files_dir",
+        "data_dir",
+        "download_dir",
+        "list_dir",
+        "log_dir",
+        "restricted_list_dir",
+        "tmp_upload_dir",
+        "validation_local_dir",
+        "validation_repo_dir",
+    )
+    for item in directory_config_items:
+        if config.options[item] and not config.options[item].endswith("/"):
+            config.options[item] += "/"
 
-    if config.options["data_dir"] and not config.options["data_dir"].endswith("/"):
-        config.options["data_dir"] += "/"
+    bot_files_subdirs = (
+        "backups_dir",
+        "download_dir",
+        "log_dir",
+        "tmp_upload_dir",
+        "validation_local_dir",
+    )
+    for item in bot_files_subdirs:
+        if config.options[item]:
+            config.options[
+                item
+            ] = f"{config.options['bot_files_dir']}{config.options[item]}"
 
-    if config.options["backups_dir"] and not config.options["backups_dir"].endswith("/"):
-        config.options["backups_dir"] += "/"
-
-    if config.options["download_dir"] and not config.options["download_dir"].endswith("/"):
-        config.options["download_dir"] += "/"
-
-    if config.options["list_dir"] and not config.options["list_dir"].endswith("/"):
-        config.options["list_dir"] += "/"
-
-    if config.options["restricted_list_dir"] and not config.options[
-        "restricted_list_dir"
-    ].endswith("/"):
-        config.options["restricted_list_dir"] += "/"
-
-    if config.options["log_dir"] and not config.options["log_dir"].endswith("/"):
-        config.options["log_dir"] += "/"
-
-    config.options["log_dir"] = f"{config.options['bot_files_dir']}{config.options['log_dir']}"
-    config.options[
-        "download_dir"
-    ] = f"{config.options['bot_files_dir']}{config.options['download_dir']}"
-    config.options[
-        "backups_dir"
-    ] = f"{config.options['bot_files_dir']}{config.options['backups_dir']}"
-
-    config.options["list_dir"] = f"{config.options['data_dir']}{config.options['list_dir']}"
-
-    if config.options["restricted_list_dir"]:
-        config.options[
-            "restricted_list_dir"
-        ] = f"{config.options['data_dir']}{config.options['restricted_list_dir']}"
-
-    config.options[
-        "wikipedia_file"
-    ] = f"{config.options['data_dir']}{config.options['wikipedia_file']}"
-    config.options[
-        "alias_file"
-    ] = f"{config.options['data_dir']}{config.options['alias_file']}"
-    if config.options["meme_file"]:
-        config.options[
-            "meme_file"
-        ] = f"{config.options['data_dir']}{config.options['meme_file']}"
+    data_subdirs = (
+        "alias_file",
+        "list_dir",
+        "meme_file",
+        "restricted_list_dir",
+        "wikipedia_file",
+    )
+    for item in data_subdirs:
+        if config.options[item]:
+            config.options[item] = f"{config.options['data_dir']}{config.options[item]}"
 
     config.options["id_type"] = config.options["id_type"].lower()
-
     config.options["short_id_type"] = (
         config.options["short_id_type"] or config.options["id_type"][0]
     )
 
+    if kwargs.get("web", None):
+        config.options["hashes_url"] = config.options["hashes_url"] or [
+            "https://raw.githubusercontent.com/"
+            + "/".join(url.split("/")[-2:]).split(".")[0]
+            + f"/master/{path}hashes.csv"
+            for url, path in (
+                (config.options["github_image_repo_url"], ""),
+                (
+                    config.options["validation_repo_url"],
+                    config.options["validation_repo_dir"],
+                ),
+            )
+        ]  # default hashes_url is https://raw.githubusercontent.com/{user}/{repo}/master/hashes.csv
+
+        config.options["ids_url"] = config.options["ids_url"] or [
+            "https://raw.githubusercontent.com/"
+            + "/".join(url.split("/")[-2:]).split(".")[0]
+            + f"/master/{path}ids.csv"
+            for url, path in (
+                (config.options["github_image_repo_url"], ""),
+                (
+                    config.options["validation_repo_url"],
+                    config.options["validation_repo_dir"],
+                ),
+            )
+        ]  # default ids_url is https://raw.githubusercontent.com/{user}/{repo}/master/{path}ids.csv
+
+        config.options["commit_url_format"] = config.options["commit_url_format"] or [
+            "https://github.com/"
+            + "/".join(url.split("/")[-2:]).split(".")[0]
+            + "/commit/{id}"
+            for url in (
+                config.options["github_image_repo_url"],
+                config.options["validation_repo_url"],
+            )
+        ]  # default commit_url_format is https://github.com/{user}/{repo}/commit/{id}
+
+        config.options["verification_server"] = (
+            config.options["verification_server"] or config.options["support_server"]
+        )
+
 
 def start():
-    import sciolyid.start_bot  # pylint: disable=unused-import
+    import sciolyid.start_bot  # pylint: disable=unused-import,import-outside-toplevel

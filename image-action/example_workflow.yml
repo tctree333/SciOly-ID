@@ -1,0 +1,23 @@
+## Goes in .github/workflows/main.yml
+
+name: "Update index files"
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Update files
+        uses: tctree333/SciOly-ID/image-action@master
+        with:
+          github token: ${{ secrets.GITHUB_TOKEN }}
+          current repo: ${{ github.repository }}
+          subfolder: true
+
