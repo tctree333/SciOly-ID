@@ -60,7 +60,9 @@ def count():
             logger.info("too many subfolders!")
     for item in id_items:
         if config.options["id_groups"]:
-            counts[get_category(item)][item] = 0
+            category = get_category(item)
+            counts.setdefault(category, {})
+            counts[category][item] = 0
         else:
             counts[item] = 0
     out_list = [
