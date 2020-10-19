@@ -145,7 +145,7 @@ async def bot_has_permissions(ctx):
     """Checks if the bot has correct permissions."""
     logger.info("global check: checking permissions")
     return commands.bot_has_permissions(
-        send_messages=True, embed_links=True, attach_files=True, manage_roles=True
+        send_messages=True, embed_links=True, attach_files=True
     ).predicate(ctx)
 
 
