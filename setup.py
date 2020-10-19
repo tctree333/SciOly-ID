@@ -24,10 +24,10 @@ setuptools.setup(
     author_email="tomichen33@gmail.com",
     packages=setuptools.find_packages(),
     install_requires=[
-        "discord.py>=1.3.4, <2.0.0",
+        "discord.py>=1.5.0, <2.0.0",
         "redis>=3.3.5, <4.0.0",
-        "sentry-sdk>=0.16.0, <0.17.0",
-        "Pillow>=6.1.0, <8.0.0",
+        "sentry-sdk>=0.16.0, <1.0.0",
+        "Pillow>=6.1.0, <9.0.0",
         "wikipedia>=1.4.0, <2.0.0",
         "gitpython>=3.0.6, <4.0.0",
         "hiredis>=1.0.1, <1.2.0",
