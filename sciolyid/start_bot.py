@@ -35,7 +35,7 @@ from sciolyid.functions import backup_all, channel_setup, fools, user_setup
 # Initialize bot
 intent: discord.Intents = discord.Intents.none()
 intent.guilds = True
-intent.members = True
+# intent.members = True
 intent.messages = True
 intent.voice_states = True
 
