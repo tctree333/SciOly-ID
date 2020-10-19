@@ -33,11 +33,22 @@ from sciolyid.data import GenericError, database, logger
 from sciolyid.functions import backup_all, channel_setup, fools, user_setup
 
 # Initialize bot
+intent: discord.Intents = discord.Intents.none()
+intent.guilds = True
+intent.members = True
+intent.messages = True
+intent.voice_states = True
+
+cache_flags: discord.MemberCacheFlags = discord.MemberCacheFlags.none()
+cache_flags.voice = True
+
 bot = commands.Bot(
     command_prefix=config.options["prefixes"],
     case_insensitive=True,
     description=config.options["bot_description"],
     help_command=commands.DefaultHelpCommand(verify_checks=False),
+    intents=intent,
+    member_cache_flags=cache_flags,
 )
 
 
@@ -75,7 +86,9 @@ for extension in config.options["disable_extensions"]:
     try:
         initial_extensions.remove(f"sciolyid.cogs.{extension}")
     except ValueError:
-        raise config.BotConfigError(f"Unable to disable extension 'sciolyid.cogs.{extension}'")
+        raise config.BotConfigError(
+            f"Unable to disable extension 'sciolyid.cogs.{extension}'"
+        )
 
 initial_extensions += config.options["custom_extensions"]
 initial_extensions = list(set(initial_extensions))
@@ -131,23 +144,9 @@ def moderation_check(ctx):
 async def bot_has_permissions(ctx):
     """Checks if the bot has correct permissions."""
     logger.info("global check: checking permissions")
-    # code copied from @commands.bot_has_permissions(send_messages=True, embed_links=True, attach_files=True)
-    if ctx.guild is not None:
-        perms = {"send_messages": True, "embed_links": True, "attach_files": True}
-        guild = ctx.guild
-        me = guild.me if guild is not None else ctx.bot.user
-        permissions = ctx.channel.permissions_for(me)
-
-        missing = [
-            perm for perm, value in perms.items() if getattr(permissions, perm, None) != value
-        ]
-
-        if not missing:
-            return True
-
-        raise commands.BotMissingPermissions(missing)
-    else:
-        return True
+    return commands.bot_has_permissions(
+        send_messages=True, embed_links=True, attach_files=True, manage_roles=True
+    ).predicate(ctx)
 
 
 @bot.check
@@ -240,7 +239,9 @@ async def on_command_error(ctx, error):
         elif error.code == 201:
             logger.info("HTTP Error")
             capture_exception(error)
-            await ctx.send("**An unexpected HTTP Error has occurred.**\n *Please try again.*")
+            await ctx.send(
+                "**An unexpected HTTP Error has occurred.**\n *Please try again.*"
+            )
         else:
             logger.info("uncaught generic error")
             capture_exception(error)
@@ -280,7 +281,9 @@ async def on_command_error(ctx, error):
 
         elif isinstance(error.original, discord.Forbidden):
             if error.original.code == 50007:
-                await ctx.send("I was unable to DM you. Check if I was blocked and try again.")
+                await ctx.send(
+                    "I was unable to DM you. Check if I was blocked and try again."
+                )
             elif error.original.code == 50013:
                 await ctx.send(
                     "There was an error with permissions. Check the bot has proper permissions and try again."
