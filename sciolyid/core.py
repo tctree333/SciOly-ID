@@ -124,7 +124,7 @@ async def get_image(ctx, item):
             ):
                 logger.info("found one!")
                 break
-            elif y == prevJ:
+            if y == prevJ:
                 raise GenericError("No Valid Images Found", code=999)
 
         database.hset(f"channel:{ctx.channel.id}", "prevJ", str(j))
@@ -165,6 +165,5 @@ async def get_files(item, retries=0):
             await config.options["download_func"]()
             retries += 1
             return await get_files(item, retries)
-        else:
-            logger.info("More than 3 retries")
-            return []
+        logger.info("More than 3 retries")
+        return []

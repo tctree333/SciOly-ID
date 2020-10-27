@@ -29,7 +29,8 @@ class Sessions(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def _get_options(self, ctx):
+    @staticmethod
+    def _get_options(ctx):
         bw, group, wiki, strict = database.hmget(
             f"session.data:{ctx.author.id}", ["bw", "group", "wiki", "strict"]
         )
@@ -46,7 +47,8 @@ class Sessions(commands.Cog):
 
         return options
 
-    def _get_stats(self, ctx):
+    @staticmethod
+    def _get_stats(ctx):
         start, correct, incorrect, total = map(
             int,
             database.hmget(
@@ -131,63 +133,63 @@ class Sessions(commands.Cog):
                 f"**There is already a session running.** *Change settings/view stats with `{config.options['prefixes'][0]}session edit`*"
             )
             return
+
+        args = args_str.lower().split(" ")
+        logger.info(f"args: {args}")
+
+        if "bw" in args:
+            bw = "bw"
         else:
-            args = args_str.lower().split(" ")
-            logger.info(f"args: {args}")
+            bw = ""
 
-            if "bw" in args:
-                bw = "bw"
-            else:
-                bw = ""
+        if "wiki" in args:
+            wiki = ""
+        else:
+            wiki = "wiki"
 
-            if "wiki" in args:
-                wiki = ""
-            else:
-                wiki = "wiki"
+        if "strict" in args:
+            strict = "strict"
+        else:
+            strict = ""
 
-            if "strict" in args:
-                strict = "strict"
-            else:
-                strict = ""
+        group_args = []
+        for category in set(
+            list(groups.keys())
+            + [
+                item
+                for group in groups
+                for item in config.options["category_aliases"][group]
+            ]
+        ).intersection({arg.lower() for arg in args}):
+            if category not in groups.keys():
+                category = next(
+                    key
+                    for key, value in config.options["category_aliases"].items()
+                    if category in value
+                )
+            group_args.append(category)
+        if group_args and config.options["id_groups"]:
+            group = " ".join(group_args).strip()
+        else:
+            group = ""
 
-            group_args = []
-            for category in set(
-                list(groups.keys())
-                + [
-                    item
-                    for group in groups.keys()
-                    for item in config.options["category_aliases"][group]
-                ]
-            ).intersection({arg.lower() for arg in args}):
-                if category not in groups.keys():
-                    category = next(
-                        key
-                        for key, value in config.options["category_aliases"].items()
-                        if category in value
-                    )
-                group_args.append(category)
-            if group_args and config.options["id_groups"]:
-                group = " ".join(group_args).strip()
-            else:
-                group = ""
+        logger.info(f"adding bw: {bw}; group: {group}; wiki: {wiki}; strict: {strict}")
 
-            logger.info(f"adding bw: {bw}; group: {group}; wiki: {wiki}; strict: {strict}")
-
-            database.hmset(
-                f"session.data:{ctx.author.id}",
-                {
-                    "start": round(time.time()),
-                    "stop": 0,
-                    "correct": 0,
-                    "incorrect": 0,
-                    "total": 0,
-                    "bw": bw,
-                    "group": group,
-                    "wiki": wiki,
-                    "strict": strict,
-                },
-            )
-            await ctx.send(f"**Session started with options:**\n{self._get_options(ctx)}")
+        database.hmset(
+            f"session.data:{ctx.author.id}",
+            {
+                "start": round(time.time()),
+                "stop": 0,
+                "correct": 0,
+                "incorrect": 0,
+                "total": 0,
+                "bw": bw,
+                "group": group,
+                "wiki": wiki,
+                "strict": strict,
+            },
+        )
+        await ctx.send(f"**Session started with options:**\n{self._get_options(ctx)}")
 
     # views session
     @session.command(
@@ -236,7 +238,7 @@ class Sessions(commands.Cog):
                 list(groups.keys())
                 + [
                     item
-                    for group in groups.keys()
+                    for group in groups
                     for item in config.options["category_aliases"][group]
                 ]
             ).intersection({arg.lower() for arg in args}):
@@ -263,7 +265,7 @@ class Sessions(commands.Cog):
                 database.hset(
                     f"session.data:{ctx.author.id}", "group", " ".join(add_group).strip(),
                 )
-            await self._send_stats(ctx, f"**Session started previously.**\n")
+            await self._send_stats(ctx, "**Session started previously.**\n")
         else:
             await ctx.send(
                 f"**There is no session running.** *You can start one with `{config.options['prefixes'][0]}session start`*"

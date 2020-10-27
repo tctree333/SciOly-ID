@@ -60,7 +60,8 @@ class Media(commands.Cog):
 
         return inner
 
-    def increment_item_frequency(self, ctx, item):
+    @staticmethod
+    def increment_item_frequency(ctx, item):
         item_setup(ctx, item)
         database.zincrby("frequency.item:global", 1, string.capwords(item))
 
@@ -130,7 +131,7 @@ class Media(commands.Cog):
             list(groups.keys())
             + [
                 item
-                for group in groups.keys()
+                for group in groups
                 for item in config.options["category_aliases"][group]
             ]
         ).intersection({arg.lower() for arg in args}):

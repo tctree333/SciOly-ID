@@ -141,7 +141,7 @@ class Other(commands.Cog):
             if meme_list:
                 await ctx.send(random.choice(meme_list))
             else:
-                await ctx.send("No memes avaliable :(")
+                await ctx.send("No memes available :(")
 
     if config.options["sendas"]:
         # Send command - for testing purposes only

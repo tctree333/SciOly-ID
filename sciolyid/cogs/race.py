@@ -29,7 +29,8 @@ class Race(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def _get_options(self, ctx):
+    @staticmethod
+    def _get_options(ctx):
         bw, group, limit, strict = database.hmget(
             f"race.data:{ctx.channel.id}", ["bw", "group", "limit", "strict"]
         )
@@ -131,7 +132,7 @@ class Race(commands.Cog):
         + "Starting a race will automatically run "
         + f"'{config.options['prefixes'][0]}pic' after every check. "
         + f"You will still need to use '{config.options['prefixes'][0]}check' to check your answer. "
-        + f"Races are channel-specific, and anyone in that channel can play."
+        + "Races are channel-specific, and anyone in that channel can play."
         + f"Races end when a player is the first to correctly ID a set amount of {config.options['id_type']}. (default 10)",
     )
     @commands.guild_only()
@@ -156,7 +157,7 @@ class Race(commands.Cog):
         if not str(ctx.channel.name).startswith("racing"):
             logger.info("not race channel")
             await ctx.send(
-                "**Sorry, racing is not availiable in this channel.**\n"
+                "**Sorry, racing is not available in this channel.**\n"
                 + "*Set the channel name to start with `racing` to enable it.*"
             )
             return
@@ -167,70 +168,69 @@ class Race(commands.Cog):
                 f"**There is already a race in session.** *View stats with `{config.options['prefixes'][0]}race view`*"
             )
             return
+        args = args_str.split(" ")
+        logger.info(f"args: {args}")
+
+        if "bw" in args:
+            bw = "bw"
         else:
-            args = args_str.split(" ")
-            logger.info(f"args: {args}")
+            bw = ""
 
-            if "bw" in args:
-                bw = "bw"
-            else:
-                bw = ""
+        if "strict" in args:
+            strict = "strict"
+        else:
+            strict = ""
 
-            if "strict" in args:
-                strict = "strict"
-            else:
-                strict = ""
+        group_args = []
+        for category in set(
+            list(groups.keys())
+            + [
+                item
+                for group in groups
+                for item in config.options["category_aliases"][group]
+            ]
+        ).intersection({arg.lower() for arg in args}):
+            if category not in groups.keys():
+                category = next(
+                    key
+                    for key, value in config.options["category_aliases"].items()
+                    if category in value
+                )
+            group_args.append(category)
+        group = " ".join(group_args).strip()
 
-            group_args = []
-            for category in set(
-                list(groups.keys())
-                + [
-                    item
-                    for group in groups.keys()
-                    for item in config.options["category_aliases"][group]
-                ]
-            ).intersection({arg.lower() for arg in args}):
-                if category not in groups.keys():
-                    category = next(
-                        key
-                        for key, value in config.options["category_aliases"].items()
-                        if category in value
-                    )
-                group_args.append(category)
-            group = " ".join(group_args).strip()
+        for arg in args:
+            try:
+                limit = int(arg)
+                break
+            except ValueError:
+                pass
+        else:
+            limit = 10
 
-            for arg in args:
-                try:
-                    limit = int(arg)
-                    break
-                except ValueError:
-                    pass
-            else:
-                limit = 10
+        if limit > 1000000:
+            await ctx.send("**Sorry, the maximum amount to win is 1 million.**")
+            limit = 1000000
 
-            if limit > 1000000:
-                await ctx.send("**Sorry, the maximum amount to win is 1 million.**")
-                limit = 1000000
+        logger.info(f"adding bw: {bw}; group: {group}; ")
 
-            logger.info(f"adding bw: {bw}; group: {group}; ")
+        database.hmset(
+            f"race.data:{ctx.channel.id}",
+            {
+                "start": round(time.time()),
+                "stop": 0,
+                "limit": limit,
+                "bw": bw,
+                "group": group,
+                "strict": strict,
+            },
+        )
+        database.zadd(f"race.scores:{ctx.channel.id}", {str(ctx.author.id): 0})
+        await ctx.send(f"**Race started with options:**\n{self._get_options(ctx)}")
 
-            database.hmset(
-                f"race.data:{ctx.channel.id}",
-                {
-                    "start": round(time.time()),
-                    "stop": 0,
-                    "limit": limit,
-                    "bw": bw,
-                    "group": group,
-                    "strict": strict,
-                },
-            )
-            database.zadd(f"race.scores:{ctx.channel.id}", {str(ctx.author.id): 0})
-            await ctx.send(f"**Race started with options:**\n{self._get_options(ctx)}")
-
-            logger.info("auto sending next image")
-            media = self.bot.get_cog("Media")
-            await media.send_pic_(ctx, group, bw)
+        logger.info("auto sending next image")
+        media = self.bot.get_cog("Media")
+        await media.send_pic_(ctx, group, bw)
 
     @race.command(
         brief="- Views race",
@@ -242,7 +242,7 @@ class Race(commands.Cog):
         logger.info("command: view race")
 
         if database.exists(f"race.data:{ctx.channel.id}"):
-            await self._send_stats(ctx, f"**Race In Progress**")
+            await self._send_stats(ctx, "**Race In Progress**")
         else:
             await ctx.send(
                 f"**There is no race in session.** *You can start one with `{config.options['prefixes'][0]}race start`*"

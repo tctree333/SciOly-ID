@@ -42,7 +42,7 @@ optional: Dict[str, Any] = {
     "download_dir": "github_download/",  # local directory containing media (images)
     "data_dir": "data/",  # local directory containing the id data
     "list_dir": "lists/",  # directory within data_dir containing id lists
-    "restricted_list_dir": None,  # directory within data_dir containg id lists that are avaliable by selection only
+    "restricted_list_dir": None,  # directory within data_dir containg id lists that are available by selection only
     "wikipedia_file": "wikipedia.txt",  # filename within data_dir containing wiki urls for every item
     "alias_file": "aliases.txt",  # filename within data_dir contiaining aliases for any item
     "meme_file": None,
@@ -50,7 +50,7 @@ optional: Dict[str, Any] = {
     "log_dir": "logs/",  # directory for text logs/backups
     "bot_files_dir": "",  # folder for bot generated files (downloaded images, logs)
     "short_id_type": "",  # short (usually 1 letter) form of id_type, used as alias for the pic command
-    "invite": "This bot is currently not avaliable outside the support server.",  # bot server invite link
+    "invite": "This bot is currently not available outside the support server.",  # bot server invite link
     "authors": "person_v1.32, hmmm, and EraserBird",  # creator names
     "id_groups": True,  # true/false - if you want to be able to select certain groups of items to id
     "category_aliases": {},  # aliases for categories

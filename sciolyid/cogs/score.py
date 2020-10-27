@@ -20,7 +20,6 @@ import typing
 import discord
 import pandas as pd
 from discord.ext import commands
-from sentry_sdk import capture_exception
 
 import sciolyid.config as config
 from sciolyid.data import GenericError, database, logger
@@ -31,7 +30,8 @@ class Score(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def _server_total(self, ctx):
+    @staticmethod
+    def _server_total(ctx):
         logger.info("fetching server totals")
         channels = map(
             lambda x: x.decode("utf-8").split(":")[1],
@@ -45,7 +45,8 @@ class Score(commands.Cog):
         scores = pipe.execute()
         return int(sum(scores))
 
-    def _monthly_lb(self, ctx, category):
+    @staticmethod
+    def _monthly_lb(category):
         logger.info("generating monthly leaderboard")
         if category == "scores":
             key = "daily.score"
@@ -55,7 +56,9 @@ class Score(commands.Cog):
             raise GenericError("Invalid category", 990)
 
         today = datetime.datetime.now(datetime.timezone.utc).date()
-        past_month = pd.date_range(today - datetime.timedelta(29), today).date
+        past_month = pd.date_range(  # pylint: disable=no-member
+            today - datetime.timedelta(29), today
+        ).date
         pipe = database.pipeline()
         for day in past_month:
             pipe.zrevrangebyscore(f"{key}:{day}", "+inf", "-inf", withscores=True)
@@ -65,7 +68,9 @@ class Score(commands.Cog):
             daily_score = pd.Series(
                 {
                     e[0]: e[1]
-                    for e in map(lambda x: (x[0].decode("utf-8"), int(x[1])), daily_score)
+                    for e in map(
+                        lambda x: (x[0].decode("utf-8"), int(x[1])), daily_score
+                    )
                 }
             )
             totals = totals.add(daily_score, fill_value=0)
@@ -75,14 +80,16 @@ class Score(commands.Cog):
     async def user_lb(self, ctx, title, page, database_key=None, data=None):
         if database_key is None and data is None:
             raise GenericError("database_key and data are both NoneType", 990)
-        elif database_key is not None and data is not None:
+        if database_key is not None and data is not None:
             raise GenericError("database_key and data are both set", 990)
 
         if page < 1:
             page = 1
 
         user_amount = (
-            int(database.zcard(database_key)) if database_key is not None else data.count()
+            int(database.zcard(database_key))
+            if database_key is not None
+            else data.count()
         )
         page = (page * 10) - 10
 
@@ -96,7 +103,9 @@ class Score(commands.Cog):
 
         users_per_page = 10
         leaderboard_list = (
-            database.zrevrangebyscore(database_key, "+inf", "-inf", page, users_per_page, True)
+            database.zrevrangebyscore(
+                database_key, "+inf", "-inf", page, users_per_page, True
+            )
             if database_key is not None
             else data.iloc[page : page + users_per_page - 1].items()
         )
@@ -134,7 +143,9 @@ class Score(commands.Cog):
             if database_key is not None:
                 placement = int(database.zrevrank(database_key, str(ctx.author.id))) + 1
                 distance = int(
-                    database.zrevrange(database_key, placement - 2, placement - 2, True)[0][1]
+                    database.zrevrange(
+                        database_key, placement - 2, placement - 2, True
+                    )[0][1]
                 ) - int(user_score)
             else:
                 placement = int(data.rank(ascending=False)[str(ctx.author.id)])
@@ -195,7 +206,10 @@ class Score(commands.Cog):
     )
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.user))
     async def userscore(
-        self, ctx, *, user: typing.Optional[typing.Union[discord.Member, discord.User, str]] = None
+        self,
+        ctx,
+        *,
+        user: typing.Optional[typing.Union[discord.Member, discord.User, str]] = None,
     ):
         logger.info("command: userscore")
 
@@ -266,8 +280,8 @@ class Score(commands.Cog):
         embed.set_author(name=config.options["bot_signature"])
         current_streak = f"{user} has answered `{streak}` in a row!"
         max_streak = f"{user}'s max was `{max_streak}` in a row!"
-        embed.add_field(name=f"**Current Streak**", value=current_streak, inline=False)
-        embed.add_field(name=f"**Max Streak**", value=max_streak, inline=False)
+        embed.add_field(name="**Current Streak**", value=current_streak, inline=False)
+        embed.add_field(name="**Max Streak**", value=max_streak, inline=False)
 
         await ctx.send(embed=embed)
 
@@ -307,7 +321,9 @@ class Score(commands.Cog):
             database_key = "streak:global"
             scope = "current"
 
-        await self.user_lb(ctx, f"Streak Leaderboard ({scope})", page, database_key, None)
+        await self.user_lb(
+            ctx, f"Streak Leaderboard ({scope})", page, database_key, None
+        )
 
     # leaderboard - returns top 1-10 users
     @commands.command(
@@ -346,7 +362,7 @@ class Score(commands.Cog):
             else:
                 logger.info("dm context")
                 await ctx.send(
-                    "**Server scopes are not avaliable in DMs.**\n*Showing global leaderboard instead.*"
+                    "**Server scopes are not available in DMs.**\n*Showing global leaderboard instead.*"
                 )
                 scope = "global"
                 database_key = "users:global"
@@ -354,7 +370,7 @@ class Score(commands.Cog):
         elif scope in ("month", "monthly", "m"):
             database_key = None
             scope = "Last 30 Days"
-            data = self._monthly_lb(ctx, "scores")
+            data = self._monthly_lb("scores")
         else:
             database_key = "users:global"
             scope = "global"
@@ -386,7 +402,17 @@ class Score(commands.Cog):
         logger.info(f"scope: {scope}")
         logger.info(f"page: {page}")
 
-        if not scope in ("global", "server", "me", "month", "monthly", "mo", "g", "s", "m"):
+        if not scope in (
+            "global",
+            "server",
+            "me",
+            "month",
+            "monthly",
+            "mo",
+            "g",
+            "s",
+            "m",
+        ):
             logger.info("invalid scope")
             await ctx.send(
                 f"**{scope} is not a valid scope!**\n*Valid Scopes:* `global, server, me, month`"
@@ -400,7 +426,7 @@ class Score(commands.Cog):
             else:
                 logger.info("dm context")
                 await ctx.send(
-                    "**Server scopes are not avaliable in DMs.**\n*Showing global leaderboard instead.*"
+                    "**Server scopes are not available in DMs.**\n*Showing global leaderboard instead.*"
                 )
                 scope = "global"
                 database_key = "incorrect:global"
@@ -412,7 +438,7 @@ class Score(commands.Cog):
         elif scope in ("month", "monthly", "mo"):
             database_key = None
             scope = "Last 30 days"
-            data = self._monthly_lb(ctx, "missed")
+            data = self._monthly_lb("missed")
         else:
             database_key = "incorrect:global"
             scope = "global"
