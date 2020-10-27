@@ -35,12 +35,13 @@ from sciolyid.functions import backup_all, channel_setup, fools, user_setup
 # Initialize bot
 intent: discord.Intents = discord.Intents.none()
 intent.guilds = True
-# intent.members = True
+intent.members = True
 intent.messages = True
 intent.voice_states = True
 
 cache_flags: discord.MemberCacheFlags = discord.MemberCacheFlags.none()
 cache_flags.voice = True
+cache_flags.joined = True
 
 bot = commands.Bot(
     command_prefix=config.options["prefixes"],
@@ -134,10 +135,9 @@ def moderation_check(ctx):
     logger.info("global check: checking banned")
     if database.zscore("ignore:global", str(ctx.channel.id)) is not None:
         raise GenericError(code=192)
-    elif database.zscore("banned:global", str(ctx.author.id)) is not None:
+    if database.zscore("banned:global", str(ctx.author.id)) is not None:
         raise GenericError(code=842)
-    else:
-        return True
+    return True
 
 
 @bot.check
@@ -219,10 +219,10 @@ async def on_command_error(ctx, error):
         )
 
     elif isinstance(error, commands.NoPrivateMessage):
-        await ctx.send("**This command is unavaliable in DMs!**")
+        await ctx.send("**This command is unavailable in DMs!**")
 
     elif isinstance(error, commands.PrivateMessageOnly):
-        await ctx.send("**This command is only avaliable in DMs!**")
+        await ctx.send("**This command is only available in DMs!**")
 
     elif isinstance(error, commands.NotOwner):
         logger.info("not owner")
@@ -277,7 +277,7 @@ async def on_command_error(ctx, error):
 
         elif isinstance(error.original, wikipedia.exceptions.WikipediaException):
             capture_exception(error.original)
-            await ctx.send("Wikipedia page unavaliable. Try again later.")
+            await ctx.send("Wikipedia page unavailable. Try again later.")
 
         elif isinstance(error.original, discord.Forbidden):
             if error.original.code == 50007:
