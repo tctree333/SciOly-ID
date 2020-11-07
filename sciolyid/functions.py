@@ -36,9 +36,7 @@ async def channel_setup(ctx):
     `ctx` - Discord context object
     """
     logger.info("checking channel setup")
-    if database.exists(f"channel:{ctx.channel.id}"):
-        logger.info("channel data ok")
-    else:
+    if not database.exists(f"channel:{ctx.channel.id}"):
         database.hmset(
             f"channel:{ctx.channel.id}",
             {"item": "", "answered": 1, "prevJ": 20, "prevI": ""},
@@ -47,20 +45,12 @@ async def channel_setup(ctx):
         logger.info("channel data added")
         await ctx.send("Ok, setup! I'm all ready to use!")
 
-    if database.zscore("score:global", str(ctx.channel.id)) is not None:
-        logger.info("channel score ok")
-    else:
+    if database.zscore("score:global", str(ctx.channel.id)) is None:
         database.zadd("score:global", {str(ctx.channel.id): 0})
         logger.info("channel score added")
 
     if ctx.guild is not None:
-        if (
-            database.zadd("channels:global", {f"{ctx.guild.id}:{ctx.channel.id}": 0})
-            != 0
-        ):
-            logger.info("server lookup ok")
-        else:
-            logger.info("server lookup added")
+        database.zadd("channels:global", {f"{ctx.guild.id}:{ctx.channel.id}": 0})
 
 
 async def user_setup(ctx):
@@ -69,52 +59,30 @@ async def user_setup(ctx):
     `ctx` - Discord context object
     """
     logger.info("checking user data")
-    if database.zscore("users:global", str(ctx.author.id)) is not None:
-        logger.info("user global ok")
-    else:
+    if database.zscore("users:global", str(ctx.author.id)) is None:
         database.zadd("users:global", {str(ctx.author.id): 0})
         logger.info("user global added")
         await ctx.send("Welcome <@" + str(ctx.author.id) + ">!")
 
     date = str(datetime.datetime.now(datetime.timezone.utc).date())
-    if database.zscore(f"daily.score:{date}", str(ctx.author.id)) is not None:
-        logger.info("user daily ok")
-    else:
+    if database.zscore(f"daily.score:{date}", str(ctx.author.id)) is None:
         database.zadd(f"daily.score:{date}", {str(ctx.author.id): 0})
         logger.info("user daily added")
 
     # Add streak
-    if (database.zscore("streak:global", str(ctx.author.id)) is not None) and (
-        database.zscore("streak.max:global", str(ctx.author.id)) is not None
+    if (database.zscore("streak:global", str(ctx.author.id)) is None) or (
+        database.zscore("streak.max:global", str(ctx.author.id)) is None
     ):
-        logger.info("user streak in already")
-    else:
         database.zadd("streak:global", {str(ctx.author.id): 0})
         database.zadd("streak.max:global", {str(ctx.author.id): 0})
         logger.info("added streak")
 
     if ctx.guild is not None:
-        logger.info("no dm")
-        if (
-            database.zscore(f"users.server:{ctx.guild.id}", str(ctx.author.id))
-            is not None
-        ):
-            server_score = database.zscore(
-                f"users.server:{ctx.guild.id}", str(ctx.author.id)
-            )
-            global_score = database.zscore("users:global", str(ctx.author.id))
-            if server_score is global_score:
-                logger.info("user server ok")
-            else:
-                database.zadd(
-                    f"users.server:{ctx.guild.id}", {str(ctx.author.id): global_score}
-                )
-        else:
-            score = int(database.zscore("users:global", str(ctx.author.id)))
-            database.zadd(f"users.server:{ctx.guild.id}", {str(ctx.author.id): score})
-            logger.info("user server added")
-    else:
-        logger.info("dm context")
+        global_score = database.zscore("users:global", str(ctx.author.id))
+        database.zadd(
+            f"users.server:{ctx.guild.id}", {str(ctx.author.id): global_score}
+        )
+        logger.info("synced scores")
 
 
 def item_setup(ctx, item: str):

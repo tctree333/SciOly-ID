@@ -116,46 +116,29 @@ if sys.platform == "win32":
 ######
 # Global Command Checks
 ######
-@bot.check
-def log_command_frequency(ctx):
-    """Logs the command used to the database."""
-    logger.info("global check: logging command frequency")
-    database.zincrby("frequency.command:global", 1, str(ctx.command))
-    return True
-
 
 @bot.check
-def moderation_check(ctx):
-    """Checks different moderation checks.
+async def prechecks(ctx):
+    await ctx.trigger_typing()
 
-    Disallows:
-    - Users that are banned from the bot,
-    - Channels that are ignored
-    """
+    logger.info("global check: checking permissions")
+    await commands.bot_has_permissions(
+        send_messages=True, embed_links=True, attach_files=True
+    ).predicate(ctx)
+
     logger.info("global check: checking banned")
     if database.zscore("ignore:global", str(ctx.channel.id)) is not None:
         raise GenericError(code=192)
     if database.zscore("banned:global", str(ctx.author.id)) is not None:
         raise GenericError(code=842)
-    return True
 
+    logger.info("global check: logging command frequency")
+    database.zincrby("frequency.command:global", 1, str(ctx.command))
 
-@bot.check
-async def bot_has_permissions(ctx):
-    """Checks if the bot has correct permissions."""
-    logger.info("global check: checking permissions")
-    return await commands.bot_has_permissions(
-        send_messages=True, embed_links=True, attach_files=True
-    ).predicate(ctx)
-
-
-@bot.check
-async def database_setup(ctx):
-    """Ensures database consistency before commands run."""
     logger.info("global check: database setup")
-    await ctx.trigger_typing()
     await channel_setup(ctx)
     await user_setup(ctx)
+
     return True
 
 
