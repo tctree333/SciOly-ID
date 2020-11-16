@@ -16,17 +16,14 @@
 
 import itertools
 import random
-import typing
 from difflib import get_close_matches
 
-import discord
 import wikipedia
 from discord.ext import commands
 
 import sciolyid.config as config
 from sciolyid.core import send_image
-from sciolyid.data import (aliases, database, get_aliases, groups, id_list,
-                           logger, master_id_list, meme_list)
+from sciolyid.data import aliases, groups, logger, master_id_list, meme_list
 from sciolyid.functions import CustomCooldown, build_id_list
 
 
@@ -55,7 +52,9 @@ class Other(commands.Cog):
                 item = next(key for key, value in aliases.items() if item in value)
 
             delete = await ctx.send("Please wait a moment.")
-            await send_image(ctx, str(item), message=f"Here's a *{item.lower()}* image!")
+            await send_image(
+                ctx, str(item), message=f"Here's a *{item.lower()}* image!"
+            )
             await delete.delete()
 
         else:
@@ -113,7 +112,9 @@ class Other(commands.Cog):
         async def groups(self, ctx):
             logger.info("command: list")
 
-            await ctx.send(f"**Valid Groups**: `{', '.join(map(str, list(groups.keys())))}`")
+            await ctx.send(
+                f"**Valid Groups**: `{', '.join(map(str, list(groups.keys())))}`"
+            )
 
     # Wiki command - argument is the wiki page
     @commands.command(help="- Fetch the wikipedia page for any given argument")
