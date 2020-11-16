@@ -70,7 +70,10 @@ class Stats(commands.Cog):
             if self.bot.intents.members:
                 user = self.bot.get_user(int(user_id))
             else:
-                user = await self.bot.fetch_user(int(user_id))
+                try:
+                    user = await self.bot.fetch_user(int(user_id))
+                except discord.HTTPException:
+                    user = None
 
             if user is None:
                 new_index.append("User Unavailable")
