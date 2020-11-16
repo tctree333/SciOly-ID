@@ -38,6 +38,7 @@ web_required: Dict[str, Optional[str]] = {
 }
 
 optional: Dict[str, Any] = {
+    "members_intent": False,  # whether the privileged members intent is enabled in the developer portal
     "download_func": None,  # asyncronous function that downloads images locally to download_dir
     "download_dir": "github_download/",  # local directory containing media (images)
     "data_dir": "data/",  # local directory containing the id data

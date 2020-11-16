@@ -35,13 +35,14 @@ from sciolyid.functions import backup_all, channel_setup, fools, user_setup
 # Initialize bot
 intent: discord.Intents = discord.Intents.none()
 intent.guilds = True
-intent.members = True
+intent.members = config.options["members_intent"]
 intent.messages = True
 intent.voice_states = True
 
 cache_flags: discord.MemberCacheFlags = discord.MemberCacheFlags.none()
 cache_flags.voice = True
-cache_flags.joined = True
+if intent.members:
+    cache_flags.joined = True
 
 bot = commands.Bot(
     command_prefix=config.options["prefixes"],
