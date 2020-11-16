@@ -232,8 +232,7 @@ async def on_command_error(ctx, error):
             await ctx.send(
                 "**An uncaught generic error has occurred.**\n"
                 + "*Please log this message in #support in the support server below, or try again.*\n"
-                + "**Error:** "
-                + str(error)
+                + f"**Error code:** `{error.code}`"
             )
             await ctx.send(config.options["support_server"])
             raise error
@@ -245,8 +244,6 @@ async def on_command_error(ctx, error):
                 await ctx.send(
                     "**An unexpected ResponseError has occurred.**\n"
                     + "*Please log this message in #support in the support server below, or try again.*\n"
-                    + "**Error:** "
-                    + str(error)
                 )
                 await ctx.send(config.options["support_server"])
             else:
@@ -276,33 +273,32 @@ async def on_command_error(ctx, error):
                 capture_exception(error)
                 await ctx.send(
                     "**An unexpected Forbidden error has occurred.**\n"
-                    "*Please log this message in #support in the support server below, or try again.*\n"
-                    "**Error:** " + str(error)
+                    + "*Please log this message in #support in the support server below, or try again.*\n"
+                    + f"**Error code:** `{error.original.code}`"
                 )
                 await ctx.send(config.options["support_server"])
 
         elif isinstance(error.original, discord.HTTPException):
+            capture_exception(error.original)
             if error.original.status == 502:
                 await ctx.send(
                     "**An error has occured with discord. :(**\n*Please try again.*"
                 )
             else:
-                capture_exception(error.original)
                 await ctx.send(
                     "**An unexpected HTTPException has occurred.**\n"
                     + "*Please log this message in #support in the support server below, or try again*\n"
-                    + "**Error:** "
-                    + str(error.original)
+                    + f"**Reponse Code:** `{error.original.status}`"
                 )
                 await ctx.send(config.options["support_server"])
 
         elif isinstance(error.original, aiohttp.ClientOSError):
+            capture_exception(error.original)
             if error.original.errno == errno.ECONNRESET:
                 await ctx.send(
                     "**An error has occured with discord. :(**\n*Please try again.*"
                 )
             else:
-                capture_exception(error.original)
                 await ctx.send(
                     "**An unexpected ClientOSError has occurred.**\n"
                     + "*Please log this message in #support in the support server below, or try again.*\n"
@@ -319,14 +315,28 @@ async def on_command_error(ctx, error):
             capture_exception(error.original)
             await ctx.send("**The request timed out.**\n*Please try again in a bit.*")
 
+        elif isinstance(error.original, OSError):
+            capture_exception(error.original)
+            if error.original.errno == errno.ENOSPC:
+                await ctx.send(
+                    "**No space is left on the server!**\n"
+                    + "*Please report this message in #support in the support server below!*\n"
+                )
+                await ctx.send(config.options["support_server"])
+            else:
+                await ctx.send(
+                    "**An unexpected OSError has occurred.**\n"
+                    + "*Please log this message in #support in the support server below, or try again.*\n"
+                    + f"**Error code:** `{error.original.errno}`"
+                )
+                await ctx.send(config.options["support_server"])
+
         else:
             logger.info("uncaught command error")
             capture_exception(error.original)
             await ctx.send(
                 "**An uncaught command error has occurred.**\n"
                 + "*Please log this message in #support in the support server below, or try again.*\n"
-                + "**Error:**  "
-                + str(error)
             )
             await ctx.send(config.options["support_server"])
             raise error
@@ -337,8 +347,6 @@ async def on_command_error(ctx, error):
         await ctx.send(
             "**An uncaught non-command error has occurred.**\n"
             + "*Please log this message in #support in the support server below, or try again.*\n"
-            + "**Error:** "
-            + str(error)
         )
         await ctx.send(config.options["support_server"])
         raise error
