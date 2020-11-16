@@ -162,11 +162,11 @@ class Other(commands.Cog):
             await channel.send(" ".join(message))
             await ctx.send("Ok, sent!")
 
-    # Test command - for testing purposes only
-    @commands.command(help="- test command", hidden=True)
-    async def test(self, ctx, *, item):
-        logger.info("command: test")
-        await ctx.send(await get_aliases(item))
+    # # Test command - for testing purposes only
+    # @commands.command(help="- test command", hidden=True)
+    # async def test(self, ctx, *, item):
+    #     logger.info("command: test")
+    #     await ctx.send(await get_aliases(item))
 
     # Test command - for testing purposes only
     @commands.command(help="- test command", hidden=True)
