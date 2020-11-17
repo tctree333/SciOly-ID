@@ -172,7 +172,7 @@ async def on_command_error(ctx, error):
 
     if isinstance(error, commands.CommandOnCooldown):  # send cooldown
         await ctx.send(
-            "**Cooldown.** Try again after " + str(round(error.retry_after)) + " s.",
+            "**Cooldown.** Try again after " + str(round(error.retry_after, 2)) + " s.",
             delete_after=5.0,
         )
 
