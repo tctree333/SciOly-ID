@@ -35,7 +35,7 @@ class Other(commands.Cog):
     @commands.command(
         help=f"- Gives images of specific {config.options['id_type']}", aliases=["i"]
     )
-    @commands.check(CustomCooldown(10.0, bucket=commands.BucketType.user))
+    @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.user))
     async def info(self, ctx, *, arg):
         logger.info("command: info")
 
@@ -64,7 +64,7 @@ class Other(commands.Cog):
 
     # List command
     @commands.command(help="- DMs the user with the appropriate list.", name="list")
-    @commands.check(CustomCooldown(8.0, bucket=commands.BucketType.user))
+    @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.user))
     async def list_of_items(self, ctx, group=""):
         logger.info("command: list")
 
@@ -118,7 +118,7 @@ class Other(commands.Cog):
 
     # Wiki command - argument is the wiki page
     @commands.command(help="- Fetch the wikipedia page for any given argument")
-    @commands.check(CustomCooldown(8.0, bucket=commands.BucketType.user))
+    @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.user))
     async def wiki(self, ctx, *, arg):
         logger.info("command: wiki")
 
@@ -135,7 +135,7 @@ class Other(commands.Cog):
         @commands.command(
             help=f"- Sends a funny {config.options['id_type'][:-1]} video/image!"
         )
-        @commands.cooldown(1, 300.0, type=commands.BucketType.user)
+        @commands.check(CustomCooldown(180.0, disable=True, bucket=commands.BucketType.user))
         async def meme(self, ctx):
             logger.info("command: meme")
 
