@@ -9,6 +9,7 @@ import sciolyid.config as config
 
 PROFILE_URL = "https://discord.com/api/users/{id}"
 AVATAR_URL = "https://cdn.discordapp.com/avatars/{id}/{avatar}.{ext}"
+DEFAULT_AVATAR_URL = "https://cdn.discordapp.com/embed/avatars/{discrim}.png"
 INVITE_TO_ID_URL = "https://discord.com/api/invites/{code}"
 
 SESSION_EXPIRE: int = 432000  # time (seconds) before expiring the session
@@ -31,11 +32,16 @@ def fetch_profile(user_id: Union[int, str]) -> Dict[str, str]:
 
     profile: Dict[str, str] = dict()
     profile["username"] = f"{json['username']}#{json['discriminator']}"
-    profile["avatar"] = AVATAR_URL.format(
-        id=user_id,
-        avatar=json["avatar"],
-        ext=("gif" if json["avatar"].startswith("a_") else "png"),
-    )
+    if json["avatar"]:
+        profile["avatar"] = AVATAR_URL.format(
+            id=user_id,
+            avatar=json["avatar"],
+            ext=("gif" if json["avatar"].startswith("a_") else "png"),
+        )
+    else:
+        profile["avatar"] = DEFAULT_AVATAR_URL.format(
+            discrim=int(json["discriminator"]) % 5
+        )
 
     return profile
 
