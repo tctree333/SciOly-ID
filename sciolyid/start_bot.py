@@ -30,7 +30,8 @@ from sentry_sdk import capture_exception
 
 import sciolyid.config as config
 from sciolyid.data import GenericError, database, logger
-from sciolyid.functions import backup_all, channel_setup, fools, user_setup
+from sciolyid.functions import (backup_all, channel_setup, fools,
+                                get_all_users, user_setup)
 
 # Initialize bot
 intent: discord.Intents = discord.Intents.none()
@@ -67,6 +68,7 @@ async def on_ready():
 
     # start tasks
     update_images.start()
+    refresh_user_cache.start()
     if config.options["backups_channel"]:
         refresh_backup.start()
 
@@ -117,6 +119,7 @@ if sys.platform == "win32":
 ######
 # Global Command Checks
 ######
+
 
 @bot.check
 async def prechecks(ctx):
@@ -358,6 +361,13 @@ async def update_images():
     logger.info("updating images")
     await config.options["download_func"]()
     logger.info("done updating images!")
+
+
+@tasks.loop(hours=12.0)
+async def refresh_user_cache():
+    """Task to update User cache to increase performance of commands."""
+    logger.info("TASK: Updating User cache")
+    await get_all_users(bot)
 
 
 @tasks.loop(hours=6.0)

@@ -22,7 +22,7 @@ from discord.ext import commands
 
 import sciolyid.config as config
 from sciolyid.data import database, groups, logger
-from sciolyid.functions import CustomCooldown
+from sciolyid.functions import CustomCooldown, fetch_get_user
 
 
 class Race(commands.Cog):
@@ -67,24 +67,12 @@ class Race(commands.Cog):
 
         for i, stats in enumerate(leaderboard_list):
             if ctx.guild is not None:
-                if self.bot.intents.members:
-                    user = ctx.guild.get_member(int(stats[0]))
-                else:
-                    try:
-                        user = await ctx.guild.fetch_member(int(stats[0]))
-                    except discord.HTTPException:
-                        user = None
+                user = await fetch_get_user(int(stats[0]), ctx=ctx, member=True)
             else:
                 user = None
 
             if user is None:
-                if self.bot.intents.members:
-                    user = self.bot.get_user(int(stats[0]))
-                else:
-                    try:
-                        user = await self.bot.fetch_user(int(stats[0]))
-                    except discord.HTTPException:
-                        user = None
+                user = await fetch_get_user(int(stats[0]), ctx=ctx, member=False)
                 if user is None:
                     user_info = "**Deleted**"
                 else:
@@ -112,24 +100,12 @@ class Race(commands.Cog):
     async def stop_race_(self, ctx):
         first = database.zrevrange(f"race.scores:{ctx.channel.id}", 0, 0, True)[0]
         if ctx.guild is not None:
-            if self.bot.intents.members:
-                user = ctx.guild.get_member(int(first[0]))
-            else:
-                try:
-                    user = await ctx.guild.fetch_member(int(first[0]))
-                except discord.HTTPException:
-                    user = None
+            user = await fetch_get_user(int(first[0]), ctx=ctx, member=True)
         else:
             user = None
 
         if user is None:
-            if self.bot.intents.members:
-                user = self.bot.get_user(int(first[0]))
-            else:
-                try:
-                    user = await self.bot.fetch_user(int(first[0]))
-                except discord.HTTPException:
-                    user = None
+            user = await fetch_get_user(int(first[0]), ctx=ctx, member=False)
             if user is None:
                 user_info = "Deleted"
             else:

@@ -23,7 +23,7 @@ from discord.ext import commands
 
 import sciolyid.config as config
 from sciolyid.data import GenericError, database, logger
-from sciolyid.functions import CustomCooldown, send_leaderboard
+from sciolyid.functions import CustomCooldown, send_leaderboard, fetch_get_user
 
 
 class Score(commands.Cog):
@@ -116,24 +116,12 @@ class Score(commands.Cog):
 
         for i, stats in enumerate(leaderboard_list):
             if ctx.guild is not None:
-                if self.bot.intents.members:
-                    user = ctx.guild.get_member(int(stats[0]))
-                else:
-                    try:
-                        user = await ctx.guild.fetch_member(int(stats[0]))
-                    except discord.HTTPException:
-                        user = None
+                user = await fetch_get_user(int(stats[0]), ctx=ctx, member=True)
             else:
                 user = None
 
             if user is None:
-                if self.bot.intents.members:
-                    user = self.bot.get_user(int(stats[0]))
-                else:
-                    try:
-                        user = await self.bot.fetch_user(int(stats[0]))
-                    except discord.HTTPException:
-                        user = None
+                user = await fetch_get_user(int(stats[0]), ctx=ctx, member=False)
                 if user is None:
                     user_info = "**Deleted**"
                 else:

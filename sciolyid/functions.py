@@ -16,6 +16,7 @@
 
 import datetime
 import difflib
+import functools
 import math
 import os
 import pickle
@@ -28,6 +29,48 @@ from PIL import Image
 
 import sciolyid.config as config
 from sciolyid.data import GenericError, database, groups, id_list, logger
+
+
+def cache(func=None):
+    """Cache decorator based on functools.lru_cache.
+    This does not have a max_size and does not evict items.
+    In addition, results are only cached by the first provided argument.
+    """
+
+    def wrapper(func):
+        sentinel = object()
+
+        cache_ = {}
+        hits = misses = 0
+        cache_get = cache_.get
+        cache_len = cache_.__len__
+
+        async def wrapped(*args, **kwds):
+            # Simple caching without ordering or size limit
+            logger.info("checking cache")
+            nonlocal hits, misses
+            key = hash(args[0])
+            result = cache_get(key, sentinel)
+            if result is not sentinel:
+                logger.info(f"{args[0]} found in cache!")
+                hits += 1
+                return result
+            logger.info(f"did not find {args[0]} in cache")
+            misses += 1
+            result = await func(*args, **kwds)
+            cache_[key] = result
+            return result
+
+        def cache_info():
+            """Report cache statistics"""
+            return functools._CacheInfo(hits, misses, None, cache_len())
+
+        wrapped.cache_info = cache_info
+        return functools.update_wrapper(wrapped, func)
+
+    if func:
+        return wrapper(func)
+    return wrapper
 
 
 async def channel_setup(ctx):
@@ -265,6 +308,33 @@ def black_and_white(input_image_path) -> BytesIO:
     return final_buffer
 
 
+async def fetch_get_user(user_id: int, ctx=None, bot=None, member: bool = False):
+    if (ctx is None and bot is None) or (ctx is not None and bot is not None):
+        raise ValueError("Only one of ctx or bot must be passed")
+    if ctx:
+        bot = ctx.bot
+    elif member:
+        raise ValueError("ctx must be passed for member lookup")
+    if not member:
+        return await _fetch_cached_user(user_id, bot)
+    if bot.intents.members:
+        return ctx.guild.get_member(user_id)
+    try:
+        return await ctx.guild.fetch_member(user_id)
+    except discord.HTTPException:
+        return None
+
+
+@cache()
+async def _fetch_cached_user(user_id: int, bot):
+    if bot.intents.members:
+        return bot.get_user(user_id)
+    try:
+        return await bot.fetch_user(user_id)
+    except discord.HTTPException:
+        return None
+
+
 async def send_leaderboard(
     ctx, title, page, database_key=None, data=None, items_per_page=10
 ):
@@ -403,6 +473,14 @@ async def fools(ctx):
         await ctx.send(embed=embed)
         raise GenericError(code=666)
     return True
+
+
+async def get_all_users(bot):
+    logger.info("Starting user cache")
+    user_ids = map(int, database.zrangebyscore("users:global", "-inf", "+inf"))
+    for user_id in user_ids:
+        await fetch_get_user(user_id, bot=bot, member=False)
+    logger.info("User cache finished")
 
 
 def spellcheck_list(word_to_check, correct_list, abs_cutoff=None):
