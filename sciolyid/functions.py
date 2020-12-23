@@ -30,13 +30,11 @@ from PIL import Image
 import sciolyid.config as config
 from sciolyid.data import GenericError, database, groups, id_list, logger
 
-
 def cache(func=None):
     """Cache decorator based on functools.lru_cache.
     This does not have a max_size and does not evict items.
     In addition, results are only cached by the first provided argument.
     """
-
     def wrapper(func):
         sentinel = object()
 
@@ -72,7 +70,6 @@ def cache(func=None):
         return wrapper(func)
     return wrapper
 
-
 async def channel_setup(ctx):
     """Sets up a new discord channel.
 
@@ -82,7 +79,12 @@ async def channel_setup(ctx):
     if not database.exists(f"channel:{ctx.channel.id}"):
         database.hmset(
             f"channel:{ctx.channel.id}",
-            {"item": "", "answered": 1, "prevJ": 20, "prevI": ""},
+            {
+            "item": "",
+            "answered": 1,
+            "prevJ": 20,
+            "prevI": ""
+            },
         )
         # true = 1, false = 0, prevJ is 20 to define as integer
         logger.info("channel data added")
@@ -94,7 +96,6 @@ async def channel_setup(ctx):
 
     if ctx.guild is not None:
         database.zadd("channels:global", {f"{ctx.guild.id}:{ctx.channel.id}": 0})
-
 
 async def user_setup(ctx):
     """Sets up a new discord user for score tracking.
@@ -113,20 +114,16 @@ async def user_setup(ctx):
         logger.info("user daily added")
 
     # Add streak
-    if (database.zscore("streak:global", str(ctx.author.id)) is None) or (
-        database.zscore("streak.max:global", str(ctx.author.id)) is None
-    ):
+    if (database.zscore("streak:global", str(ctx.author.id)) is
+        None) or (database.zscore("streak.max:global", str(ctx.author.id)) is None):
         database.zadd("streak:global", {str(ctx.author.id): 0})
         database.zadd("streak.max:global", {str(ctx.author.id): 0})
         logger.info("added streak")
 
     if ctx.guild is not None:
         global_score = database.zscore("users:global", str(ctx.author.id))
-        database.zadd(
-            f"users.server:{ctx.guild.id}", {str(ctx.author.id): global_score}
-        )
+        database.zadd(f"users.server:{ctx.guild.id}", {str(ctx.author.id): global_score})
         logger.info("synced scores")
-
 
 def item_setup(ctx, item: str):
     """Sets up a new item for incorrect tracking.
@@ -180,9 +177,7 @@ def item_setup(ctx, item: str):
         ):
             logger.info("item server ok")
         else:
-            database.zadd(
-                f"incorrect.server:{ctx.guild.id}", {string.capwords(item): 0}
-            )
+            database.zadd(f"incorrect.server:{ctx.guild.id}", {string.capwords(item): 0})
             logger.info("item server added")
     else:
         logger.info("dm context")
@@ -202,7 +197,6 @@ def item_setup(ctx, item: str):
     else:
         logger.info("no session")
 
-
 def session_increment(ctx, item: str, amount: int = 1):
     """Increments the value of a database hash field by `amount`.
 
@@ -219,7 +213,6 @@ def session_increment(ctx, item: str, amount: int = 1):
         database.hset(f"session.data:{ctx.author.id}", item, str(value))
     else:
         logger.info("session not active")
-
 
 def incorrect_increment(ctx, item: str, amount: int = 1):
     """Increments the value of an incorrect item by `amount`.
@@ -248,7 +241,6 @@ def incorrect_increment(ctx, item: str, amount: int = 1):
     else:
         logger.info("no session")
 
-
 def score_increment(ctx, amount: int = 1):
     """Increments the score of a user by `amount`.
 
@@ -269,7 +261,6 @@ def score_increment(ctx, amount: int = 1):
         logger.info("race in session")
         database.zincrby(f"race.scores:{ctx.channel.id}", amount, str(ctx.author.id))
 
-
 def streak_increment(ctx, amount: int):
     """Increments the streak of a user by `amount`.
 
@@ -281,16 +272,14 @@ def streak_increment(ctx, amount: int):
     if amount is not None:
         # increment streak and update max
         database.zincrby("streak:global", amount, ctx.author.id)
-        if database.zscore("streak:global", ctx.author.id) > database.zscore(
-            "streak.max:global", ctx.author.id
-        ):
+        if database.zscore("streak:global",
+            ctx.author.id) > database.zscore("streak.max:global", ctx.author.id):
             database.zadd(
                 "streak.max:global",
                 {ctx.author.id: database.zscore("streak:global", ctx.author.id)},
             )
     else:
         database.zadd("streak:global", {ctx.author.id: 0})
-
 
 def black_and_white(input_image_path) -> BytesIO:
     """Returns a black and white version of an image.
@@ -306,7 +295,6 @@ def black_and_white(input_image_path) -> BytesIO:
         bw.save(final_buffer, "png")
     final_buffer.seek(0)
     return final_buffer
-
 
 async def fetch_get_user(user_id: int, ctx=None, bot=None, member: bool = False):
     if (ctx is None and bot is None) or (ctx is not None and bot is not None):
@@ -324,7 +312,6 @@ async def fetch_get_user(user_id: int, ctx=None, bot=None, member: bool = False)
     except discord.HTTPException:
         return None
 
-
 @cache()
 async def _fetch_cached_user(user_id: int, bot):
     if bot.intents.members:
@@ -333,7 +320,6 @@ async def _fetch_cached_user(user_id: int, bot):
         return await bot.fetch_user(user_id)
     except discord.HTTPException:
         return None
-
 
 async def send_leaderboard(
     ctx, title, page, database_key=None, data=None, items_per_page=10
@@ -363,13 +349,11 @@ async def send_leaderboard(
 
     leaderboard_list = (
         map(
-            lambda x: (x[0].decode("utf-8"), x[1]),
-            database.zrevrangebyscore(
-                database_key, "+inf", "-inf", page, items_per_page, True
-            ),
-        )
-        if database_key is not None
-        else data.iloc[page : page + items_per_page - 1].items()
+        lambda x: (x[0].decode("utf-8"), x[1]),
+        database.
+        zrevrangebyscore(database_key, "+inf", "-inf", page, items_per_page, True),
+        ) if database_key is not None else data.iloc[page:page + items_per_page -
+        1].items()
     )
     embed = discord.Embed(type="rich", colour=discord.Color.blurple())
     embed.set_author(name=config.options["bot_signature"])
@@ -380,7 +364,6 @@ async def send_leaderboard(
     embed.add_field(name=title, value=leaderboard, inline=False)
 
     await ctx.send(embed=embed)
-
 
 def build_id_list(group_str: str = ""):
     logger.info("building id list")
@@ -396,17 +379,13 @@ def build_id_list(group_str: str = ""):
 
     group_args = []
     for group in set(
-        list(groups.keys())
-        + [
-            item
-            for group in groups
-            for item in config.options["category_aliases"][group]
-        ]
-    ).intersection({category.lower() for category in categories}):
+        list(groups.keys()) +
+        [item for group in groups for item in config.options["category_aliases"][group]]
+    ).intersection({category.lower()
+        for category in categories}):
         if group not in groups.keys():
             group = next(
-                key
-                for key, value in config.options["category_aliases"].items()
+                key for key, value in config.options["category_aliases"].items()
                 if group in value
             )
         group_args.append(group)
@@ -426,7 +405,6 @@ def build_id_list(group_str: str = ""):
     logger.info(f"category_output: {category_output}")
 
     return (id_choices, category_output)
-
 
 def backup_all():
     """Backs up the database to a file.
@@ -455,7 +433,6 @@ def backup_all():
                 k.write(f"{key}\n")
     logger.info("Backup Finished")
 
-
 async def fools(ctx):
     logger.info(f"holiday check: invoked command: {str(ctx.command)}")
     if str(ctx.command) in ("leaderboard", "missed", "score", "streak", "userscore"):
@@ -467,13 +444,18 @@ async def fools(ctx):
         embed.set_author(name=config.options["bot_signature"])
         embed.add_field(
             name=f"{str(ctx.command).title()}",
-            value="User scores and data have been cleared. We apologize for the inconvenience.",
+            value=
+            "User scores and data have been cleared. We apologize for the inconvenience.",
             inline=False,
         )
         await ctx.send(embed=embed)
         raise GenericError(code=666)
     return True
 
+def spellcheck_list(word_to_check, correct_list, id_list):
+    return any(
+        spellcheck(word_to_check, correct_word, id_list) for correct_word in correct_list
+    )
 
 async def get_all_users(bot):
     logger.info("Starting user cache")
@@ -482,34 +464,24 @@ async def get_all_users(bot):
         await fetch_get_user(user_id, bot=bot, member=False)
     logger.info("User cache finished")
 
-
-def spellcheck_list(word_to_check, correct_list, abs_cutoff=None):
-    for correct_word in correct_list:
-        if abs_cutoff is None:
-            relative_cutoff = math.floor(len(correct_word) / 3)
-        if spellcheck(word_to_check, correct_word, relative_cutoff) is True:
-            return True
-    return False
-
-
-def spellcheck(worda, wordb, cutoff=3):
+def spellcheck(worda, wordb, id_list):
     """Checks if two words are close to each other.
 
     `worda` (str) - first word to compare
     `wordb` (str) - second word to compare
     `cutoff` (int) - allowed difference amount
     """
+
     worda = worda.lower().replace("-", " ").replace("'", "")
     wordb = wordb.lower().replace("-", " ").replace("'", "")
-    shorterword = min(worda, wordb, key=len)
-    if worda != wordb:
-        if (
-            len(list(difflib.Differ().compare(worda, wordb))) - len(shorterword)
-            >= cutoff
-        ):
-            return False
-    return True
-
+    if worda == wordb:
+        return True
+    matches = difflib.get_close_matches(worda, id_list, n=1, cutoff=0.75)
+    if matches and matches[0] == wordb:
+        return True
+    return False
+    #if (len(list(difflib.Differ().compare(worda, wordb))) - len(shorterword) >= cutoff):
+    #    return False
 
 class CustomCooldown:
     """Halve cooldown times in DM channels."""
@@ -532,18 +504,15 @@ class CustomCooldown:
         self.disable = disable
         self.default_mapping = commands.CooldownMapping.from_cooldown(rate, per, bucket)
         self.dm_mapping = commands.CooldownMapping.from_cooldown(rate, dm_per, bucket)
-        self.race_mapping = commands.CooldownMapping.from_cooldown(
-            rate, race_per, bucket
-        )
+        self.race_mapping = commands.CooldownMapping.from_cooldown(rate, race_per, bucket)
 
     def __call__(self, ctx: commands.Context):
         if not self.disable and ctx.guild is None:
             # halve cooldown in DMs
             bucket = self.dm_mapping.get_bucket(ctx.message)
 
-        elif ctx.command.name.startswith("check") and ctx.channel.name.startswith(
-            "racing"
-        ):
+        elif ctx.command.name.startswith("check"
+                                        ) and ctx.channel.name.startswith("racing"):
             # tiny check cooldown in racing channels
             bucket = self.race_mapping.get_bucket(ctx.message)
 

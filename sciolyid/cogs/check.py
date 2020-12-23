@@ -18,7 +18,7 @@ import string
 
 from discord.ext import commands
 
-from sciolyid.data import database, get_aliases, get_wiki_url, logger
+from sciolyid.data import database, get_aliases, get_wiki_url, id_list, logger
 from sciolyid.functions import (
     CustomCooldown,
     incorrect_increment,
@@ -29,22 +29,17 @@ from sciolyid.functions import (
     streak_increment,
 )
 
-
 class Check(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     # Check command - argument is the guess
-    @commands.command(
-        help="- Checks your answer.", usage="guess", aliases=["guess", "c"]
-    )
+    @commands.command(help="- Checks your answer.", usage="guess", aliases=["guess", "c"])
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.user))
     async def check(self, ctx, *, arg):
         logger.info("command: check")
 
-        current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode(
-            "utf-8"
-        )
+        current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8")
         if current_item == "":  # no image
             await ctx.send("You must ask for a image first!")
         else:  # if there is a image, it checks answer
@@ -54,7 +49,7 @@ class Check(commands.Cog):
             logger.info("arg: " + arg)
 
             item_setup(ctx, current_item)
-            correct_list = map(lambda x: x.lower(), get_aliases(current_item))
+            correct_list = (x.lower() for x in get_aliases(current_item))
 
             if database.exists(f"race.data:{ctx.channel.id}"):
                 logger.info("race in session")
@@ -63,7 +58,7 @@ class Check(commands.Cog):
                     correct = arg in correct_list
                 else:
                     logger.info("spelling leniency")
-                    correct = spellcheck_list(arg, correct_list)
+                    correct = spellcheck_list(arg, correct_list, id_list)
             else:
                 logger.info("no race")
                 if database.hget(f"session.data:{ctx.author.id}", "strict"):
@@ -71,7 +66,7 @@ class Check(commands.Cog):
                     correct = arg in correct_list
                 else:
                     logger.info("spelling leniency")
-                    correct = spellcheck_list(arg, correct_list)
+                    correct = spellcheck_list(arg, correct_list, id_list)
 
             if correct:
                 logger.info("correct")
@@ -89,14 +84,13 @@ class Check(commands.Cog):
 
                 await ctx.send(
                     "Correct! Good job!"
-                    if not database.exists(f"race.data:{ctx.channel.id}")
-                    else f"**{ctx.author.mention}**, you are correct!"
+                    if not database.exists(f"race.data:{ctx.channel.id}") else
+                    f"**{ctx.author.mention}**, you are correct!"
                 )
                 url = get_wiki_url(ctx, current_item)
                 await ctx.send(
                     url
-                    if not database.exists(f"race.data:{ctx.channel.id}")
-                    else f"<{url}>"
+                    if not database.exists(f"race.data:{ctx.channel.id}") else f"<{url}>"
                 )  # sends wiki page
                 score_increment(ctx, 1)
                 if database.exists(f"race.data:{ctx.channel.id}"):
@@ -115,7 +109,7 @@ class Check(commands.Cog):
                             f"race.data:{ctx.channel.id}", ["group", "bw"]
                         )
                         media = self.bot.get_cog("Media")
-                        await media.send_pic_(
+                        await media.send_pic(
                             ctx, group.decode("utf-8"), bw.decode("utf-8")
                         )
 
@@ -131,12 +125,9 @@ class Check(commands.Cog):
                 else:
                     database.hset(f"channel:{ctx.channel.id}", "item", "")
                     database.hset(f"channel:{ctx.channel.id}", "answered", "1")
-                    await ctx.send(
-                        "Sorry, the image was actually " + current_item + "."
-                    )
+                    await ctx.send("Sorry, the image was actually " + current_item + ".")
                     url = get_wiki_url(ctx, current_item)
                     await ctx.send(url)
-
 
 def setup(bot):
     bot.add_cog(Check(bot))

@@ -19,7 +19,6 @@ from discord.ext import commands
 from sciolyid.data import database, get_wiki_url, logger
 from sciolyid.functions import CustomCooldown, streak_increment
 
-
 class Skip(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -52,10 +51,9 @@ class Skip(commands.Cog):
                     logger.info("auto sending next image")
                     group, bw = database.hmget(f"race.data:{ctx.channel.id}", ["group", "bw"])
                     media = self.bot.get_cog("Media")
-                    await media.send_pic_(ctx, group.decode("utf-8"), bw.decode("utf-8"))
+                    await media.send_pic(ctx, group.decode("utf-8"), bw.decode("utf-8"))
         else:
             await ctx.send("You need to ask for an image first!")
-
 
 def setup(bot):
     bot.add_cog(Skip(bot))
