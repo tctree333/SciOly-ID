@@ -54,7 +54,9 @@ class Race(commands.Cog):
         if placings > database.zcard(database_key):
             placings = database.zcard(database_key)
 
-        leaderboard_list = database.zrevrangebyscore(database_key, "+inf", "-inf", 0, placings, True)
+        leaderboard_list = database.zrevrangebyscore(
+            database_key, "+inf", "-inf", 0, placings, True
+        )
         embed = discord.Embed(type="rich", colour=discord.Color.blurple(), title=preamble)
         embed.set_author(name=config.options["bot_signature"])
         leaderboard = ""
@@ -80,7 +82,9 @@ class Race(commands.Cog):
         elapsed = str(datetime.timedelta(seconds=round(time.time()) - start))
 
         embed.add_field(name="Options", value=self._get_options(ctx), inline=False)
-        embed.add_field(name="Stats", value=f"**Race Duration:** `{elapsed}`", inline=False)
+        embed.add_field(
+            name="Stats", value=f"**Race Duration:** `{elapsed}`", inline=False
+        )
         embed.add_field(name="Leaderboard", value=leaderboard, inline=False)
 
         if database.zscore(database_key, str(ctx.author.id)) is not None:
@@ -91,7 +95,7 @@ class Race(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    async def stop_race_(self, ctx):
+    async def stop_race(self, ctx):
         first = database.zrevrange(f"race.scores:{ctx.channel.id}", 0, 0, True)[0]
         if ctx.guild is not None:
             user = await fetch_get_user(int(first[0]), ctx=ctx, member=True)
@@ -120,19 +124,22 @@ class Race(commands.Cog):
         database.delete(f"race.scores:{ctx.channel.id}")
 
     @commands.group(
-        brief=f"- Base race command. Use '{config.options['prefixes'][0]}help race' for more info.",
+        brief=
+        f"- Base race command. Use '{config.options['prefixes'][0]}help race' for more info.",
         help="- Base race command\n" +
-        f"Races allow you to compete with others to see who can ID {config.options['id_type']} first. " +
-        "Starting a race will automatically run " +
+        f"Races allow you to compete with others to see who can ID {config.options['id_type']} first. "
+        + "Starting a race will automatically run " +
         f"'{config.options['prefixes'][0]}pic' after every check. " +
-        f"You will still need to use '{config.options['prefixes'][0]}check' to check your answer. " +
-        "Races are channel-specific, and anyone in that channel can play." +
+        f"You will still need to use '{config.options['prefixes'][0]}check' to check your answer. "
+        + "Races are channel-specific, and anyone in that channel can play." +
         f"Races end when a player is the first to correctly ID a set amount of {config.options['id_type']}. (default 10)",
     )
     @commands.guild_only()
     async def race(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.send("**Invalid subcommand passed.**\n*Valid Subcommands:* `start, view, stop`")
+            await ctx.send(
+                "**Invalid subcommand passed.**\n*Valid Subcommands:* `start, view, stop`"
+            )
 
     @race.command(
         brief="- Starts race",
@@ -140,7 +147,8 @@ class Race(commands.Cog):
         Arguments passed will become the default arguments to '{config.options['prefixes'][0]}pic', but some can be manually overwritten during use.
         Arguments can be passed in any order.""",
         aliases=["st"],
-        usage=f"[bw]{' [group]' if config.options['id_groups'] else ''} [amount to win (default 10)]",
+        usage=
+        f"[bw]{' [group]' if config.options['id_groups'] else ''} [amount to win (default 10)]",
     )
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.channel))
     async def start(self, ctx, *args):
@@ -160,40 +168,38 @@ class Race(commands.Cog):
                 f"**There is already a race in session.** *View stats with `{config.options['prefixes'][0]}race view`*"
             )
             return
-        #args = args_str.split(" ")
         logger.info(f"args: {args}")
 
-        if "bw" in args:
-            bw = "bw"
-        else:
-            bw = ""
+        categories = set(
+            list(groups.keys()) + [
+            item for group in groups for item in config.options["category_aliases"][group]
+            ]
+        )
 
-        if "strict" in args:
-            strict = "strict"
-        else:
-            strict = ""
-
+        bw = ""
+        strict = ""
         group_args = []
-        for category in set(
-            list(groups.keys()) +
-            [item for group in groups for item in config.options["category_aliases"][group]]
-        ).intersection({arg.lower()
-            for arg in args}):
-            if category not in groups.keys():
-                category = next(
-                    key for key, value in config.options["category_aliases"].items() if category in value
-                )
-            group_args.append(category)
-        group = " ".join(group_args).strip()
-
+        limit = 10
         for arg in args:
-            try:
-                limit = int(arg)
-                break
-            except ValueError:
-                pass
-        else:
-            limit = 10
+            arg = arg.lower()
+            if "strict" in args:
+                strict = "strict"
+            elif "bw" in args:
+                bw = "bw"
+            elif arg in categories:
+                if arg not in groups.keys():
+                    arg = next(
+                        key for key, value in config.options["category_aliases"].items()
+                        if arg in value
+                    )
+                group_args.append(arg)
+            else:
+                try:
+                    limit = int(arg)
+                except ValueError:
+                    await ctx.send(f"**Invalid argument provided**: `{arg}`")
+                    return
+        group = " ".join(group_args).strip()
 
         if limit > 1000000:
             await ctx.send("**Sorry, the maximum amount to win is 1 million.**")
@@ -241,7 +247,7 @@ class Race(commands.Cog):
         logger.info("command: stop race")
 
         if database.exists(f"race.data:{ctx.channel.id}"):
-            await self.stop_race_(ctx)
+            await self.stop_race(ctx)
         else:
             await ctx.send(
                 f"**There is no race in session.** *You can start one with `{config.options['prefixes'][0]}race start`*"

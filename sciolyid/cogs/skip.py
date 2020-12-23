@@ -46,10 +46,12 @@ class Skip(commands.Cog):
                 if int(first[1]) >= limit:
                     logger.info("race ending")
                     race = self.bot.get_cog("Race")
-                    await race.stop_race_(ctx)
+                    await race.stop_race(ctx)
                 else:
                     logger.info("auto sending next image")
-                    group, bw = database.hmget(f"race.data:{ctx.channel.id}", ["group", "bw"])
+                    group, bw = database.hmget(
+                        f"race.data:{ctx.channel.id}", ["group", "bw"]
+                    )
                     media = self.bot.get_cog("Media")
                     await media.send_pic(ctx, group.decode("utf-8"), bw.decode("utf-8"))
         else:

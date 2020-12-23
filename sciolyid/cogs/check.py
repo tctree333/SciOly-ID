@@ -102,7 +102,7 @@ class Check(commands.Cog):
                     if int(first[1]) >= limit:
                         logger.info("race ending")
                         race = self.bot.get_cog("Race")
-                        await race.stop_race_(ctx)
+                        await race.stop_race(ctx)
                     else:
                         logger.info("auto sending next image")
                         group, bw = database.hmget(

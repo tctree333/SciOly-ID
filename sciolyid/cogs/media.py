@@ -87,8 +87,7 @@ class Media(commands.Cog):
             current_item = random.choice(choices)
             self.increment_item_frequency(ctx, current_item)
 
-            prevI = database.hget(f"channel:{ctx.channel.id}",
-                "prevI").decode("utf-8")
+            prevI = database.hget(f"channel:{ctx.channel.id}", "prevI").decode("utf-8")
             while current_item == prevI:
                 current_item = random.choice(choices)
             database.hset(f"channel:{ctx.channel.id}", "prevI", str(current_item))
@@ -115,34 +114,38 @@ class Media(commands.Cog):
     # help text
     @commands.command(
         help="- Sends a random image for you to ID",
-        aliases=[
-        "p", config.options["id_type"][:-1], config.options["short_id_type"]
-        ],
+        aliases=["p", config.options["id_type"][:-1], config.options["short_id_type"]],
     )
     # 5 second cooldown
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.channel))
-    async def pic(self, ctx, *, args_str: str = ""):
+    async def pic(self, ctx, *args):
         logger.info("command: pic")
 
-        args = args_str.split(" ")
         logger.info(f"args: {args}")
 
-        bw = "bw" in args
-
-        toggle_groups = []
-        for category in set(
+        categories = set(
             list(groups.keys()) + [
-            item for group in groups
-            for item in config.options["category_aliases"][group]
+            item for group in groups for item in config.options["category_aliases"][group]
             ]
-        ).intersection({arg.lower()
-            for arg in args}):
-            if category not in groups.keys():
-                category = next(
-                    key for key, value in config.options["category_aliases"].items()
-                    if category in value
-                )
-            toggle_groups.append(category)
+        )
+
+        bw = False
+        toggle_groups = []
+        for arg in args:
+            arg = arg.lower()
+            if arg == "bw":
+                bw = True
+            elif arg in categories:
+                if arg not in groups.keys():
+                    arg = next(
+                        key for key, value in config.options["category_aliases"].items()
+                        if arg in value
+                    )
+                toggle_groups.append(arg)
+            else:
+                await ctx.send(f"**Invalid argument provided**: `{arg}`")
+                return
+
         logger.info(f"group_args: {toggle_groups}")
         if toggle_groups:
             group = " ".join(toggle_groups).strip()
@@ -160,9 +163,7 @@ class Media(commands.Cog):
                 add_groups = []
                 logger.info(f"toggle group: {toggle_groups}")
                 logger.info(f"current group: {current_groups}")
-                for o in set(toggle_groups).symmetric_difference(
-                    set(current_groups)
-                ):
+                for o in set(toggle_groups).symmetric_difference(set(current_groups)):
                     add_groups.append(o)
                 logger.info(f"adding groups: {add_groups}")
                 group = " ".join(add_groups).strip()
