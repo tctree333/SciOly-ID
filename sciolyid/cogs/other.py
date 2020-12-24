@@ -43,6 +43,7 @@ class Other(commands.Cog):
             arg.lower(),
             master_id_list + list(itertools.chain.from_iterable(aliases.values())),
             n=1,
+            cutoff=0.8
         )
         if matches:
             item = matches[0]
