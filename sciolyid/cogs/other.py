@@ -53,8 +53,9 @@ class Other(commands.Cog):
                 item = next(key for key, value in aliases.items() if item in value)
 
             delete = await ctx.send("Please wait a moment.")
+            an = "an" if item.lower()[0] in ('a', 'e', 'i', 'o', 'u') else 'a'
             await send_image(
-                ctx, str(item), message=f"Here's a *{item.lower()}* image!"
+                ctx, str(item), message=f"Here's {an} *{item.lower()}* image!"
             )
             await delete.delete()
 
