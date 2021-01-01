@@ -67,7 +67,7 @@ class Stats(commands.Cog):
         current_ids = df.index
         new_index = []
         for user_id in current_ids:
-            user = await fetch_get_user(int(stats[0]), bot=self.bot, member=False)
+            user = await fetch_get_user(int(user_id), bot=self.bot, member=False)
             if user is None:
                 new_index.append("User Unavailable")
             else:
