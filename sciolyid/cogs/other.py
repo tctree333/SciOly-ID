@@ -43,7 +43,7 @@ class Other(commands.Cog):
             arg.lower(),
             master_id_list + list(itertools.chain.from_iterable(aliases.values())),
             n=1,
-            cutoff=0.8
+            cutoff=0.8,
         )
         if matches:
             item = matches[0]
@@ -53,7 +53,7 @@ class Other(commands.Cog):
                 item = next(key for key, value in aliases.items() if item in value)
 
             delete = await ctx.send("Please wait a moment.")
-            an = "an" if item.lower()[0] in ('a', 'e', 'i', 'o', 'u') else 'a'
+            an = "an" if item.lower()[0] in ("a", "e", "i", "o", "u") else "a"
             await send_image(
                 ctx, str(item), message=f"Here's {an} *{item.lower()}* image!"
             )
@@ -137,7 +137,9 @@ class Other(commands.Cog):
         @commands.command(
             help=f"- Sends a funny {config.options['id_type'][:-1]} video/image!"
         )
-        @commands.check(CustomCooldown(180.0, disable=True, bucket=commands.BucketType.user))
+        @commands.check(
+            CustomCooldown(180.0, disable=True, bucket=commands.BucketType.user)
+        )
         async def meme(self, ctx):
             logger.info("command: meme")
 
@@ -150,19 +152,13 @@ class Other(commands.Cog):
         # Send command - for testing purposes only
         @commands.command(help="- send command", hidden=True, aliases=["sendas"])
         @commands.is_owner()
-        async def send_as_bot(self, ctx, *, args_str):
+        async def send_as_bot(self, ctx, channel_id: int, message):
             logger.info("command: send")
 
-            logger.info(f"args: {args_str}")
-            args = args_str.split(" ")
+            logger.info(f"args: {channel_id=}, {message=}")
 
-            channel_id = int(args[0])
-            try:
-                message = args[1:]
-            except IndexError:
-                await ctx.send("No message provided!")
             channel = self.bot.get_channel(channel_id)
-            await channel.send(" ".join(message))
+            await channel.send(message)
             await ctx.send("Ok, sent!")
 
     # # Test command - for testing purposes only
