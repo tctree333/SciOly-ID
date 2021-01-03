@@ -24,6 +24,7 @@ import sciolyid.config as config
 from sciolyid.data import database, groups, logger
 from sciolyid.functions import CustomCooldown, fetch_get_user
 
+
 class Race(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -34,11 +35,14 @@ class Race(commands.Cog):
             f"race.data:{ctx.channel.id}", ["bw", "group", "limit", "strict"]
         )
         options = (
-            f"**Black & White:** {bw==b'bw'}\n" + (
-            f"**{config.options['category_name']}:** {group.decode('utf-8') if group else 'None'}\n"
-            if config.options["id_groups"] else ""
-            ) + f"**Amount to Win:** {limit.decode('utf-8')}\n" +
-            f"**Strict Spelling:** {strict == b'strict'}"
+            f"**Black & White:** {bw==b'bw'}\n"
+            + (
+                f"**{config.options['category_name']}:** {group.decode('utf-8') if group else 'None'}\n"
+                if config.options["id_groups"]
+                else ""
+            )
+            + f"**Amount to Win:** {limit.decode('utf-8')}\n"
+            + f"**Strict Spelling:** {strict == b'strict'}"
         )
 
         return options
@@ -57,7 +61,9 @@ class Race(commands.Cog):
         leaderboard_list = database.zrevrangebyscore(
             database_key, "+inf", "-inf", 0, placings, True
         )
-        embed = discord.Embed(type="rich", colour=discord.Color.blurple(), title=preamble)
+        embed = discord.Embed(
+            type="rich", colour=discord.Color.blurple(), title=preamble
+        )
         embed.set_author(name=config.options["bot_signature"])
         leaderboard = ""
 
@@ -112,8 +118,8 @@ class Race(commands.Cog):
             user_info = f"{user.name}#{user.discriminator} ({user.mention})"
 
         await ctx.send(
-            f"**Congratulations, {user_info}!**\n" +
-            f"You have won the race by correctly identifying `{int(first[1])}` {config.options['id_type']}. "
+            f"**Congratulations, {user_info}!**\n"
+            + f"You have won the race by correctly identifying `{int(first[1])}` {config.options['id_type']}. "
             + "*Way to go!*"
         )
 
@@ -124,15 +130,14 @@ class Race(commands.Cog):
         database.delete(f"race.scores:{ctx.channel.id}")
 
     @commands.group(
-        brief=
-        f"- Base race command. Use '{config.options['prefixes'][0]}help race' for more info.",
-        help="- Base race command\n" +
-        f"Races allow you to compete with others to see who can ID {config.options['id_type']} first. "
-        + "Starting a race will automatically run " +
-        f"'{config.options['prefixes'][0]}pic' after every check. " +
-        f"You will still need to use '{config.options['prefixes'][0]}check' to check your answer. "
-        + "Races are channel-specific, and anyone in that channel can play." +
-        f"Races end when a player is the first to correctly ID a set amount of {config.options['id_type']}. (default 10)",
+        brief=f"- Base race command. Use '{config.options['prefixes'][0]}help race' for more info.",
+        help="- Base race command\n"
+        + f"Races allow you to compete with others to see who can ID {config.options['id_type']} first. "
+        + "Starting a race will automatically run "
+        + f"'{config.options['prefixes'][0]}pic' after every check. "
+        + f"You will still need to use '{config.options['prefixes'][0]}check' to check your answer. "
+        + "Races are channel-specific, and anyone in that channel can play."
+        + f"Races end when a player is the first to correctly ID a set amount of {config.options['id_type']}. (default 10)",
     )
     @commands.guild_only()
     async def race(self, ctx):
@@ -147,8 +152,7 @@ class Race(commands.Cog):
         Arguments passed will become the default arguments to '{config.options['prefixes'][0]}pic', but some can be manually overwritten during use.
         Arguments can be passed in any order.""",
         aliases=["st"],
-        usage=
-        f"[bw]{' [group]' if config.options['id_groups'] else ''} [amount to win (default 10)]",
+        usage=f"[bw]{' [group]' if config.options['id_groups'] else ''} [amount to win (default 10)]",
     )
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.channel))
     async def start(self, ctx, *args):
@@ -157,8 +161,8 @@ class Race(commands.Cog):
         if not str(ctx.channel.name).startswith("racing"):
             logger.info("not race channel")
             await ctx.send(
-                "**Sorry, racing is not available in this channel.**\n" +
-                "*Set the channel name to start with `racing` to enable it.*"
+                "**Sorry, racing is not available in this channel.**\n"
+                + "*Set the channel name to start with `racing` to enable it.*"
             )
             return
 
@@ -171,8 +175,11 @@ class Race(commands.Cog):
         logger.info(f"args: {args}")
 
         categories = set(
-            list(groups.keys()) + [
-            item for group in groups for item in config.options["category_aliases"][group]
+            list(groups.keys())
+            + [
+                item
+                for group in groups
+                for item in config.options["category_aliases"][group]
             ]
         )
 
@@ -189,7 +196,8 @@ class Race(commands.Cog):
             elif arg in categories:
                 if arg not in groups.keys():
                     arg = next(
-                        key for key, value in config.options["category_aliases"].items()
+                        key
+                        for key, value in config.options["category_aliases"].items()
                         if arg in value
                     )
                 group_args.append(arg)
@@ -210,12 +218,12 @@ class Race(commands.Cog):
         database.hmset(
             f"race.data:{ctx.channel.id}",
             {
-            "start": round(time.time()),
-            "stop": 0,
-            "limit": limit,
-            "bw": bw,
-            "group": group,
-            "strict": strict,
+                "start": round(time.time()),
+                "stop": 0,
+                "limit": limit,
+                "bw": bw,
+                "group": group,
+                "strict": strict,
             },
         )
         database.zadd(f"race.scores:{ctx.channel.id}", {str(ctx.author.id): 0})
@@ -227,8 +235,8 @@ class Race(commands.Cog):
 
     @race.command(
         brief="- Views race",
-        help="- Views race.\n" +
-        f"Races allow you to compete with your friends to ID {config.options['id_type']} first.",
+        help="- Views race.\n"
+        + f"Races allow you to compete with your friends to ID {config.options['id_type']} first.",
     )
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.channel))
     async def view(self, ctx):
@@ -252,6 +260,7 @@ class Race(commands.Cog):
             await ctx.send(
                 f"**There is no race in session.** *You can start one with `{config.options['prefixes'][0]}race start`*"
             )
+
 
 def setup(bot):
     bot.add_cog(Race(bot))

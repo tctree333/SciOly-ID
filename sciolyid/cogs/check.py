@@ -29,17 +29,22 @@ from sciolyid.functions import (
     streak_increment,
 )
 
+
 class Check(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     # Check command - argument is the guess
-    @commands.command(help="- Checks your answer.", usage="guess", aliases=["guess", "c"])
+    @commands.command(
+        help="- Checks your answer.", usage="guess", aliases=["guess", "c"]
+    )
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.user))
     async def check(self, ctx, *, arg):
         logger.info("command: check")
 
-        current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8")
+        current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode(
+            "utf-8"
+        )
         if current_item == "":  # no image
             await ctx.send("You must ask for a image first!")
         else:  # if there is a image, it checks answer
@@ -84,13 +89,14 @@ class Check(commands.Cog):
 
                 await ctx.send(
                     "Correct! Good job!"
-                    if not database.exists(f"race.data:{ctx.channel.id}") else
-                    f"**{ctx.author.mention}**, you are correct!"
+                    if not database.exists(f"race.data:{ctx.channel.id}")
+                    else f"**{ctx.author.mention}**, you are correct!"
                 )
                 url = get_wiki_url(ctx, current_item)
                 await ctx.send(
                     url
-                    if not database.exists(f"race.data:{ctx.channel.id}") else f"<{url}>"
+                    if not database.exists(f"race.data:{ctx.channel.id}")
+                    else f"<{url}>"
                 )  # sends wiki page
                 score_increment(ctx, 1)
                 if database.exists(f"race.data:{ctx.channel.id}"):
@@ -125,9 +131,12 @@ class Check(commands.Cog):
                 else:
                     database.hset(f"channel:{ctx.channel.id}", "item", "")
                     database.hset(f"channel:{ctx.channel.id}", "answered", "1")
-                    await ctx.send("Sorry, the image was actually " + current_item + ".")
+                    await ctx.send(
+                        "Sorry, the image was actually " + current_item + "."
+                    )
                     url = get_wiki_url(ctx, current_item)
                     await ctx.send(url)
+
 
 def setup(bot):
     bot.add_cog(Check(bot))

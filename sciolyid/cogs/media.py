@@ -23,16 +23,19 @@ import sciolyid.config as config
 from sciolyid.core import send_image
 from sciolyid.data import GenericError, database, groups, id_list, logger
 from sciolyid.functions import (
-    CustomCooldown, build_id_list, item_setup, session_increment
+    CustomCooldown,
+    build_id_list,
+    item_setup,
+    session_increment,
 )
 
 IMAGE_MESSAGE = (
     f"*Here you go!* \n**Use `{config.options['prefixes'][0]}pic` again to get a new image of the same {config.options['id_type'][:-1]}, "
-    +
-    f"or `{config.options['prefixes'][0]}skip` to get a new {config.options['id_type'][:-1]}."
-    + f"Use `{config.options['prefixes'][0]}check [guess]` to check your answer. " +
-    f"Use `{config.options['prefixes'][0]}hint` for a hint.**"
+    + f"or `{config.options['prefixes'][0]}skip` to get a new {config.options['id_type'][:-1]}."
+    + f"Use `{config.options['prefixes'][0]}check [guess]` to check your answer. "
+    + f"Use `{config.options['prefixes'][0]}hint` for a hint.**"
 )
+
 
 class Media(commands.Cog):
     def __init__(self, bot):
@@ -40,6 +43,7 @@ class Media(commands.Cog):
 
     def error_handle(self, ctx, group_str: str, bw: bool, retries):
         """Return a function to pass to send_pic() as on_error."""
+
         async def inner(error):
             nonlocal retries
 
@@ -68,8 +72,8 @@ class Media(commands.Cog):
     async def send_pic(self, ctx, group_str: str, bw: bool = False, retries=0):
 
         logger.info(
-            f"{config.options['id_type'][:-1]}: " +
-            database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8")
+            f"{config.options['id_type'][:-1]}: "
+            + database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8")
         )
 
         answered = int(database.hget(f"channel:{ctx.channel.id}", "answered"))
@@ -124,8 +128,11 @@ class Media(commands.Cog):
         logger.info(f"args: {args}")
 
         categories = set(
-            list(groups.keys()) + [
-            item for group in groups for item in config.options["category_aliases"][group]
+            list(groups.keys())
+            + [
+                item
+                for group in groups
+                for item in config.options["category_aliases"][group]
             ]
         )
 
@@ -138,7 +145,8 @@ class Media(commands.Cog):
             elif arg in categories:
                 if arg not in groups.keys():
                     arg = next(
-                        key for key, value in config.options["category_aliases"].items()
+                        key
+                        for key, value in config.options["category_aliases"].items()
                         if arg in value
                     )
                 toggle_groups.append(arg)
@@ -157,8 +165,9 @@ class Media(commands.Cog):
 
             if toggle_groups:
                 current_groups = (
-                    database.hget(f"session.data:{ctx.author.id}",
-                    "group").decode("utf-8").split(" ")
+                    database.hget(f"session.data:{ctx.author.id}", "group")
+                    .decode("utf-8")
+                    .split(" ")
                 )
                 add_groups = []
                 logger.info(f"toggle group: {toggle_groups}")
@@ -168,8 +177,9 @@ class Media(commands.Cog):
                 logger.info(f"adding groups: {add_groups}")
                 group = " ".join(add_groups).strip()
             else:
-                group = database.hget(f"session.data:{ctx.author.id}",
-                    "group").decode("utf-8")
+                group = database.hget(f"session.data:{ctx.author.id}", "group").decode(
+                    "utf-8"
+                )
 
             if database.hget(f"session.data:{ctx.author.id}", "bw").decode("utf-8"):
                 bw = not bw
@@ -185,17 +195,18 @@ class Media(commands.Cog):
 
         logger.info(f"args: bw: {bw}; group: {group}")
         if (
-            int(database.hget(f"channel:{ctx.channel.id}", "answered")) and
-            config.options["id_groups"]
+            int(database.hget(f"channel:{ctx.channel.id}", "answered"))
+            and config.options["id_groups"]
         ):
             await ctx.send(
-                f"**Recognized arguments:** *Black & White*: `{bw}`, " +
-                f"*{config.options['category_name']}*: `{'None' if group == '' else group}`"
+                f"**Recognized arguments:** *Black & White*: `{bw}`, "
+                + f"*{config.options['category_name']}*: `{'None' if group == '' else group}`"
             )
         else:
             await ctx.send(f"**Recognized arguments:** *Black & White*: `{bw}`")
 
         await self.send_pic(ctx, group, bw)
+
 
 def setup(bot):
     bot.add_cog(Media(bot))
