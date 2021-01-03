@@ -187,9 +187,9 @@ class Race(commands.Cog):
         limit = 10
         for arg in args:
             arg = arg.lower()
-            if "strict" in args:
+            if arg == "strict":
                 strict = "strict"
-            elif "bw" in args:
+            elif arg == "bw":
                 bw = "bw"
             elif arg in all_categories:
                 if arg not in groups.keys():

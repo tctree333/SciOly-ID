@@ -384,7 +384,7 @@ async def send_leaderboard(
 
 def build_id_list(group_str: str = ""):
     logger.info("building id list")
-    categories = group_str.split(" ")
+    categories = group_str.lower().split(" ")
     logger.info(f"categories: {categories}")
 
     id_choices = []
@@ -395,9 +395,7 @@ def build_id_list(group_str: str = ""):
         return (id_list, "None")
     all_categories = get_all_categories()
     group_args = []
-    for group in all_categories.intersection(
-        {category.lower() for category in categories}
-    ):
+    for group in all_categories.intersection(categories):
         if group not in groups.keys():
             group = dealias_group(group)
         group_args.append(group)
@@ -503,7 +501,7 @@ def spellcheck_list(word_to_check, correct_list, id_list):
     )
 
 
-def spellcheck(worda:str, wordb:str, id_list):
+def spellcheck(worda: str, wordb: str, id_list):
     """Checks if two words are close to each other.
 
     `worda` (str) - first word to compare

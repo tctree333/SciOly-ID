@@ -157,7 +157,6 @@ class Sessions(commands.Cog):
                 strict = "strict"
             elif arg in all_categories:
                 if arg not in groups.keys():
-
                     arg = dealias_group(arg)
                 group_args.append(arg)
             else:
