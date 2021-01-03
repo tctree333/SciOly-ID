@@ -22,7 +22,12 @@ from discord.ext import commands
 
 import sciolyid.config as config
 from sciolyid.data import database, groups, logger
-from sciolyid.functions import CustomCooldown, fetch_get_user
+from sciolyid.functions import (
+    CustomCooldown,
+    dealias_group,
+    fetch_get_user,
+    get_all_categories,
+)
 
 
 class Race(commands.Cog):
@@ -174,15 +179,8 @@ class Race(commands.Cog):
             return
         logger.info(f"args: {args}")
 
-        categories = set(
-            list(groups.keys())
-            + [
-                item
-                for group in groups
-                for item in config.options["category_aliases"][group]
-            ]
-        )
-
+        all_categories = get_all_categories()
+        # parse args
         bw = ""
         strict = ""
         group_args = []
@@ -193,13 +191,9 @@ class Race(commands.Cog):
                 strict = "strict"
             elif "bw" in args:
                 bw = "bw"
-            elif arg in categories:
+            elif arg in all_categories:
                 if arg not in groups.keys():
-                    arg = next(
-                        key
-                        for key, value in config.options["category_aliases"].items()
-                        if arg in value
-                    )
+                    arg = dealias_group(arg)
                 group_args.append(arg)
             else:
                 try:

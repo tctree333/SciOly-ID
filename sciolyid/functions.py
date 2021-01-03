@@ -393,22 +393,13 @@ def build_id_list(group_str: str = ""):
     if not config.options["id_groups"]:
         logger.info("no groups allowed")
         return (id_list, "None")
-
+    all_categories = get_all_categories()
     group_args = []
-    for group in set(
-        list(groups.keys())
-        + [
-            item
-            for group in groups
-            for item in config.options["category_aliases"][group]
-        ]
-    ).intersection({category.lower() for category in categories}):
+    for group in all_categories.intersection(
+        {category.lower() for category in categories}
+    ):
         if group not in groups.keys():
-            group = next(
-                key
-                for key, value in config.options["category_aliases"].items()
-                if group in value
-            )
+            group = dealias_group(group)
         group_args.append(group)
     logger.info(f"group_args: {group_args}")
 
@@ -475,13 +466,6 @@ async def fools(ctx):
     return True
 
 
-def spellcheck_list(word_to_check, correct_list, id_list):
-    return any(
-        spellcheck(word_to_check, correct_word, id_list)
-        for correct_word in correct_list
-    )
-
-
 async def get_all_users(bot):
     logger.info("Starting user cache")
     user_ids = map(int, database.zrangebyscore("users:global", "-inf", "+inf"))
@@ -490,12 +474,41 @@ async def get_all_users(bot):
     logger.info("User cache finished")
 
 
-def spellcheck(worda, wordb, id_list):
+def get_all_categories():
+    """ return all categories, including aliases """
+    # TODO make this a global?
+    return set(
+        list(groups.keys())
+        + [
+            item
+            for group in groups
+            for item in config.options["category_aliases"][group]
+        ]
+    )
+
+
+def dealias_group(group):
+    """ resolve group to a real category by expanding aliases"""
+    return next(
+        key
+        for key, value in config.options["category_aliases"].items()
+        if group in value
+    )
+
+
+def spellcheck_list(word_to_check, correct_list, id_list):
+    return any(
+        spellcheck(word_to_check, correct_word, id_list)
+        for correct_word in correct_list
+    )
+
+
+def spellcheck(worda:str, wordb:str, id_list):
     """Checks if two words are close to each other.
 
     `worda` (str) - first word to compare
     `wordb` (str) - second word to compare
-    `cutoff` (int) - allowed difference amount
+    `id_list` (list[str]) - id_list for checking close matches
     """
 
     worda = worda.lower().replace("-", " ").replace("'", "")
@@ -506,8 +519,6 @@ def spellcheck(worda, wordb, id_list):
     if matches and matches[0] == wordb:
         return True
     return False
-    # if (len(list(difflib.Differ().compare(worda, wordb))) - len(shorterword) >= cutoff):
-    #    return False
 
 
 class CustomCooldown:

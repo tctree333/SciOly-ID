@@ -15,7 +15,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import datetime
-from sys import argv
 import time
 
 import discord
@@ -23,7 +22,7 @@ from discord.ext import commands
 
 import sciolyid.config as config
 from sciolyid.data import database, groups, logger
-from sciolyid.functions import CustomCooldown
+from sciolyid.functions import CustomCooldown, dealias_group, get_all_categories
 
 
 class Sessions(commands.Cog):
@@ -142,14 +141,7 @@ class Sessions(commands.Cog):
 
         logger.info(f"args: {args}")
 
-        categories = set(
-            list(groups.keys())
-            + [
-                item
-                for group in groups
-                for item in config.options["category_aliases"][group]
-            ]
-        )
+        all_categories = get_all_categories()
 
         bw = ""
         wiki = ""
@@ -163,13 +155,10 @@ class Sessions(commands.Cog):
                 wiki = "wiki"
             elif arg == "strict":
                 strict = "strict"
-            elif arg in categories:
+            elif arg in all_categories:
                 if arg not in groups.keys():
-                    arg = next(
-                        key
-                        for key, value in config.options["category_aliases"].items()
-                        if arg in value
-                    )
+
+                    arg = dealias_group(arg)
                 group_args.append(arg)
             else:
                 await ctx.send(f"**Invalid argument provided**: `{arg}`")
@@ -214,14 +203,7 @@ class Sessions(commands.Cog):
         if database.exists(f"session.data:{ctx.author.id}"):
             logger.info(f"args: {args}")
 
-            categories = set(
-                list(groups.keys())
-                + [
-                    item
-                    for group in groups
-                    for item in config.options["category_aliases"][group]
-                ]
-            )
+            all_categories = get_all_categories()
 
             group_args = []
             for arg in args:
@@ -249,13 +231,9 @@ class Sessions(commands.Cog):
                         database.hset(
                             f"session.data:{ctx.author.id}", "strict", "strict"
                         )
-                elif arg in categories:
+                elif arg in all_categories:
                     if arg not in groups.keys():
-                        arg = next(
-                            key
-                            for key, value in config.options["category_aliases"].items()
-                            if arg in value
-                        )
+                        arg = dealias_group(arg)
                     group_args.append(arg)
                 else:
                     await ctx.send(f"**Invalid argument provided**: `{arg}`")

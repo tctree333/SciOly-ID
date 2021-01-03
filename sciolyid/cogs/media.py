@@ -25,6 +25,8 @@ from sciolyid.data import GenericError, database, groups, id_list, logger
 from sciolyid.functions import (
     CustomCooldown,
     build_id_list,
+    dealias_group,
+    get_all_categories,
     item_setup,
     session_increment,
 )
@@ -127,14 +129,8 @@ class Media(commands.Cog):
 
         logger.info(f"args: {args}")
 
-        categories = set(
-            list(groups.keys())
-            + [
-                item
-                for group in groups
-                for item in config.options["category_aliases"][group]
-            ]
-        )
+        # parse args
+        all_categories = get_all_categories()
 
         bw = False
         toggle_groups = []
@@ -142,13 +138,9 @@ class Media(commands.Cog):
             arg = arg.lower()
             if arg == "bw":
                 bw = True
-            elif arg in categories:
+            elif arg in all_categories:
                 if arg not in groups.keys():
-                    arg = next(
-                        key
-                        for key, value in config.options["category_aliases"].items()
-                        if arg in value
-                    )
+                    arg = dealias_group(arg)
                 toggle_groups.append(arg)
             else:
                 await ctx.send(f"**Invalid argument provided**: `{arg}`")
@@ -162,7 +154,7 @@ class Media(commands.Cog):
 
         if database.exists(f"session.data:{ctx.author.id}"):
             logger.info("session parameters")
-
+            # handle group args
             if toggle_groups:
                 current_groups = (
                     database.hget(f"session.data:{ctx.author.id}", "group")
