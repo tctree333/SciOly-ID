@@ -17,7 +17,6 @@
 import datetime
 import difflib
 import functools
-import math
 import os
 import pickle
 import string
