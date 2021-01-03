@@ -31,7 +31,7 @@ setuptools.setup(
         "wikipedia>=1.4.0, <2.0.0",
         "gitpython>=3.0.6, <4.0.0",
         "hiredis>=1.0.1, <1.2.0",
-        "pandas>=1.0.0, <1.2.0",
+        "pandas>=1.0.0, <1.3.0",
     ],
     extras_require={
         "web": [
