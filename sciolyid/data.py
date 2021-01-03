@@ -156,7 +156,9 @@ if config.options["logs"]:
     stream_handler.setLevel(logging.DEBUG)
 
     file_handler.setFormatter(
-        logging.Formatter("{asctime} - {filename:10} -  {levelname:8} - {message}", style="{")
+        logging.Formatter(
+            "{asctime} - {filename:10} -  {levelname:8} - {message}", style="{"
+        )
     )
     stream_handler.setFormatter(
         logging.Formatter("{filename:10} -  {levelname:8} - {message}", style="{")
@@ -174,7 +176,9 @@ if config.options["logs"]:
             sys.__excepthook__(exc_type, exc_value, exc_traceback)
             return
 
-        logger.critical("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+        logger.critical(
+            "Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback)
+        )
 
     sys.excepthook = handle_exception
 
@@ -263,13 +267,26 @@ def get_category(item: str):
     return None
 
 
+def dealias_group(group):
+    """ resolve group to a real category by expanding aliases"""
+    if group in groups.keys():
+        return group
+    else:
+        return next(
+            key
+            for key, value in config.options["category_aliases"].items()
+            if group in value
+        )
+
+
 def _groups():
     """Converts txt files of data into lists."""
     filenames = [name.split(".")[0] for name in os.listdir(config.options["list_dir"])]
     restricted_filenames = []
     if config.options["restricted_list_dir"]:
         restricted_filenames = [
-            name.split(".")[0] for name in os.listdir(config.options["restricted_list_dir"])
+            name.split(".")[0]
+            for name in os.listdir(config.options["restricted_list_dir"])
         ]
 
     # Converts txt file of data into lists
@@ -310,7 +327,8 @@ def _all_lists():
     restricted = []
     if config.options["restricted_list_dir"]:
         restricted = [
-            name.split(".")[0] for name in os.listdir(config.options["restricted_list_dir"])
+            name.split(".")[0]
+            for name in os.listdir(config.options["restricted_list_dir"])
         ]
     for group in groups:
         if group in restricted:
@@ -341,6 +359,10 @@ def _config():
 
 
 groups = _groups()
+all_categories = set(
+    list(groups.keys())
+    + [item for group in groups for item in config.options["category_aliases"][group]]
+)  # includes aliases
 meme_list = _memes()
 id_list, master_id_list = _all_lists()
 wikipedia_urls = _wiki_urls()

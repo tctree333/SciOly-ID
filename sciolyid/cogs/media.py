@@ -21,12 +21,17 @@ from discord.ext import commands
 
 import sciolyid.config as config
 from sciolyid.core import send_image
-from sciolyid.data import GenericError, database, groups, id_list, logger
+from sciolyid.data import (
+    GenericError,
+    all_categories,
+    database,
+    dealias_group,
+    id_list,
+    logger,
+)
 from sciolyid.functions import (
     CustomCooldown,
     build_id_list,
-    dealias_group,
-    get_all_categories,
     item_setup,
     session_increment,
 )
@@ -130,8 +135,6 @@ class Media(commands.Cog):
         logger.info(f"args: {args}")
 
         # parse args
-        all_categories = get_all_categories()
-
         bw = False
         toggle_groups = []
         for arg in set(args):

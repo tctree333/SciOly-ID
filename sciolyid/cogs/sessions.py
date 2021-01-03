@@ -21,8 +21,8 @@ import discord
 from discord.ext import commands
 
 import sciolyid.config as config
-from sciolyid.data import database, groups, logger
-from sciolyid.functions import CustomCooldown, dealias_group, get_all_categories
+from sciolyid.data import all_categories, database, dealias_group, logger
+from sciolyid.functions import CustomCooldown
 
 
 class Sessions(commands.Cog):
@@ -141,8 +141,7 @@ class Sessions(commands.Cog):
 
         logger.info(f"args: {args}")
 
-        all_categories = get_all_categories()
-
+        # parse args
         bw = ""
         wiki = ""
         strict = ""
@@ -200,8 +199,7 @@ class Sessions(commands.Cog):
         if database.exists(f"session.data:{ctx.author.id}"):
             logger.info(f"args: {args}")
 
-            all_categories = get_all_categories()
-
+            # parse args
             group_args = []
             for arg in set(args):
                 arg = arg.lower()

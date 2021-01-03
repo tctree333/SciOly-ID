@@ -21,13 +21,8 @@ import discord
 from discord.ext import commands
 
 import sciolyid.config as config
-from sciolyid.data import database, groups, logger
-from sciolyid.functions import (
-    CustomCooldown,
-    dealias_group,
-    fetch_get_user,
-    get_all_categories,
-)
+from sciolyid.data import all_categories, database, dealias_group, logger
+from sciolyid.functions import CustomCooldown, fetch_get_user
 
 
 class Race(commands.Cog):
@@ -179,7 +174,6 @@ class Race(commands.Cog):
             return
         logger.info(f"args: {args}")
 
-        all_categories = get_all_categories()
         # parse args
         bw = ""
         strict = ""

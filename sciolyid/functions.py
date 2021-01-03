@@ -27,7 +27,15 @@ from discord.ext import commands
 from PIL import Image
 
 import sciolyid.config as config
-from sciolyid.data import GenericError, database, groups, id_list, logger
+from sciolyid.data import (
+    GenericError,
+    all_categories,
+    database,
+    groups,
+    id_list,
+    logger,
+    dealias_group,
+)
 
 
 def cache(func=None):
@@ -392,7 +400,6 @@ def build_id_list(group_str: str = ""):
     if not config.options["id_groups"]:
         logger.info("no groups allowed")
         return (id_list, "None")
-    all_categories = get_all_categories()
     group_args = []
     for group in all_categories.intersection(categories):
         group_args.append(dealias_group(group))
@@ -467,31 +474,6 @@ async def get_all_users(bot):
     for user_id in user_ids:
         await fetch_get_user(user_id, bot=bot, member=False)
     logger.info("User cache finished")
-
-
-def get_all_categories():
-    """ return all categories, including aliases """
-    # TODO make this a global?
-    return set(
-        list(groups.keys())
-        + [
-            item
-            for group in groups
-            for item in config.options["category_aliases"][group]
-        ]
-    )
-
-
-def dealias_group(group):
-    """ resolve group to a real category by expanding aliases"""
-    if group in groups.keys():
-        return group
-    else:
-        return next(
-            key
-            for key, value in config.options["category_aliases"].items()
-            if group in value
-        )
 
 
 def spellcheck_list(word, correct_list, id_list):
