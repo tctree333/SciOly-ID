@@ -147,7 +147,7 @@ class Sessions(commands.Cog):
         wiki = ""
         strict = ""
         group_args = []
-        for arg in args:
+        for arg in set(args):
             arg = arg.lower()
             if arg == "bw":
                 bw = "bw"
@@ -156,9 +156,7 @@ class Sessions(commands.Cog):
             elif arg == "strict":
                 strict = "strict"
             elif arg in all_categories:
-                if arg not in groups.keys():
-                    arg = dealias_group(arg)
-                group_args.append(arg)
+                group_args.append(dealias_group(arg))
             else:
                 await ctx.send(f"**Invalid argument provided**: `{arg}`")
                 return
@@ -205,7 +203,7 @@ class Sessions(commands.Cog):
             all_categories = get_all_categories()
 
             group_args = []
-            for arg in args:
+            for arg in set(args):
                 arg = arg.lower()
                 if arg == "bw":
                     if not database.hget(f"session.data:{ctx.author.id}", "bw"):
@@ -231,9 +229,7 @@ class Sessions(commands.Cog):
                             f"session.data:{ctx.author.id}", "strict", "strict"
                         )
                 elif arg in all_categories:
-                    if arg not in groups.keys():
-                        arg = dealias_group(arg)
-                    group_args.append(arg)
+                    group_args.append(dealias_group(arg))
                 else:
                     await ctx.send(f"**Invalid argument provided**: `{arg}`")
                     return

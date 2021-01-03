@@ -185,16 +185,14 @@ class Race(commands.Cog):
         strict = ""
         group_args = []
         limit = 10
-        for arg in args:
+        for arg in set(args):
             arg = arg.lower()
             if arg == "strict":
                 strict = "strict"
             elif arg == "bw":
                 bw = "bw"
             elif arg in all_categories:
-                if arg not in groups.keys():
-                    arg = dealias_group(arg)
-                group_args.append(arg)
+                group_args.append(dealias_group(arg))
             else:
                 try:
                     limit = int(arg)

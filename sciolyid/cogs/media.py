@@ -134,14 +134,12 @@ class Media(commands.Cog):
 
         bw = False
         toggle_groups = []
-        for arg in args:
+        for arg in set(args):
             arg = arg.lower()
             if arg == "bw":
                 bw = True
             elif arg in all_categories:
-                if arg not in groups.keys():
-                    arg = dealias_group(arg)
-                toggle_groups.append(arg)
+                toggle_groups.append(dealias_group(arg))
             else:
                 await ctx.send(f"**Invalid argument provided**: `{arg}`")
                 return

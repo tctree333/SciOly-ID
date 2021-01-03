@@ -395,9 +395,7 @@ def build_id_list(group_str: str = ""):
     all_categories = get_all_categories()
     group_args = []
     for group in all_categories.intersection(categories):
-        if group not in groups.keys():
-            group = dealias_group(group)
-        group_args.append(group)
+        group_args.append(dealias_group(group))
     logger.info(f"group_args: {group_args}")
 
     category_output = " ".join(group_args).strip()
@@ -486,34 +484,25 @@ def get_all_categories():
 
 def dealias_group(group):
     """ resolve group to a real category by expanding aliases"""
-    return next(
-        key
-        for key, value in config.options["category_aliases"].items()
-        if group in value
-    )
+    if group in groups.keys():
+        return group
+    else:
+        return next(
+            key
+            for key, value in config.options["category_aliases"].items()
+            if group in value
+        )
 
 
-def spellcheck_list(word_to_check, correct_list, id_list):
-    return any(
-        spellcheck(word_to_check, correct_word, id_list)
-        for correct_word in correct_list
-    )
-
-
-def spellcheck(worda: str, wordb: str, id_list):
-    """Checks if two words are close to each other.
-
-    `worda` (str) - first word to compare
-    `wordb` (str) - second word to compare
-    `id_list` (list[str]) - id_list for checking close matches
-    """
-
-    worda = worda.lower().replace("-", " ").replace("'", "")
-    wordb = wordb.lower().replace("-", " ").replace("'", "")
-    if worda == wordb:
+def spellcheck_list(word, correct_list, id_list):
+    word = word.lower().replace("-", " ").replace("'", "")
+    correct_list = [
+        word.lower().replace("-", " ").replace("'", "") for word in correct_list
+    ]
+    if word in correct_list:
         return True
-    matches = difflib.get_close_matches(worda, id_list, n=1, cutoff=0.75)
-    if matches and matches[0] == wordb:
+    matches = difflib.get_close_matches(word, id_list, n=1, cutoff=0.75)
+    if matches and matches[0] in correct_list:
         return True
     return False
 
