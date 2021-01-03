@@ -273,7 +273,7 @@ class Stats(commands.Cog):
                 data = await self.convert_users(data)
             with StringIO() as f:
                 f.write(header)
-                data.to_csv(f, mode="wb", header=False)
+                data.to_csv(f, header=False)
                 with BytesIO(f.getvalue().encode("utf-8")) as b:
                     files.append(discord.File(b, filename))
 
