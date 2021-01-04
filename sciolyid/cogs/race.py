@@ -21,7 +21,7 @@ import discord
 from discord.ext import commands
 
 import sciolyid.config as config
-from sciolyid.data import database, groups, logger
+from sciolyid.data import all_categories, database, dealias_group, logger
 from sciolyid.functions import CustomCooldown, fetch_get_user
 
 
@@ -61,7 +61,9 @@ class Race(commands.Cog):
         leaderboard_list = database.zrevrangebyscore(
             database_key, "+inf", "-inf", 0, placings, True
         )
-        embed = discord.Embed(type="rich", colour=discord.Color.blurple(), title=preamble)
+        embed = discord.Embed(
+            type="rich", colour=discord.Color.blurple(), title=preamble
+        )
         embed.set_author(name=config.options["bot_signature"])
         leaderboard = ""
 
@@ -86,7 +88,9 @@ class Race(commands.Cog):
         elapsed = str(datetime.timedelta(seconds=round(time.time()) - start))
 
         embed.add_field(name="Options", value=self._get_options(ctx), inline=False)
-        embed.add_field(name="Stats", value=f"**Race Duration:** `{elapsed}`", inline=False)
+        embed.add_field(
+            name="Stats", value=f"**Race Duration:** `{elapsed}`", inline=False
+        )
         embed.add_field(name="Leaderboard", value=leaderboard, inline=False)
 
         if database.zscore(database_key, str(ctx.author.id)) is not None:
@@ -97,7 +101,7 @@ class Race(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    async def stop_race_(self, ctx):
+    async def stop_race(self, ctx):
         first = database.zrevrange(f"race.scores:{ctx.channel.id}", 0, 0, True)[0]
         if ctx.guild is not None:
             user = await fetch_get_user(int(first[0]), ctx=ctx, member=True)
@@ -151,7 +155,7 @@ class Race(commands.Cog):
         usage=f"[bw]{' [group]' if config.options['id_groups'] else ''} [amount to win (default 10)]",
     )
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.channel))
-    async def start(self, ctx, *, args_str: str = ""):
+    async def start(self, ctx, *args):
         logger.info("command: start race")
 
         if not str(ctx.channel.name).startswith("racing"):
@@ -168,45 +172,28 @@ class Race(commands.Cog):
                 f"**There is already a race in session.** *View stats with `{config.options['prefixes'][0]}race view`*"
             )
             return
-        args = args_str.split(" ")
         logger.info(f"args: {args}")
 
-        if "bw" in args:
-            bw = "bw"
-        else:
-            bw = ""
-
-        if "strict" in args:
-            strict = "strict"
-        else:
-            strict = ""
-
+        # parse args
+        bw = ""
+        strict = ""
         group_args = []
-        for category in set(
-            list(groups.keys())
-            + [
-                item
-                for group in groups
-                for item in config.options["category_aliases"][group]
-            ]
-        ).intersection({arg.lower() for arg in args}):
-            if category not in groups.keys():
-                category = next(
-                    key
-                    for key, value in config.options["category_aliases"].items()
-                    if category in value
-                )
-            group_args.append(category)
+        limit = 10
+        for arg in set(args):
+            arg = arg.lower()
+            if arg == "strict":
+                strict = "strict"
+            elif arg == "bw":
+                bw = "bw"
+            elif arg in all_categories:
+                group_args.append(dealias_group(arg))
+            else:
+                try:
+                    limit = int(arg)
+                except ValueError:
+                    await ctx.send(f"**Invalid argument provided**: `{arg}`")
+                    return
         group = " ".join(group_args).strip()
-
-        for arg in args:
-            try:
-                limit = int(arg)
-                break
-            except ValueError:
-                pass
-        else:
-            limit = 10
 
         if limit > 1000000:
             await ctx.send("**Sorry, the maximum amount to win is 1 million.**")
@@ -230,7 +217,7 @@ class Race(commands.Cog):
 
         logger.info("auto sending next image")
         media = self.bot.get_cog("Media")
-        await media.send_pic_(ctx, group, bw)
+        await media.send_pic(ctx, group, bw)
 
     @race.command(
         brief="- Views race",
@@ -254,7 +241,7 @@ class Race(commands.Cog):
         logger.info("command: stop race")
 
         if database.exists(f"race.data:{ctx.channel.id}"):
-            await self.stop_race_(ctx)
+            await self.stop_race(ctx)
         else:
             await ctx.send(
                 f"**There is no race in session.** *You can start one with `{config.options['prefixes'][0]}race start`*"

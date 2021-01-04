@@ -28,7 +28,15 @@ from discord.ext import commands
 from PIL import Image
 
 import sciolyid.config as config
-from sciolyid.data import GenericError, database, groups, id_list, logger
+from sciolyid.data import (
+    GenericError,
+    all_categories,
+    database,
+    groups,
+    id_list,
+    logger,
+    dealias_group,
+)
 
 
 def cache(func=None):
@@ -384,7 +392,7 @@ async def send_leaderboard(
 
 def build_id_list(group_str: str = ""):
     logger.info("building id list")
-    categories = group_str.split(" ")
+    categories = group_str.lower().split(" ")
     logger.info(f"categories: {categories}")
 
     id_choices = []
@@ -393,23 +401,9 @@ def build_id_list(group_str: str = ""):
     if not config.options["id_groups"]:
         logger.info("no groups allowed")
         return (id_list, "None")
-
     group_args = []
-    for group in set(
-        list(groups.keys())
-        + [
-            item
-            for group in groups
-            for item in config.options["category_aliases"][group]
-        ]
-    ).intersection({category.lower() for category in categories}):
-        if group not in groups.keys():
-            group = next(
-                key
-                for key, value in config.options["category_aliases"].items()
-                if group in value
-            )
-        group_args.append(group)
+    for group in all_categories.intersection(categories):
+        group_args.append(dealias_group(group))
     logger.info(f"group_args: {group_args}")
 
     category_output = " ".join(group_args).strip()
@@ -487,14 +481,15 @@ def spellcheck_list(word_to_check, correct_list, abs_cutoff=None):
     for correct_word in correct_list:
         if abs_cutoff is None:
             relative_cutoff = math.floor(len(correct_word) / 3)
-        if spellcheck(word_to_check, correct_word, relative_cutoff) is True:
+        else:
+            relative_cutoff = abs_cutoff
+        if spellcheck(word_to_check, correct_word, relative_cutoff):
             return True
     return False
 
 
 def spellcheck(worda, wordb, cutoff=3):
     """Checks if two words are close to each other.
-
     `worda` (str) - first word to compare
     `wordb` (str) - second word to compare
     `cutoff` (int) - allowed difference amount
@@ -523,9 +518,9 @@ class CustomCooldown:
     ):
         """Initialize a custom cooldown.
 
-            `per` (float) - Cooldown default duration, halves in DM channels
-            `bucket` (commands.BucketType) - cooldown scope, defaults to channel
-            """
+        `per` (float) - Cooldown default duration, halves in DM channels
+        `bucket` (commands.BucketType) - cooldown scope, defaults to channel
+        """
         rate = 1
         dm_per = per / 2
         race_per = 0.5

@@ -97,7 +97,7 @@ class Score(commands.Cog):
             logger.info(f"no users in {database_key}")
             await ctx.send("There are no users in the database.")
             return
-
+ 
         if page >= user_amount:
             page = user_amount - (user_amount % 10 if user_amount % 10 != 0 else 10)
 

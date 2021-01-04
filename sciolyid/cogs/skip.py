@@ -30,29 +30,37 @@ class Skip(commands.Cog):
     async def skip(self, ctx):
         logger.info("command: skip")
 
-        current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8")
+        current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode(
+            "utf-8"
+        )
         database.hset(f"channel:{ctx.channel.id}", "item", "")
         database.hset(f"channel:{ctx.channel.id}", "answered", "1")
         if current_item:  # check if there is image
             url = get_wiki_url(ctx, current_item)
             await ctx.send(f"Ok, skipping {current_item.lower()}")
             await ctx.send(
-                url if not database.exists(f"race.data:{ctx.channel.id}") else f"<{url}>"
+                url
+                if not database.exists(f"race.data:{ctx.channel.id}")
+                else f"<{url}>"
             )  # sends wiki page
             streak_increment(ctx, None)  # reset streak
             if database.exists(f"race.data:{ctx.channel.id}"):
 
                 limit = int(database.hget(f"race.data:{ctx.channel.id}", "limit"))
-                first = database.zrevrange(f"race.scores:{ctx.channel.id}", 0, 0, True)[0]
+                first = database.zrevrange(f"race.scores:{ctx.channel.id}", 0, 0, True)[
+                    0
+                ]
                 if int(first[1]) >= limit:
                     logger.info("race ending")
                     race = self.bot.get_cog("Race")
-                    await race.stop_race_(ctx)
+                    await race.stop_race(ctx)
                 else:
                     logger.info("auto sending next image")
-                    group, bw = database.hmget(f"race.data:{ctx.channel.id}", ["group", "bw"])
+                    group, bw = database.hmget(
+                        f"race.data:{ctx.channel.id}", ["group", "bw"]
+                    )
                     media = self.bot.get_cog("Media")
-                    await media.send_pic_(ctx, group.decode("utf-8"), bw.decode("utf-8"))
+                    await media.send_pic(ctx, group.decode("utf-8"), bw.decode("utf-8"))
         else:
             await ctx.send("You need to ask for an image first!")
 

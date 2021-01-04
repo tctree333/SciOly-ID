@@ -21,9 +21,20 @@ from discord.ext import commands
 
 import sciolyid.config as config
 from sciolyid.core import send_image
-from sciolyid.data import GenericError, database, groups, id_list, logger
-from sciolyid.functions import (CustomCooldown, build_id_list, item_setup,
-                                session_increment)
+from sciolyid.data import (
+    GenericError,
+    all_categories,
+    database,
+    dealias_group,
+    id_list,
+    logger,
+)
+from sciolyid.functions import (
+    CustomCooldown,
+    build_id_list,
+    item_setup,
+    session_increment,
+)
 
 IMAGE_MESSAGE = (
     f"*Here you go!* \n**Use `{config.options['prefixes'][0]}pic` again to get a new image of the same {config.options['id_type'][:-1]}, "
@@ -38,7 +49,7 @@ class Media(commands.Cog):
         self.bot = bot
 
     def error_handle(self, ctx, group_str: str, bw: bool, retries):
-        """Return a function to pass to send_bird() as on_error."""
+        """Return a function to pass to send_pic() as on_error."""
 
         async def inner(error):
             nonlocal retries
@@ -54,7 +65,7 @@ class Media(commands.Cog):
             if isinstance(error, GenericError) and error.code == 100:
                 retries += 1
                 await ctx.send("**Retrying...**")
-                await self.send_pic_(ctx, group_str, bw, retries)
+                await self.send_pic(ctx, group_str, bw, retries)
             else:
                 await ctx.send("*Please try again.*")
 
@@ -65,7 +76,7 @@ class Media(commands.Cog):
         item_setup(ctx, item)
         database.zincrby("frequency.item:global", 1, string.capwords(item))
 
-    async def send_pic_(self, ctx, group_str: str, bw: bool = False, retries=0):
+    async def send_pic(self, ctx, group_str: str, bw: bool = False, retries=0):
 
         logger.info(
             f"{config.options['id_type'][:-1]}: "
@@ -118,30 +129,24 @@ class Media(commands.Cog):
     )
     # 5 second cooldown
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.channel))
-    async def pic(self, ctx, *, args_str: str = ""):
+    async def pic(self, ctx, *args):
         logger.info("command: pic")
 
-        args = args_str.split(" ")
         logger.info(f"args: {args}")
 
-        bw = "bw" in args
-
+        # parse args
+        bw = False
         toggle_groups = []
-        for category in set(
-            list(groups.keys())
-            + [
-                item
-                for group in groups
-                for item in config.options["category_aliases"][group]
-            ]
-        ).intersection({arg.lower() for arg in args}):
-            if category not in groups.keys():
-                category = next(
-                    key
-                    for key, value in config.options["category_aliases"].items()
-                    if category in value
-                )
-            toggle_groups.append(category)
+        for arg in set(args):
+            arg = arg.lower()
+            if arg == "bw":
+                bw = True
+            elif arg in all_categories:
+                toggle_groups.append(dealias_group(arg))
+            else:
+                await ctx.send(f"**Invalid argument provided**: `{arg}`")
+                return
+
         logger.info(f"group_args: {toggle_groups}")
         if toggle_groups:
             group = " ".join(toggle_groups).strip()
@@ -150,7 +155,7 @@ class Media(commands.Cog):
 
         if database.exists(f"session.data:{ctx.author.id}"):
             logger.info("session parameters")
-
+            # handle group args
             if toggle_groups:
                 current_groups = (
                     database.hget(f"session.data:{ctx.author.id}", "group")
@@ -165,7 +170,9 @@ class Media(commands.Cog):
                 logger.info(f"adding groups: {add_groups}")
                 group = " ".join(add_groups).strip()
             else:
-                group = database.hget(f"session.data:{ctx.author.id}", "group").decode("utf-8")
+                group = database.hget(f"session.data:{ctx.author.id}", "group").decode(
+                    "utf-8"
+                )
 
             if database.hget(f"session.data:{ctx.author.id}", "bw").decode("utf-8"):
                 bw = not bw
@@ -191,7 +198,7 @@ class Media(commands.Cog):
         else:
             await ctx.send(f"**Recognized arguments:** *Black & White*: `{bw}`")
 
-        await self.send_pic_(ctx, group, bw)
+        await self.send_pic(ctx, group, bw)
 
 
 def setup(bot):

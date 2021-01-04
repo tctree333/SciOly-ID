@@ -34,7 +34,7 @@ id_required: Dict[str, Optional[str]] = {
 web_required: Dict[str, Optional[str]] = {
     "client_id": None,  # discord client id
     "base_image_url": None,  # root of where images are hosted
-    "validation_repo_url": None, # github repo where images are temporarily held
+    "validation_repo_url": None,  # github repo where images are temporarily held
 }
 
 optional: Dict[str, Any] = {
