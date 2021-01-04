@@ -86,7 +86,6 @@ def setup(*args, **kwargs):
             ] = f"{config.options['bot_files_dir']}{config.options[item]}"
 
     data_subdirs = (
-        "alias_file",
         "list_dir",
         "meme_file",
         "restricted_list_dir",

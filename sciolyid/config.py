@@ -45,7 +45,6 @@ optional: Dict[str, Any] = {
     "list_dir": "lists/",  # directory within data_dir containing id lists
     "restricted_list_dir": None,  # directory within data_dir containg id lists that are available by selection only
     "wikipedia_file": "wikipedia.txt",  # filename within data_dir containing wiki urls for every item
-    "alias_file": "aliases.txt",  # filename within data_dir contiaining aliases for any item
     "meme_file": None,
     "logs": True,  # enable logging
     "log_dir": "logs/",  # directory for text logs/backups

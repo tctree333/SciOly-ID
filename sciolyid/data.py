@@ -142,6 +142,7 @@ if config.options["sentry"]:
 # leave confirm format:
 #   leave:guild_id : 0
 
+
 # setup logging
 logger = logging.getLogger(config.options["name"])
 if config.options["logs"]:
@@ -232,19 +233,6 @@ def get_wiki_url(ctx, item: str):
     return wikipedia_urls[item.lower()]
 
 
-def _generate_aliases():
-    logger.info("Working on aliases")
-    aliases_ = {}
-    with open(f'{config.options["alias_file"]}', "r") as f:
-        reader = csv.reader(f)
-        for raw_aliases in reader:
-            raw_aliases = list(map(str.lower, raw_aliases))
-            item = raw_aliases[0]
-            aliases_[item] = raw_aliases
-    logger.info("Done with aliases")
-    return aliases_
-
-
 def get_aliases(item: str):
     logger.info(f"getting aliases for {item}")
     item = item.lower()
@@ -268,45 +256,41 @@ def get_category(item: str):
 
 
 def dealias_group(group):
-    """ resolve group to a real category by expanding aliases"""
+    """Resolve group to a real category by expanding aliases."""
     if group in groups.keys():
         return group
-    else:
-        return next(
-            key
-            for key, value in config.options["category_aliases"].items()
-            if group in value
-        )
+    return next(
+        key
+        for key, value in config.options["category_aliases"].items()
+        if group in value
+    )
 
 
 def _groups():
     """Converts txt files of data into lists."""
-    filenames = [name.split(".")[0] for name in os.listdir(config.options["list_dir"])]
+    filenames = [f"{config.options['list_dir']}{name}" for name in os.listdir(config.options["list_dir"])]
     restricted_filenames = []
     if config.options["restricted_list_dir"]:
         restricted_filenames = [
-            name.split(".")[0]
+            f"{config.options['restricted_list_dir']}{name}"
             for name in os.listdir(config.options["restricted_list_dir"])
         ]
 
     # Converts txt file of data into lists
     lists = {}
-    for filename in filenames:
+    aliases_ = {}
+    for filename in filenames + restricted_filenames:
         logger.info(f"Working on {filename}")
-        with open(f'{config.options["list_dir"]}{filename}.txt', "r") as f:
-            lists[filename] = [line.strip().lower() for line in f]
+        with open(filename, "r") as f:
+            for line in f:
+                line = line.strip().lower().split(",")
+                lists[filename] = line[0]
+                if len(line) > 1:
+                    aliases_[line[0]] = line[1:]
         logger.info(f"Done with {filename}")
 
-    for restricted_filename in restricted_filenames:
-        logger.info(f"Working on {restricted_filename}")
-        with open(
-            f'{config.options["restricted_list_dir"]}{restricted_filename}.txt', "r"
-        ) as f:
-            lists[restricted_filename] = [line.strip().lower() for line in f]
-        logger.info(f"Done with {restricted_filename}")
-
     logger.info("Done with lists!")
-    return lists
+    return (lists, aliases_)
 
 
 def _memes():
@@ -358,16 +342,17 @@ def _config():
         config.options["download_func"] = download_github
 
 
-groups = _groups()
+groups, aliases = _groups()
 meme_list = _memes()
 id_list, master_id_list = _all_lists()
 wikipedia_urls = _wiki_urls()
-aliases = _generate_aliases()
 _config()
+
 all_categories = set(
     list(groups.keys())
     + [item for group in groups for item in config.options["category_aliases"][group]]
 )  # includes aliases
+
 logger.info(f"List Lengths: {len(id_list)}")
 logger.info(f"Master List Lengths: {len(master_id_list)}")
 
