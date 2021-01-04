@@ -79,14 +79,18 @@ def _push_helper(repo, commit_message, progress=None):
 @celery_app.task
 def push(commit_message: str, user_id: Union[int, str]):
     logger.info("pushing!")
-    result = _push_helper(verify_repo, commit_message, progress=gen_progress(user_id))[0]
+    result = _push_helper(verify_repo, commit_message, progress=gen_progress(user_id))[
+        0
+    ]
     if result is None:
         database.hset(
             f"sciolyid.upload.status:{user_id}",
             mapping={"status": json.dumps(["FAIL"]), "end": int(time.time())},
         )
         logger.error("push operation failed completely!")
-        webhooks.send("error", message="Push for verify repo on image addition failed completely!")
+        webhooks.send(
+            "error", message="Push for verify repo on image addition failed completely!"
+        )
     else:
         database.hset(
             f"sciolyid.upload.status:{user_id}",
@@ -165,7 +169,9 @@ def move_images():
             item = os.path.dirname(os.path.relpath(path, root))
             added_items.append(item)
             category = get_category(item)
-            shutil.copy(path, os.path.join(image_repo.working_tree_dir, category, item, ''))
+            shutil.copy(
+                path, os.path.join(image_repo.working_tree_dir, category, item, "")
+            )
             verify_repo.index.remove(path, working_tree=True)
 
     if valid or delete:
@@ -174,16 +180,31 @@ def move_images():
 
         ok = 0
         urls = []
-        for i, result in enumerate((("image repo", image_push), ("verify repo", verify_push))):
+        for i, result in enumerate(
+            (("image repo", image_push), ("verify repo", verify_push))
+        ):
             if result[1][0] is None:
                 logger.info(result[0] + " failed completely!")
-                webhooks.send("error", message=f"Push for {result[0]} on valid image transfer failed completely!")
+                webhooks.send(
+                    "error",
+                    message=f"Push for {result[0]} on valid image transfer failed completely!",
+                )
             else:
                 logger.info(result[0] + " push success!")
                 ok += 1
-                urls.append(config.options["commit_url_format"][i].format(id=result[1][1].hexsha))
+                urls.append(
+                    config.options["commit_url_format"][i].format(
+                        id=result[1][1].hexsha
+                    )
+                )
 
         if ok == 2:
-            webhooks.send("valid", added=len(valid), rejected=len(delete), items=added_items, urls=urls)
+            webhooks.send(
+                "valid",
+                added=len(valid),
+                rejected=len(delete),
+                items=added_items,
+                urls=urls,
+            )
     else:
         logger.info("no changes to update!")

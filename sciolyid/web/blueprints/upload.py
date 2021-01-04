@@ -33,8 +33,11 @@ import sciolyid.web.functions.webhooks as webhooks
 import sciolyid.web.tasks.git_tasks as git_tasks
 from sciolyid.data import master_id_list
 from sciolyid.web.config import logger
-from sciolyid.web.functions.images import (find_duplicates, generate_id_lookup,
-                                           verify_image)
+from sciolyid.web.functions.images import (
+    find_duplicates,
+    generate_id_lookup,
+    verify_image,
+)
 from sciolyid.web.functions.user import fetch_profile, get_user_id
 from sciolyid.web.git import verify_repo
 from sciolyid.web.tasks import database

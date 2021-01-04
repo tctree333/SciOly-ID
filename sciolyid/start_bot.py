@@ -30,8 +30,13 @@ from sentry_sdk import capture_exception
 
 import sciolyid.config as config
 from sciolyid.data import GenericError, database, logger
-from sciolyid.functions import (backup_all, channel_setup, fools,
-                                get_all_users, user_setup)
+from sciolyid.functions import (
+    backup_all,
+    channel_setup,
+    fools,
+    get_all_users,
+    user_setup,
+)
 
 # Initialize bot
 intent: discord.Intents = discord.Intents.none()

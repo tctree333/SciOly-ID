@@ -40,7 +40,7 @@ setuptools.setup(
             "gunicorn>=20.0.4, <21.0.0",
             "ImageHash>=4.0.0, <5.0.0",
             "Celery>=4.4.3, <4.5.0",
-            "blinker>=1.4, <1.5"
+            "blinker>=1.4, <1.5",
         ]
     },
     py_modules=["config", "core", "data", "functions", "downloads", "start_bot"],

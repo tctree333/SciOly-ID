@@ -20,8 +20,7 @@ import time
 
 import authlib
 from authlib.integrations.flask_client import OAuth
-from flask import (Blueprint, jsonify, make_response, redirect, request,
-                   session, url_for)
+from flask import Blueprint, jsonify, make_response, redirect, request, session, url_for
 from sentry_sdk import capture_exception
 
 import sciolyid.config as config

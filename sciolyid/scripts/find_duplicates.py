@@ -2,6 +2,7 @@ import csv
 
 import imagehash
 
+
 def get_hashlist():
     hashes = list()
     filenames = list()
@@ -11,6 +12,7 @@ def get_hashlist():
             hashes.append(img_hash)
             filenames.append(filename)
     return (hashes, filenames)
+
 
 def find_duplicates(hashes, filenames):
     duplicates = []
@@ -24,5 +26,6 @@ def find_duplicates(hashes, filenames):
         if len(matches) > 1:
             duplicates.append(matches)
     return duplicates
+
 
 print(find_duplicates(*get_hashlist()))

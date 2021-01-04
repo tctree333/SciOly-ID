@@ -31,10 +31,12 @@ def api_index():
     logger.info("index page accessed")
     return "<h1>Hello!</h1><p>This is the index page for the sciolyid internal API.<p>"
 
+
 @app.errorhandler(400)
 def client_error(e):
     capture_exception(e)
     return flask.jsonify(error=str(e)), 400
+
 
 @app.errorhandler(403)
 def not_allowed(e):

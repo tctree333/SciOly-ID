@@ -43,6 +43,7 @@ app.config["SESSION_COOKIE_NAME"] = config.options["name"]
 app.secret_key = os.getenv(config.options["secret_key_env"])
 FRONTEND_URL: str = os.getenv(config.options["frontend_url_env"], "")
 
+
 @app.after_request  # enable CORS
 def after_request(response):
     header = response.headers

@@ -55,9 +55,7 @@ def _setup_repo(repo_url: str, repo_dir: str) -> Repo:
             + "@"
             + new_repo_url[2]
         )
-        repo = Repo.clone_from(
-            "/".join(new_repo_url), repo_dir
-        )
+        repo = Repo.clone_from("/".join(new_repo_url), repo_dir)
     os.remove(config.options["bot_files_dir"] + "git.lock")
     logger.info("done!")
 
@@ -67,5 +65,9 @@ def _setup_repo(repo_url: str, repo_dir: str) -> Repo:
     return repo
 
 
-verify_repo: Repo = _setup_repo(config.options["validation_repo_url"], config.options["validation_local_dir"])
-image_repo: Repo = _setup_repo(config.options["github_image_repo_url"], config.options["download_dir"])
+verify_repo: Repo = _setup_repo(
+    config.options["validation_repo_url"], config.options["validation_local_dir"]
+)
+image_repo: Repo = _setup_repo(
+    config.options["github_image_repo_url"], config.options["download_dir"]
+)

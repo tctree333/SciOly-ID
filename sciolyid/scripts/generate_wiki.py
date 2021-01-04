@@ -18,7 +18,10 @@ with open(f"{folder}/wikipedia.txt", "w") as f:
         else:
             try:
                 url = wikipedia.page(f"{thing}").url
-            except (wikipedia.exceptions.DisambiguationError, wikipedia.exceptions.PageError):
+            except (
+                wikipedia.exceptions.DisambiguationError,
+                wikipedia.exceptions.PageError,
+            ):
                 print("FAIL")
                 fails.append(thing)
                 continue

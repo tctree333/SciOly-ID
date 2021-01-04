@@ -3,8 +3,11 @@ import os
 
 from github import Github, Repository
 
-from generate_hashes_ids import (calculate_image_hashes, calculate_image_ids,
-                                 get_image_files)
+from generate_hashes_ids import (
+    calculate_image_hashes,
+    calculate_image_ids,
+    get_image_files,
+)
 
 REPO_ID = os.environ["INPUT_CURRENT_REPO"]
 SUBFOLDER = os.getenv("INPUT_SUBFOLDER") in (True, "yes", "true", "True")

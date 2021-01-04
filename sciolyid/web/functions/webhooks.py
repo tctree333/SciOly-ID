@@ -21,8 +21,12 @@ import requests
 from discord import Color, Embed, RequestsWebhookAdapter, Webhook
 
 import sciolyid.config as config
-from sciolyid.web.functions.user import (AVATAR_URL, PROFILE_URL,
-                                         DiscordBotAuth, fetch_profile)
+from sciolyid.web.functions.user import (
+    AVATAR_URL,
+    PROFILE_URL,
+    DiscordBotAuth,
+    fetch_profile,
+)
 
 WEBHOOK_URL = os.getenv(config.options["discord_webhook_env"], None)
 

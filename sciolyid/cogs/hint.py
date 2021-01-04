@@ -30,7 +30,9 @@ class Hint(commands.Cog):
     async def hint(self, ctx):
         logger.info("command: hint")
 
-        current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8")
+        current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode(
+            "utf-8"
+        )
         if current_item != "":  # check if there is item
             await ctx.send(f"The first letter is {current_item[0]}")
         else:
