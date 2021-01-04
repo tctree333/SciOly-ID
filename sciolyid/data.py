@@ -359,15 +359,15 @@ def _config():
 
 
 groups = _groups()
-all_categories = set(
-    list(groups.keys())
-    + [item for group in groups for item in config.options["category_aliases"][group]]
-)  # includes aliases
 meme_list = _memes()
 id_list, master_id_list = _all_lists()
 wikipedia_urls = _wiki_urls()
 aliases = _generate_aliases()
 _config()
+all_categories = set(
+    list(groups.keys())
+    + [item for group in groups for item in config.options["category_aliases"][group]]
+)  # includes aliases
 logger.info(f"List Lengths: {len(id_list)}")
 logger.info(f"Master List Lengths: {len(master_id_list)}")
 

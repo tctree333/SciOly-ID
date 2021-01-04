@@ -17,6 +17,7 @@
 import datetime
 import difflib
 import functools
+import math
 import os
 import pickle
 import string
@@ -476,17 +477,33 @@ async def get_all_users(bot):
     logger.info("User cache finished")
 
 
-def spellcheck_list(word, correct_list, id_list):
-    word = word.lower().replace("-", " ").replace("'", "")
-    correct_list = [
-        word.lower().replace("-", " ").replace("'", "") for word in correct_list
-    ]
-    if word in correct_list:
-        return True
-    matches = difflib.get_close_matches(word, id_list, n=1, cutoff=0.75)
-    if matches and matches[0] in correct_list:
-        return True
+def spellcheck_list(word_to_check, correct_list, abs_cutoff=None):
+    for correct_word in correct_list:
+        if abs_cutoff is None:
+            relative_cutoff = math.floor(len(correct_word) / 3)
+        else:
+            relative_cutoff = abs_cutoff
+        if spellcheck(word_to_check, correct_word, relative_cutoff):
+            return True
     return False
+
+
+def spellcheck(worda, wordb, cutoff=3):
+    """Checks if two words are close to each other.
+    `worda` (str) - first word to compare
+    `wordb` (str) - second word to compare
+    `cutoff` (int) - allowed difference amount
+    """
+    worda = worda.lower().replace("-", " ").replace("'", "")
+    wordb = wordb.lower().replace("-", " ").replace("'", "")
+    shorterword = min(worda, wordb, key=len)
+    if worda != wordb:
+        if (
+            len(list(difflib.Differ().compare(worda, wordb))) - len(shorterword)
+            >= cutoff
+        ):
+            return False
+    return True
 
 
 class CustomCooldown:
