@@ -26,10 +26,25 @@ from sciolyid.core import send_image
 from sciolyid.data import aliases, groups, logger, master_id_list, meme_list
 from sciolyid.functions import CustomCooldown, build_id_list
 
+# Discord max message length is 2000 characters, leave some room just in case
+MAX_MESSAGE = 1950
 
 class Other(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    @staticmethod
+    def broken_join(input_list, max_size: int = MAX_MESSAGE):
+        out = []
+        temp = ""
+        for item in input_list:
+            temp += f"{item}\n"
+            if len(temp) > max_size:
+                out.append(temp)
+                temp = ""
+        if temp:
+            out.append(temp)
+        return out
 
     # Info - Gives image
     @commands.command(
@@ -74,15 +89,7 @@ class Other(commands.Cog):
         group_list = build[0]
         detected_groups = "total items" if build[1] == "None" else build[1]
 
-        item_lists = []
-        temp = ""
-        for item in group_list:
-            temp += f"{item}\n"
-            if len(temp) > 1950:
-                item_lists.append(temp)
-                temp = ""
-        if temp:
-            item_lists.append(temp)
+        item_lists = self.broken_join(group_list)
 
         if ctx.author.dm_channel is None:
             await ctx.author.create_dm()
