@@ -81,7 +81,8 @@ class Other(commands.Cog):
             if len(temp) > 1950:
                 item_lists.append(temp)
                 temp = ""
-        item_lists.append(temp)
+        if temp:
+            item_lists.append(temp)
 
         if ctx.author.dm_channel is None:
             await ctx.author.create_dm()
