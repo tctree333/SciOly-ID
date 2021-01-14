@@ -35,6 +35,7 @@ from sciolyid.functions import (
     channel_setup,
     fools,
     get_all_users,
+    prune_user_cache,
     user_setup,
 )
 
@@ -74,6 +75,7 @@ async def on_ready():
     # start tasks
     update_images.start()
     refresh_user_cache.start()
+    evict_user_cache.start()
     if config.options["backups_channel"]:
         refresh_backup.start()
 
@@ -368,11 +370,18 @@ async def update_images():
     logger.info("done updating images!")
 
 
-@tasks.loop(hours=12.0)
+@tasks.loop(hours=3.0)
 async def refresh_user_cache():
     """Task to update User cache to increase performance of commands."""
     logger.info("TASK: Updating User cache")
     await get_all_users(bot)
+
+
+@tasks.loop(minutes=8.0)
+async def evict_user_cache():
+    """Task to remove keys from the User cache to ensure freshness."""
+    logger.info("TASK: Removing user keys")
+    await prune_user_cache(10)
 
 
 @tasks.loop(hours=6.0)

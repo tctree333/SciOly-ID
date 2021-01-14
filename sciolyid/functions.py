@@ -20,6 +20,7 @@ import functools
 import math
 import os
 import pickle
+import random
 import string
 from io import BytesIO
 
@@ -52,6 +53,10 @@ def cache(func=None):
         hits = misses = 0
         cache_get = cache_.get
         cache_len = cache_.__len__
+
+        def _evict():
+            """Evicts a random item from the local cache."""
+            cache_.pop(random.choice(tuple(cache_)), 0)
 
         async def wrapped(*args, **kwds):
             # Simple caching without ordering or size limit
@@ -475,6 +480,12 @@ async def get_all_users(bot):
     for user_id in user_ids:
         await fetch_get_user(user_id, bot=bot, member=False)
     logger.info("User cache finished")
+
+
+def prune_user_cache(count: int = 5):
+    """Evicts `count` items from the user cache."""
+    for _ in range(count):
+        _fetch_cached_user.evict()
 
 
 def spellcheck_list(word_to_check, correct_list, abs_cutoff=None):
