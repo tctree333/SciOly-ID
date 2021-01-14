@@ -20,6 +20,7 @@ import typing
 import discord
 import pandas as pd
 from discord.ext import commands
+from discord.utils import escape_markdown as esc
 
 import sciolyid.config as config
 from sciolyid.data import GenericError, database, logger
@@ -125,9 +126,9 @@ class Score(commands.Cog):
                 if user is None:
                     user_info = "**Deleted**"
                 else:
-                    user_info = f"**{user.name}#{user.discriminator}**"
+                    user_info = f"**{esc(user.name)}#{user.discriminator}**"
             else:
-                user_info = f"**{user.name}#{user.discriminator}** ({user.mention})"
+                user_info = f"**{esc(user.name)}#{user.discriminator}** ({user.mention})"
 
             leaderboard += f"{i+1+page}. {user_info} - {int(stats[1])}\n"
 

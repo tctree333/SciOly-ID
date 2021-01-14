@@ -18,6 +18,7 @@ import typing
 
 import discord
 from discord.ext import commands
+from discord.utils import escape_markdown as esc
 
 import sciolyid.config as config
 from sciolyid.data import database, logger
@@ -109,15 +110,15 @@ class Meta(commands.Cog):
         removed = ""
         for channel in channels:
             if database.zscore("ignore:global", str(channel.id)) is None:
-                added += f"`#{channel.name}` (`{channel.category.name if channel.category else 'No Category'}`)\n"
+                added += f"`#{esc(channel.name)}` (`{esc(channel.category.name) if channel.category else 'No Category'}`)\n"
                 database.zadd("ignore:global", {str(channel.id): ctx.guild.id})
             else:
-                removed += f"`#{channel.name}` (`{channel.category.name if channel.category else 'No Category'}`)\n"
+                removed += f"`#{esc(channel.name)}` (`{esc(channel.category.name) if channel.category else 'No Category'}`)\n"
                 database.zrem("ignore:global", str(channel.id))
 
         ignored = "".join(
             [
-                f"`#{channel.name}` (`{channel.category.name if channel.category else 'No Category'}`)\n"
+                f"`#{esc(channel.name)}` (`{esc(channel.category.name) if channel.category else 'No Category'}`)\n"
                 for channel in map(
                     lambda c: ctx.guild.get_channel(int(c)),
                     database.zrangebyscore(
@@ -182,7 +183,7 @@ class Meta(commands.Cog):
             return
         logger.info(f"user-id: {user.id}")
         database.zadd("banned:global", {str(user.id): 0})
-        await ctx.send(f"Ok, {user.name} cannot use the bot anymore!")
+        await ctx.send(f"Ok, {esc(user.name)} cannot use the bot anymore!")
 
     # unban command - prevents certain users from using the bot
     @commands.command(help="- unban command", hidden=True)
@@ -200,7 +201,7 @@ class Meta(commands.Cog):
             return
         logger.info(f"user-id: {user.id}")
         database.zrem("banned:global", str(user.id))
-        await ctx.send(f"Ok, {user.name} can use the bot!")
+        await ctx.send(f"Ok, {esc(user.name)} can use the bot!")
 
     # correct command - see how many times someone got a bird correct
     @commands.command(help="- see answered birds command", hidden=True)
@@ -219,7 +220,7 @@ class Meta(commands.Cog):
         logger.info(f"user-id: {user.id}")
         await send_leaderboard(
             ctx,
-            f"Top Correct Birds ({user.name})",
+            f"Top Correct Birds ({esc(user.name)})",
             1,
             database_key=f"correct.user:{user.id}",
             items_per_page=25,
