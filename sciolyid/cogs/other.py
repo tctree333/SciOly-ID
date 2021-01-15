@@ -163,7 +163,7 @@ class Other(commands.Cog):
         async def send_as_bot(self, ctx, channel_id: int, message):
             logger.info("command: send")
 
-            logger.info(f"args: {channel_id=}, {message=}")
+            logger.info(f"args: {channel_id}, {message}")
 
             channel = self.bot.get_channel(channel_id)
             await channel.send(message)
