@@ -287,8 +287,8 @@ def _groups():
                 line = line.strip().lower().split(",")
                 lists[category_name].append(line[0])
                 if len(line) > 1:
-                    aliases_[line[0]] = line[1:]
-        logger.info(f"Done with {filename}")
+                    aliases_[line[0]] = line
+                    logger.info(f"Done with {filename}")
 
     logger.info("Done with lists!")
     return (lists, aliases_)
