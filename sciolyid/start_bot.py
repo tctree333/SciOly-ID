@@ -384,7 +384,7 @@ async def evict_user_cache():
     await prune_user_cache(10)
 
 
-@tasks.loop(hours=6.0)
+@tasks.loop(hours=1.0)
 async def refresh_backup():
     """Sends a copy of the database to a discord channel (BACKUPS_CHANNEL)."""
     logger.info("Refreshing backup")
