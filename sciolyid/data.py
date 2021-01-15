@@ -268,23 +268,24 @@ def dealias_group(group):
 
 def _groups():
     """Converts txt files of data into lists."""
-    filenames = [f"{config.options['list_dir']}{name}" for name in os.listdir(config.options["list_dir"])]
+    filenames = [(f"{config.options['list_dir']}{name}", name.split(".")[0]) for name in os.listdir(config.options["list_dir"])]
     restricted_filenames = []
     if config.options["restricted_list_dir"]:
         restricted_filenames = [
-            f"{config.options['restricted_list_dir']}{name}"
+            (f"{config.options['restricted_list_dir']}{name}", name.split(".")[0])
             for name in os.listdir(config.options["restricted_list_dir"])
         ]
 
     # Converts txt file of data into lists
     lists = {}
     aliases_ = {}
-    for filename in filenames + restricted_filenames:
+    for filename, category_name in filenames + restricted_filenames:
         logger.info(f"Working on {filename}")
+        lists[category_name] = []
         with open(filename, "r") as f:
             for line in f:
                 line = line.strip().lower().split(",")
-                lists[filename] = line[0]
+                lists[category_name].append(line[0])
                 if len(line) > 1:
                     aliases_[line[0]] = line[1:]
         logger.info(f"Done with {filename}")
