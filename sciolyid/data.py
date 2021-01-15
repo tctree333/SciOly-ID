@@ -284,7 +284,7 @@ def _groups():
         lists[category_name] = []
         with open(filename, "r") as f:
             for line in f:
-                line = line.strip().lower().split(",")
+                line = list(map(lambda x: x.strip().lower(), line.split(",")))
                 lists[category_name].append(line[0])
                 if len(line) > 1:
                     aliases_[line[0]] = line
