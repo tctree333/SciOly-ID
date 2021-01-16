@@ -160,13 +160,19 @@ class Other(commands.Cog):
         # Send command - for testing purposes only
         @commands.command(help="- send command", hidden=True, aliases=["sendas"])
         @commands.is_owner()
-        async def send_as_bot(self, ctx, channel_id: int, message):
+        async def send_as_bot(self, ctx, *, args_str):
             logger.info("command: send")
 
-            logger.info(f"args: {channel_id}, {message}")
+            logger.info(f"args: {args_str}")
+            args = args_str.split(" ")
 
+            channel_id = int(args[0])
+            try:
+                message = args[1:]
+            except IndexError:
+                await ctx.send("No message provided!")
             channel = self.bot.get_channel(channel_id)
-            await channel.send(message)
+            await channel.send(" ".join(message))
             await ctx.send("Ok, sent!")
 
     # # Test command - for testing purposes only
