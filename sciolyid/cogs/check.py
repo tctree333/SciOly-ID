@@ -88,9 +88,9 @@ class Check(commands.Cog):
                 )
 
                 await ctx.send(
-                    "Correct! Good job!"
+                    f"Correct! Good job! The image was **{current_item}**."
                     if not database.exists(f"race.data:{ctx.channel.id}")
-                    else f"**{ctx.author.mention}**, you are correct!"
+                    else f"**{ctx.author.mention}**, you are correct! The image was **{current_item}**."
                 )
                 url = get_wiki_url(ctx, current_item)
                 await ctx.send(
