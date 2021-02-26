@@ -86,7 +86,7 @@ class Other(commands.Cog):
         logger.info("command: list")
 
         build = build_id_list(group)
-        group_list = build[0]
+        group_list = sorted(build[0])
         detected_groups = "total items" if build[1] == "None" else build[1]
 
         item_lists = self.broken_join(group_list)
