@@ -281,7 +281,10 @@ def dealias_group(group):
 
 def _groups():
     """Converts txt files of data into lists."""
-    filenames = [(f"{config.options['group_dir']}{name}", name.split(".")[0]) for name in os.listdir(config.options["group_dir"])]
+    filenames = [
+        (f"{config.options['group_dir']}{name}", name.lower().split(".")[0])
+        for name in os.listdir(config.options["group_dir"])
+    ]
 
     # Converts txt file of data into lists
     lists = {}
@@ -305,17 +308,17 @@ def _state_lists():
     """Converts txt files of state data into lists."""
     filenames = ("list", "aliases")
     states_ = {}
-    state_names = os.listdir(config.options['state_dir'])
+    state_names = os.listdir(config.options["state_dir"])
     for state in state_names:
-        states_[state] = {}
+        states_[state.upper()] = {}
         logger.info(f"Working on {state}")
         for filename in filenames:
             logger.info(f"Working on {filename}")
-            with open(f"{config.options['state_dir']}/{state}/{filename}.txt", "r") as f:
-                states_[state][filename] = [
-                    line.strip().lower()
-                    if filename != "aliases"
-                    else line.strip()
+            with open(
+                f"{config.options['state_dir']}/{state}/{filename}.txt", "r"
+            ) as f:
+                states_[state.upper()][filename] = [
+                    line.strip().lower() if filename != "aliases" else line.strip()
                     for line in f
                     if line != "EMPTY"
                 ]

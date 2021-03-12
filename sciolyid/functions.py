@@ -17,12 +17,14 @@
 import datetime
 import difflib
 import functools
+import itertools
 import math
 import os
 import pickle
 import random
 import string
 from io import BytesIO
+from typing import Union, Iterable
 
 import discord
 from discord.ext import commands
@@ -33,10 +35,11 @@ from sciolyid.data import (
     GenericError,
     all_categories,
     database,
+    dealias_group,
     groups,
     id_list,
     logger,
-    dealias_group,
+    states,
 )
 
 
@@ -321,6 +324,26 @@ def black_and_white(input_image_path) -> BytesIO:
     return final_buffer
 
 
+def check_state_role(ctx) -> list:
+    """Returns a list of state roles a user has.
+
+    `ctx` - Discord context object
+    """
+    logger.info("checking roles")
+    user_states = []
+    if ctx.guild is not None:
+        logger.info("server context")
+        user_role_names = [role.name.lower() for role in ctx.author.roles]
+        for state in states:
+            # gets similarities
+            if set(user_role_names).intersection(set(states[state]["aliases"])):
+                user_states.append(state)
+    else:
+        logger.info("dm context")
+    logger.info(f"user roles: {user_states}")
+    return user_states
+
+
 async def fetch_get_user(user_id: int, ctx=None, bot=None, member: bool = False):
     if (ctx is None and bot is None) or (ctx is not None and bot is not None):
         raise ValueError("Only one of ctx or bot must be passed")
@@ -395,36 +418,51 @@ async def send_leaderboard(
     await ctx.send(embed=embed)
 
 
-def build_id_list(group_str: str = ""):
+def build_id_list(
+    categories: Union[str, Iterable] = "", state: Union[str, Iterable] = ""
+):
+    """Generates an ID list based on given arguments
+
+    - `categories`: category string/Iterable
+    - `state`: state string/Iterable
+    """
     logger.info("building id list")
-    categories = group_str.lower().split(" ")
-    logger.info(f"categories: {categories}")
+    if isinstance(categories, str):
+        categories = categories.split(" ")
+    if isinstance(state, str):
+        state = state.split(" ")
 
     id_choices = []
-    category_output = ""
+    group_args = set(
+        map(dealias_group, all_categories.intersection(set(map(str.lower, categories))))
+    )
+    state_args = set(states.keys()).intersection(set(map(str.upper, state)))
+    logger.info(f"group_args: {group_args}, state_args: {state_args}")
 
     if not config.options["id_groups"]:
         logger.info("no groups allowed")
-        return (id_list, "None")
-    group_args = []
-    for group in all_categories.intersection(categories):
-        group_args.append(dealias_group(group))
-    logger.info(f"group_args: {group_args}")
+        group_args = set()
 
-    category_output = " ".join(group_args).strip()
-    for group in group_args:
-        logger.info(f"group: {group}")
-        id_choices += groups[group]
-
-    if not id_choices:
-        logger.info("no choices")
-        id_choices += id_list
-        category_output = "None"
+    if group_args:
+        items_in_group = set(
+            itertools.chain.from_iterable(groups.get(o, []) for o in group_args)
+        )
+        if state_args:
+            items_in_state = set(
+                itertools.chain(*(states[state]["list"] for state in state_args))
+            )
+            id_choices = list(items_in_group.intersection(items_in_state))
+        else:
+            id_choices = list(items_in_group.intersection(set(id_list)))
+    elif state_args:
+        id_choices = list(
+            set(itertools.chain(*(states[state]["list"] for state in state_args)))
+        )
+    else:
+        id_choices = id_list
 
     logger.info(f"id_choices length: {len(id_choices)}")
-    logger.info(f"category_output: {category_output}")
-
-    return (id_choices, category_output)
+    return id_choices
 
 
 def backup_all():
