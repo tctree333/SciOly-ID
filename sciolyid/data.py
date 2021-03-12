@@ -78,6 +78,7 @@ if config.options["sentry"]:
 #                    "correct": 0,
 #                    "incorrect": 0,
 #                    "total": 0,
+#                    "state": state,
 #                    "bw": bw, - Toggles if "bw", doesn't if empty (""), default ""
 #                    "group": group,
 #                    "wiki": wiki, - Enables if "wiki", disables if empty (""), default "wiki"
@@ -89,6 +90,7 @@ if config.options["sentry"]:
 #                    "start": 0
 #                    "stop": 0,
 #                    "limit": 10,
+#                    "state": state,
 #                    "bw": bw,
 #                    "group": group,
 #                    "strict": strict - Enables strict spelling if "strict", disables if empty, default ""
@@ -111,8 +113,8 @@ if config.options["sentry"]:
 #    incorrect.user:user_id: : [item name, # incorrect]
 # }
 
-# correct birds format = {
-#    correct.user:user_id : [bird name, # correct]
+# correct item format = {
+#    correct.user:user_id : [item name, # correct]
 # }
 
 # item frequency format = {
@@ -141,6 +143,17 @@ if config.options["sentry"]:
 
 # leave confirm format:
 #   leave:guild_id : 0
+
+#  states = {
+#          state name:
+#               {
+#               aliases: [alias1, alias2...],
+#               list: [item1, item2...],
+#               }
+#          }
+
+# state items are picked from [state_dir]/[state]/list.txt
+# either list can be in any taxon
 
 
 # setup logging
@@ -292,6 +305,30 @@ def _groups():
 
     logger.info("Done with lists!")
     return (lists, aliases_)
+
+
+def _state_lists():
+    """Converts txt files of state data into lists."""
+    filenames = ("list", "aliases")
+    states_ = {}
+    state_names = os.listdir(config.options['state_dir'])
+    for state in state_names:
+        states_[state] = {}
+        logger.info(f"Working on {state}")
+        for filename in filenames:
+            logger.info(f"Working on {filename}")
+            with open(f"{config.options['state_dir']}/{state}/{filename}.txt", "r") as f:
+                states_[state][filename] = [
+                    line.strip().lower()
+                    if filename != "aliases"
+                    else line.strip()
+                    for line in f
+                    if line != "EMPTY"
+                ]
+            logger.info(f"Done with {filename}")
+        logger.info(f"Done with {state}")
+    logger.info("Done with states list!")
+    return states_
 
 
 def _memes():

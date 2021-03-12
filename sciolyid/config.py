@@ -43,6 +43,7 @@ optional: Dict[str, Any] = {
     "download_dir": "github_download/",  # local directory containing media (images)
     "data_dir": "data/",  # local directory containing the id data
     "list_dir": "lists/",  # directory within data_dir containing id lists
+    "state_dir": "state/",  # directory within data_dir containing alternate lists, False/None to disable
     "restricted_list_dir": None,  # directory within data_dir containg id lists that are available by selection only
     "wikipedia_file": "wikipedia.txt",  # filename within data_dir containing wiki urls for every item
     "meme_file": None,

@@ -64,6 +64,7 @@ def setup(*args, **kwargs):
         "list_dir",
         "log_dir",
         "restricted_list_dir",
+        "state_dir",
         "tmp_upload_dir",
         "validation_local_dir",
         "validation_repo_dir",
@@ -89,6 +90,7 @@ def setup(*args, **kwargs):
         "list_dir",
         "meme_file",
         "restricted_list_dir",
+        "state_dir",
         "wikipedia_file",
     )
     for item in data_subdirs:
