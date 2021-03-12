@@ -23,11 +23,21 @@ from discord.ext import commands
 
 import sciolyid.config as config
 from sciolyid.core import send_image
-from sciolyid.data import aliases, groups, logger, master_id_list, meme_list
+from sciolyid.data import (
+    aliases,
+    all_categories,
+    dealias_group,
+    groups,
+    logger,
+    master_id_list,
+    meme_list,
+    states,
+)
 from sciolyid.functions import CustomCooldown, build_id_list
 
 # Discord max message length is 2000 characters, leave some room just in case
 MAX_MESSAGE = 1950
+
 
 class Other(commands.Cog):
     def __init__(self, bot):
@@ -82,27 +92,47 @@ class Other(commands.Cog):
     # List command
     @commands.command(help="- DMs the user with the appropriate list.", name="list")
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.user))
-    async def list_of_items(self, ctx, group=""):
+    async def list_of_items(self, ctx, state_or_group=""):
         logger.info("command: list")
 
-        build = build_id_list(group)
-        group_list = sorted(build[0])
-        detected_groups = "total items" if build[1] == "None" else build[1]
+        group_args = set(
+            map(
+                dealias_group,
+                all_categories.intersection(set(state_or_group.lower().split(""))),
+            )
+        )
+        state_args = set(states.keys()).intersection(
+            set(state_or_group.upper().split(""))
+        )
+        if not state_args:
+            state_args = {config.options["default_state_list"]}
 
+        build = build_id_list(group_args, state_args)
+        group_list = sorted(build)
         item_lists = self.broken_join(group_list)
+
+        display_group = list(group_args)
+        if not display_group:
+            display_group.append(config.options["id_type"])
+        elif len(display_group) > 1:
+            display_group[-1] = "and " + display_group[-1]
+
+        display_state = list(state_args)
+        if len(display_state) > 1:
+            display_state[-1] = "and " + display_state[-1]
 
         if ctx.author.dm_channel is None:
             await ctx.author.create_dm()
 
         await ctx.author.dm_channel.send(
-            f"**{detected_groups.capitalize()} in the National {config.options['id_type'][:-1].title()} list:**"
+            f"**{','.join(display_group).capitalize()} in the {','.join(display_state)} list{'s' if len(display_state) > 1 else ''}:**"
         )
         for page in item_lists:
             await ctx.author.dm_channel.send(f"```\n{page}```")
 
         await ctx.send(
-            f"The National {config.options['id_type'][:-1].title()} list has **{len(group_list)}** {detected_groups}.\n"
-            + f"*A full list of {detected_groups} has been sent to you via DMs.*"
+            f"The {','.join(display_state)} list{'s' if len(display_state) > 1 else ''} has **{len(group_list)}** {','.join(display_group)}.\n"
+            + "*A full list has been sent to you via DMs.*"
         )
 
     # Group command - lists groups
