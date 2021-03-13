@@ -96,9 +96,9 @@ async def channel_setup(ctx):
     """
     logger.info("checking channel setup")
     if not database.exists(f"channel:{ctx.channel.id}"):
-        database.hmset(
+        database.hset(
             f"channel:{ctx.channel.id}",
-            {"item": "", "answered": 1, "prevJ": 20, "prevI": ""},
+            mapping={"item": "", "answered": 1, "prevJ": 20, "prevI": ""},
         )
         # true = 1, false = 0, prevJ is 20 to define as integer
         logger.info("channel data added")

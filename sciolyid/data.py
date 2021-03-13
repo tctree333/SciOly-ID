@@ -270,6 +270,8 @@ def get_category(item: str):
 
 def dealias_group(group):
     """Resolve group to a real category by expanding aliases."""
+    if group not in all_categories:
+        return None
     if group in groups.keys():
         return group
     return next(
