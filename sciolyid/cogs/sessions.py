@@ -22,7 +22,7 @@ from discord.ext import commands
 
 import sciolyid.config as config
 from sciolyid.data import all_categories, database, dealias_group, logger, states
-from sciolyid.functions import CustomCooldown
+from sciolyid.functions import CustomCooldown, check_state_role
 
 
 class Sessions(commands.Cog):
@@ -149,7 +149,6 @@ class Sessions(commands.Cog):
         bw = ""
         strict = ""
         wiki = ""
-        limit = None
         for arg in set(args):
             arg = arg.lower()
             if arg == "bw":
@@ -165,13 +164,18 @@ class Sessions(commands.Cog):
             else:
                 await ctx.send(f"**Invalid argument provided**: `{arg}`")
                 return
-        state = " ".join(state_args).strip()
+
+        if state_args:
+            state = " ".join(state_args).strip()
+        else:
+            state = " ".join(check_state_role(ctx))
+
         if group_args and config.options["id_groups"]:
             group = " ".join(group_args).strip()
         else:
             group = ""
 
-        logger.info(f"adding bw: {bw}; group: {group}; wiki: {wiki}; strict: {strict}")
+        logger.info(f"adding bw: {bw}; group: {group}; state: {state}; wiki: {wiki}; strict: {strict}")
 
         database.hset(
             f"session.data:{ctx.author.id}",
@@ -182,6 +186,7 @@ class Sessions(commands.Cog):
                 "incorrect": 0,
                 "total": 0,
                 "bw": bw,
+                "state": state,
                 "group": group,
                 "wiki": wiki,
                 "strict": strict,
