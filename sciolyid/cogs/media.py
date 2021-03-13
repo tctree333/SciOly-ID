@@ -160,8 +160,6 @@ class Media(commands.Cog):
                 else:
                     await ctx.send(f"**Invalid argument provided**: `{arg}`")
                     return
-            group = " ".join(group_args).strip()
-            state = " ".join(state_args).strip()
 
             if database.exists(f"session.data:{ctx.author.id}"):
                 logger.info("session parameters")
