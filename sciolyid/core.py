@@ -15,8 +15,10 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
+import io
 import os
 from functools import partial
+from typing import Union
 
 import discord
 
@@ -73,6 +75,7 @@ async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
         await delete.delete()
         await ctx.send("**Oops! File too large :(**\n*Please try again.*")
     else:
+        file_stream: Union[str, io.BufferedIOBase]
         if bw:
             # prevent the black and white conversion from blocking
             loop = asyncio.get_running_loop()
