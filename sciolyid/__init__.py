@@ -61,9 +61,9 @@ def setup(*args, **kwargs):
         "bot_files_dir",
         "data_dir",
         "download_dir",
-        "list_dir",
+        "group_dir",
         "log_dir",
-        "restricted_list_dir",
+        "state_dir",
         "tmp_upload_dir",
         "validation_local_dir",
         "validation_repo_dir",
@@ -86,9 +86,9 @@ def setup(*args, **kwargs):
             ] = f"{config.options['bot_files_dir']}{config.options[item]}"
 
     data_subdirs = (
-        "list_dir",
+        "group_dir",
         "meme_file",
-        "restricted_list_dir",
+        "state_dir",
         "wikipedia_file",
     )
     for item in data_subdirs:

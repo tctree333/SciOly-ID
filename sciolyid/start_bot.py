@@ -88,6 +88,7 @@ initial_extensions = [
     "sciolyid.cogs.hint",
     "sciolyid.cogs.score",
     "sciolyid.cogs.stats",
+    "sciolyid.cogs.state",
     "sciolyid.cogs.sessions",
     "sciolyid.cogs.race",
     "sciolyid.cogs.meta",

@@ -56,11 +56,11 @@ class Skip(commands.Cog):
                     await race.stop_race(ctx)
                 else:
                     logger.info("auto sending next image")
-                    group, bw = database.hmget(
-                        f"race.data:{ctx.channel.id}", ["group", "bw"]
+                    group, state, bw = database.hmget(
+                        f"race.data:{ctx.channel.id}", ["group", "state", "bw"]
                     )
                     media = self.bot.get_cog("Media")
-                    await media.send_pic(ctx, group.decode("utf-8"), bw.decode("utf-8"))
+                    await media.send_pic(ctx, group.decode("utf-8"), state.decode("utf-8"), bw.decode("utf-8"))
         else:
             await ctx.send("You need to ask for an image first!")
 

@@ -78,6 +78,7 @@ if config.options["sentry"]:
 #                    "correct": 0,
 #                    "incorrect": 0,
 #                    "total": 0,
+#                    "state": state,
 #                    "bw": bw, - Toggles if "bw", doesn't if empty (""), default ""
 #                    "group": group,
 #                    "wiki": wiki, - Enables if "wiki", disables if empty (""), default "wiki"
@@ -89,6 +90,7 @@ if config.options["sentry"]:
 #                    "start": 0
 #                    "stop": 0,
 #                    "limit": 10,
+#                    "state": state,
 #                    "bw": bw,
 #                    "group": group,
 #                    "strict": strict - Enables strict spelling if "strict", disables if empty, default ""
@@ -111,8 +113,8 @@ if config.options["sentry"]:
 #    incorrect.user:user_id: : [item name, # incorrect]
 # }
 
-# correct birds format = {
-#    correct.user:user_id : [bird name, # correct]
+# correct item format = {
+#    correct.user:user_id : [item name, # correct]
 # }
 
 # item frequency format = {
@@ -141,6 +143,17 @@ if config.options["sentry"]:
 
 # leave confirm format:
 #   leave:guild_id : 0
+
+#  states = {
+#          state name:
+#               {
+#               aliases: [alias1, alias2...],
+#               list: [item1, item2...],
+#               }
+#          }
+
+# state items are picked from [state_dir]/[state]/list.txt
+# either list can be in any taxon
 
 
 # setup logging
@@ -257,6 +270,8 @@ def get_category(item: str):
 
 def dealias_group(group):
     """Resolve group to a real category by expanding aliases."""
+    if group not in all_categories:
+        return None
     if group in groups.keys():
         return group
     return next(
@@ -268,18 +283,15 @@ def dealias_group(group):
 
 def _groups():
     """Converts txt files of data into lists."""
-    filenames = [(f"{config.options['list_dir']}{name}", name.split(".")[0]) for name in os.listdir(config.options["list_dir"])]
-    restricted_filenames = []
-    if config.options["restricted_list_dir"]:
-        restricted_filenames = [
-            (f"{config.options['restricted_list_dir']}{name}", name.split(".")[0])
-            for name in os.listdir(config.options["restricted_list_dir"])
-        ]
+    filenames = [
+        (f"{config.options['group_dir']}{name}", name.lower().split(".")[0])
+        for name in os.listdir(config.options["group_dir"])
+    ]
 
     # Converts txt file of data into lists
     lists = {}
     aliases_ = {}
-    for filename, category_name in filenames + restricted_filenames:
+    for filename, category_name in filenames:
         logger.info(f"Working on {filename}")
         lists[category_name] = []
         with open(filename, "r") as f:
@@ -292,6 +304,30 @@ def _groups():
 
     logger.info("Done with lists!")
     return (lists, aliases_)
+
+
+def _state_lists():
+    """Converts txt files of state data into lists."""
+    filenames = ("list", "aliases")
+    states_ = {}
+    state_names = os.listdir(config.options["state_dir"])
+    for state in state_names:
+        states_[state.upper()] = {}
+        logger.info(f"Working on {state}")
+        for filename in filenames:
+            logger.info(f"Working on {filename}")
+            with open(
+                f"{config.options['state_dir']}/{state}/{filename}.txt", "r"
+            ) as f:
+                states_[state.upper()][filename] = [
+                    line.strip().lower() if filename != "aliases" else line.strip()
+                    for line in f
+                    if line != "EMPTY"
+                ]
+            logger.info(f"Done with {filename}")
+        logger.info(f"Done with {state}")
+    logger.info("Done with states list!")
+    return states_
 
 
 def _memes():
@@ -307,25 +343,13 @@ def _memes():
 
 def _all_lists():
     """Compiles lists into master lists."""
-    id_list_ = []
-    master_id_list_ = []
-    restricted = []
-    if config.options["restricted_list_dir"]:
-        restricted = [
-            name.split(".")[0]
-            for name in os.listdir(config.options["restricted_list_dir"])
-        ]
-    for group in groups:
-        if group in restricted:
-            for item in groups[group]:
-                master_id_list_.append(item)
-        else:
-            for item in groups[group]:
-                id_list_.append(item)
-                master_id_list_.append(item)
-    id_list_ = list(set(id_list_))
-    master_id_list_ = list(set(master_id_list_))
-    return id_list_, master_id_list_
+    logger.info("Working on master lists")
+    master = []
+    for state in states.values():
+        master += state["list"]
+    master = list(set(master))
+    logger.info("Done with master lists!")
+    return master
 
 
 def _config():
@@ -344,9 +368,11 @@ def _config():
 
 
 groups, aliases = _groups()
+states = _state_lists()
 meme_list = _memes()
-id_list, master_id_list = _all_lists()
+master_id_list = _all_lists()
 wikipedia_urls = _wiki_urls()
+id_list = states[config.options["default_state_list"]]
 _config()
 
 all_categories = set(

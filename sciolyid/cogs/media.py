@@ -16,22 +16,23 @@
 
 import random
 import string
-
-from discord.ext import commands
+from typing import Union
 
 import sciolyid.config as config
+from discord.ext import commands
 from sciolyid.core import send_image
 from sciolyid.data import (
     GenericError,
     all_categories,
     database,
     dealias_group,
-    id_list,
     logger,
+    states,
 )
 from sciolyid.functions import (
     CustomCooldown,
     build_id_list,
+    check_state_role,
     item_setup,
     session_increment,
 )
@@ -54,7 +55,7 @@ class Media(commands.Cog):
         async def inner(error):
             nonlocal retries
 
-            # skip current bird
+            # skip current item
             database.hset(f"channel:{ctx.channel.id}", "item", "")
             database.hset(f"channel:{ctx.channel.id}", "answered", "1")
 
@@ -76,7 +77,11 @@ class Media(commands.Cog):
         item_setup(ctx, item)
         database.zincrby("frequency.item:global", 1, string.capwords(item))
 
-    async def send_pic(self, ctx, group_str: str, bw: bool = False, retries=0):
+    async def send_pic(
+        self, ctx, group_str: str, state_str: str, bw: Union[bool, str] = False, retries=0
+    ):
+        if isinstance(bw, str):
+            bw = bw == "bw"
 
         logger.info(
             f"{config.options['id_type'][:-1]}: "
@@ -90,10 +95,23 @@ class Media(commands.Cog):
             session_increment(ctx, "total", 1)
 
             if config.options["id_groups"]:
-                build = build_id_list(group_str)
-                choices = build[0]
+                await ctx.send(
+                    f"**Recognized arguments:** *Black & White*: `{bw}`, "
+                    + f"*{config.options['category_name']}*: `{'None' if group_str == '' else group_str}`"
+                    + f"*Detected State: `{'None' if state_str == '' else state_str}`"
+                )
             else:
-                choices = id_list
+                await ctx.send(f"**Recognized arguments:** *Black & White*: `{bw}`")
+
+            choices = build_id_list(group_str, state_str)
+
+            if not choices:
+                logger.info(f"no {config.options['id_type']} for taxon/state")
+                await ctx.send(
+                    f"**Sorry, no {config.options['id_type']} could be found for the taxon/state combo."
+                    + "**\n*Please try again*"
+                )
+                return
 
             current_item = random.choice(choices)
             self.increment_item_frequency(ctx, current_item)
@@ -121,6 +139,98 @@ class Media(commands.Cog):
                 bw=bw,
             )
 
+    @staticmethod
+    async def parse(ctx, args_str: str):
+        """Parse arguments for options."""
+
+        args = args_str.split(" ")
+        logger.info(f"args: {args}")
+
+        if not database.exists(f"race.data:{ctx.channel.id}"):
+            group_args = set()
+            state_args = set()
+            for arg in set(args):
+                arg = arg.lower()
+                if arg == "bw":
+                    continue
+                if arg in all_categories:
+                    group_args.add(dealias_group(arg))
+                elif arg.upper() in states.keys():
+                    state_args.add(dealias_group(arg))
+                else:
+                    await ctx.send(f"**Invalid argument provided**: `{arg}`")
+                    return
+
+            if database.exists(f"session.data:{ctx.author.id}"):
+                logger.info("session parameters")
+
+                if group_args:
+                    current_groups = set(
+                        database.hget(f"session.data:{ctx.author.id}", "group")
+                        .decode("utf-8")
+                        .split(" ")
+                    )
+                    logger.info(f"toggle groups: {group_args}")
+                    logger.info(f"current groups: {current_groups}")
+                    group_args.symmetric_difference_update(current_groups)
+                    group_args.discard("")
+                    logger.info(f"new groups: {group_args}")
+                    group = " ".join(group_args).strip()
+                else:
+                    group = database.hget(
+                        f"session.data:{ctx.author.id}", "group"
+                    ).decode("utf-8")
+
+                chosen_state = (
+                    database.hget(f"session.data:{ctx.author.id}", "state")
+                    .decode("utf-8")
+                    .split(" ")
+                )
+                if chosen_state[0] == "":
+                    chosen_state = []
+                if not chosen_state:
+                    logger.info("no session lists")
+                    chosen_state = check_state_role(ctx)
+
+                session_bw = (
+                    database.hget(f"session.data:{ctx.author.id}", "bw").decode("utf-8")
+                    == "bw"
+                )
+                bw = not session_bw if "bw" in args else session_bw
+            else:
+                chosen_state = check_state_role(ctx)
+                bw = "bw" in args
+
+            if state_args:
+                logger.info(f"toggle states: {state_args}")
+                logger.info(f"current states: {chosen_state}")
+                state_args.symmetric_difference_update(set(chosen_state))
+                state_args.discard("")
+                logger.info(f"new states: {state_args}")
+                state = " ".join(state_args).strip()
+            else:
+                state = " ".join(chosen_state).strip()
+
+        else:
+            logger.info("race parameters")
+
+            race_bw = (
+                database.hget(f"race.data:{ctx.channel.id}", "filter").decode("utf-8")
+                == "bw"
+            )
+            bw = not race_bw if "bw" in args else race_bw
+
+            group = database.hget(f"race.data:{ctx.channel.id}", "group").decode(
+                "utf-8"
+            )
+            state = database.hget(f"race.data:{ctx.channel.id}", "state").decode(
+                "utf-8"
+            )
+
+        logger.info(f"args: bw: {bw}; group: {group}; state: {state}")
+
+        return (bw, group, state)
+
     # Pic command - no args
     # help text
     @commands.command(
@@ -129,76 +239,13 @@ class Media(commands.Cog):
     )
     # 5 second cooldown
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.channel))
-    async def pic(self, ctx, *args):
+    async def pic(self, ctx, *, args_str: str = ""):
         logger.info("command: pic")
+        logger.info(f"args: {args_str}")
 
-        logger.info(f"args: {args}")
+        bw, group, state = await self.parse(ctx, args_str)
 
-        # parse args
-        bw = False
-        toggle_groups = []
-        for arg in set(args):
-            arg = arg.lower()
-            if arg == "bw":
-                bw = True
-            elif arg in all_categories:
-                toggle_groups.append(dealias_group(arg))
-            else:
-                await ctx.send(f"**Invalid argument provided**: `{arg}`")
-                return
-
-        logger.info(f"group_args: {toggle_groups}")
-        if toggle_groups:
-            group = " ".join(toggle_groups).strip()
-        else:
-            group = ""
-
-        if database.exists(f"session.data:{ctx.author.id}"):
-            logger.info("session parameters")
-            # handle group args
-            if toggle_groups:
-                current_groups = (
-                    database.hget(f"session.data:{ctx.author.id}", "group")
-                    .decode("utf-8")
-                    .split(" ")
-                )
-                add_groups = []
-                logger.info(f"toggle group: {toggle_groups}")
-                logger.info(f"current group: {current_groups}")
-                for o in set(toggle_groups).symmetric_difference(set(current_groups)):
-                    add_groups.append(o)
-                logger.info(f"adding groups: {add_groups}")
-                group = " ".join(add_groups).strip()
-            else:
-                group = database.hget(f"session.data:{ctx.author.id}", "group").decode(
-                    "utf-8"
-                )
-
-            if database.hget(f"session.data:{ctx.author.id}", "bw").decode("utf-8"):
-                bw = not bw
-
-        if database.exists(f"race.data:{ctx.channel.id}"):
-            logger.info("race parameters")
-
-            if database.hget(f"race.data:{ctx.channel.id}", "bw").decode("utf-8"):
-                bw = not bw
-
-        if not config.options["id_groups"]:
-            group = ""
-
-        logger.info(f"args: bw: {bw}; group: {group}")
-        if (
-            int(database.hget(f"channel:{ctx.channel.id}", "answered"))
-            and config.options["id_groups"]
-        ):
-            await ctx.send(
-                f"**Recognized arguments:** *Black & White*: `{bw}`, "
-                + f"*{config.options['category_name']}*: `{'None' if group == '' else group}`"
-            )
-        else:
-            await ctx.send(f"**Recognized arguments:** *Black & White*: `{bw}`")
-
-        await self.send_pic(ctx, group, bw)
+        await self.send_pic(ctx, group, state, bw=bw)
 
 
 def setup(bot):

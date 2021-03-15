@@ -42,8 +42,9 @@ optional: Dict[str, Any] = {
     "download_func": None,  # asyncronous function that downloads images locally to download_dir
     "download_dir": "github_download/",  # local directory containing media (images)
     "data_dir": "data/",  # local directory containing the id data
-    "list_dir": "lists/",  # directory within data_dir containing id lists
-    "restricted_list_dir": None,  # directory within data_dir containg id lists that are available by selection only
+    "group_dir": "group/",  # directory within data_dir containing group lists
+    "state_dir": "state/",  # directory within data_dir containing alternate lists
+    "default_state_list": "NATS",  # name of the "state" that should be considered default
     "wikipedia_file": "wikipedia.txt",  # filename within data_dir containing wiki urls for every item
     "meme_file": None,
     "logs": True,  # enable logging
