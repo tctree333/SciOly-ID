@@ -27,10 +27,6 @@ required: Dict[str, Optional[str]] = {
     "name": None,  # all lowercase, no spaces, doesn't really matter what this is
 }
 
-id_required: Dict[str, Optional[str]] = {
-    "category_name": None,  # space thing, bird order, muscle group - what you are splitting groups by
-}
-
 web_required: Dict[str, Optional[str]] = {
     "client_id": None,  # discord client id
     "base_image_url": None,  # root of where images are hosted
@@ -53,7 +49,8 @@ optional: Dict[str, Any] = {
     "short_id_type": "",  # short (usually 1 letter) form of id_type, used as alias for the pic command
     "invite": "This bot is currently not available outside the support server.",  # bot server invite link
     "authors": "person_v1.32, hmmm, and EraserBird",  # creator names
-    "id_groups": True,  # true/false - if you want to be able to select certain groups of items to id
+    # "id_groups": True,  # true/false - if you want to be able to select certain groups of items to id, set automatically from "category_name"
+    "category_name": None,  # space thing, bird order, muscle group - what you are splitting groups by
     "category_aliases": {},  # aliases for categories
     "disable_extensions": [],  # bot extensions to disable (media, check, skip, hint, score, sessions, race, other)
     "custom_extensions": [],  # custom bot extensions to enable
@@ -89,7 +86,7 @@ web_optional: Dict[str, Any] = {
 
 options: Dict[str, Any] = {
     k: v
-    for d in (required, id_required, web_required, optional, web_optional)
+    for d in (required, web_required, optional, web_optional)
     for k, v in list(d.items())
 }
 
