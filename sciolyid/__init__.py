@@ -19,7 +19,6 @@ import sciolyid.config as config
 
 def setup(*args, **kwargs):
     required = config.required.keys()
-    id_required = config.id_required.keys()
     web_required = config.web_required.keys()
     optional = tuple(config.optional.keys()) + tuple(config.web_optional.keys())
 
@@ -45,15 +44,11 @@ def setup(*args, **kwargs):
             except KeyError:
                 raise config.BotConfigError(f"Required web setup argument {option}")
 
-    if config.options["id_groups"]:
-        for option in id_required:
-            try:
-                config.options[option] = kwargs[option]
-            except KeyError:
-                raise config.BotConfigError(
-                    f"Required setup argument {option} when id_groups is True"
-                )
+    if config.options["category_name"]:
+        config.options["id_groups"] = True
         config.options["category_name"] = config.options["category_name"].title()
+    else:
+        config.options["id_groups"] = False
 
     directory_config_items = (
         "backups_dir",

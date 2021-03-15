@@ -18,8 +18,9 @@ import random
 import string
 from typing import Union
 
-import sciolyid.config as config
 from discord.ext import commands
+
+import sciolyid.config as config
 from sciolyid.core import send_image
 from sciolyid.data import (
     GenericError,
