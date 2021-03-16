@@ -59,7 +59,8 @@ def cache(func=None):
 
         def _evict():
             """Evicts a random item from the local cache."""
-            cache_.pop(random.choice(tuple(cache_)), 0)
+            if len(cache_) > 0:
+                cache_.pop(random.choice(tuple(cache_)), 0)
 
         async def wrapped(*args, **kwds):
             # Simple caching without ordering or size limit
