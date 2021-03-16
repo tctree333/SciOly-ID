@@ -98,8 +98,8 @@ class Media(commands.Cog):
             if config.options["id_groups"]:
                 await ctx.send(
                     f"**Recognized arguments:** *Black & White*: `{bw}`, "
-                    + f"*{config.options['category_name']}*: `{'None' if group_str == '' else group_str}`"
-                    + f"*Detected State: `{'None' if state_str == '' else state_str}`"
+                    + f"**{config.options['category_name']}**: `{'None' if group_str == '' else group_str}`, "
+                    + f"**Detected State**: `{'None' if state_str == '' else state_str}`"
                 )
             else:
                 await ctx.send(f"**Recognized arguments:** *Black & White*: `{bw}`")
@@ -144,23 +144,26 @@ class Media(commands.Cog):
     async def parse(ctx, args_str: str):
         """Parse arguments for options."""
 
-        args = args_str.split(" ")
+        args = set(args_str.strip().split(" "))
+        args.discard("")
+
         logger.info(f"args: {args}")
 
         if not database.exists(f"race.data:{ctx.channel.id}"):
             group_args = set()
             state_args = set()
-            for arg in set(args):
+            for arg in args:
                 arg = arg.lower()
                 if arg == "bw":
                     continue
                 if arg in all_categories:
                     group_args.add(dealias_group(arg))
                 elif arg.upper() in states.keys():
-                    state_args.add(dealias_group(arg))
+                    state_args.add(arg.upper())
                 else:
                     await ctx.send(f"**Invalid argument provided**: `{arg}`")
-                    return
+                    return None
+            group = " ".join(group_args).strip()
 
             if database.exists(f"session.data:{ctx.author.id}"):
                 logger.info("session parameters")
@@ -244,7 +247,10 @@ class Media(commands.Cog):
         logger.info("command: pic")
         logger.info(f"args: {args_str}")
 
-        bw, group, state = await self.parse(ctx, args_str)
+        data = await self.parse(ctx, args_str)
+        if not data:
+            return
+        bw, group, state = data
 
         await self.send_pic(ctx, group, state, bw=bw)
 
