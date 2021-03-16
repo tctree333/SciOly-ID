@@ -21,10 +21,13 @@ required: Dict[str, Optional[str]] = {
     "bot_signature": None,  # signature for embeds
     "prefixes": None,  # bot prefixes, primary prefix is first in list
     "id_type": None,  # stars, fossils, muscles, etc. - plural noun
-    "github_image_repo_url": None,  # link to github image repo
     "support_server": None,  # link to discord support server
     "source_link": None,  # link to source code (may be hosted on github)
     "name": None,  # all lowercase, no spaces, doesn't really matter what this is
+}
+
+default_image_required: Dict[str, Optional[str]] = {
+    "github_image_repo_url": None,  # link to github image repo
 }
 
 web_required: Dict[str, Optional[str]] = {

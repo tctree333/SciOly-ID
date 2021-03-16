@@ -18,31 +18,36 @@ import sciolyid.config as config
 
 
 def setup(*args, **kwargs):
-    required = config.required.keys()
-    web_required = config.web_required.keys()
-    optional = tuple(config.optional.keys()) + tuple(config.web_optional.keys())
-
     if len(args) == 1 and isinstance(args[0], dict):
         kwargs = args[0]
 
-    for option in required:
+    for option in config.required:
         try:
             config.options[option] = kwargs[option]
-        except KeyError:
-            raise config.BotConfigError(f"Required setup argument {option}")
+        except KeyError as e:
+            raise config.BotConfigError(f"Required setup argument {option}") from e
 
-    for option in optional:
+    for option in tuple(config.optional.keys()) + tuple(config.web_optional.keys()):
         try:
             config.options[option] = kwargs[option]
         except KeyError:
             continue
 
-    if kwargs.get("web", None):
-        for option in web_required:
+    if config.options["download_func"] is None:
+        for option in config.default_image_required:
             try:
                 config.options[option] = kwargs[option]
-            except KeyError:
-                raise config.BotConfigError(f"Required web setup argument {option}")
+            except KeyError as e:
+                raise config.BotConfigError(f"Required argument {option} if no download function provided") from e
+
+    if kwargs.get("web", None):
+        if config.options["download_func"] is not None:
+            raise config.BotConfigError("Web cannot be set if a custom download function is set")
+        for option in config.web_required:
+            try:
+                config.options[option] = kwargs[option]
+            except KeyError as e:
+                raise config.BotConfigError(f"Required web setup argument {option}") from e
 
     if config.options["category_name"]:
         config.options["id_groups"] = True
