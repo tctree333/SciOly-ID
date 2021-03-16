@@ -26,7 +26,7 @@ import sciolyid.config as config
 download_logger = logging.getLogger(config.options["name"] + ".git_downloads")
 
 
-async def download_github():
+async def download_github(item):  # pylint: disable=unused-argument
     download_logger.info("syncing github")
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
     loop = asyncio.get_event_loop()

@@ -165,7 +165,7 @@ async def get_files(item, retries=0):
         logger.info("fetching files")
         logger.info("item: " + str(item))
         if retries < 3:
-            await config.options["download_func"]()
+            await config.options["download_func"](item)
             retries += 1
             return await get_files(item, retries)
         logger.info("More than 3 retries")
