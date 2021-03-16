@@ -82,6 +82,7 @@ def cache(func=None):
             return functools._CacheInfo(hits, misses, None, cache_len())
 
         wrapped.cache_info = cache_info
+        wrapped.evict = _evict
         return functools.update_wrapper(wrapped, func)
 
     if func:
