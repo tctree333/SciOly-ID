@@ -36,6 +36,7 @@ from sciolyid.functions import (
     fools,
     get_all_users,
     prune_user_cache,
+    rotate_cache,
     user_setup,
 )
 
@@ -48,8 +49,7 @@ intent.voice_states = True
 
 cache_flags: discord.MemberCacheFlags = discord.MemberCacheFlags.none()
 cache_flags.voice = True
-if intent.members:
-    cache_flags.joined = True
+cache_flags.joined = config.options["members_intent"]
 
 bot = commands.Bot(
     command_prefix=config.options["prefixes"],
@@ -73,7 +73,10 @@ async def on_ready():
     )
 
     # start tasks
-    update_images.start()
+    if config.options["refresh_images"]:
+        update_images.start()
+    if config.options["evict_images"]:
+        refresh_cache.start()
     refresh_user_cache.start()
     evict_user_cache.start()
     if config.options["backups_channel"]:
@@ -97,10 +100,10 @@ initial_extensions = [
 for extension in config.options["disable_extensions"]:
     try:
         initial_extensions.remove(f"sciolyid.cogs.{extension}")
-    except ValueError:
+    except ValueError as e:
         raise config.BotConfigError(
             f"Unable to disable extension 'sciolyid.cogs.{extension}'"
-        )
+        ) from e
 
 initial_extensions += config.options["custom_extensions"]
 initial_extensions = list(set(initial_extensions))
@@ -363,12 +366,25 @@ async def on_command_error(ctx, error):
         raise error
 
 
-@tasks.loop(hours=24.0)
-async def update_images():
-    """Updates the images."""
-    logger.info("updating images")
-    await config.options["download_func"]()
-    logger.info("done updating images!")
+if config.options["refresh_images"]:
+
+    @tasks.loop(hours=24.0)
+    async def update_images():
+        """Updates the images."""
+        logger.info("updating images")
+        await config.options["download_func"](None, None)
+        logger.info("done updating images!")
+
+
+if config.options["evict_images"]:
+
+    @tasks.loop(hours=1.0)
+    async def refresh_cache():
+        """Task to delete a random selection of cached images every hour."""
+        logger.info("TASK: Refreshing some cache items")
+        event_loop = asyncio.get_event_loop()
+        with concurrent.futures.ThreadPoolExecutor(1) as executor:
+            await event_loop.run_in_executor(executor, rotate_cache)
 
 
 @tasks.loop(hours=3.0)

@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import contextlib
 import datetime
 import difflib
 import functools
@@ -22,6 +23,7 @@ import math
 import os
 import pickle
 import random
+import shutil
 import string
 from io import BytesIO
 from typing import Union, Iterable
@@ -526,6 +528,29 @@ def prune_user_cache(count: int = 5):
     """Evicts `count` items from the user cache."""
     for _ in range(count):
         _fetch_cached_user.evict()
+
+
+def rotate_cache():
+    """Deletes a random selection of cached items."""
+    logger.info("Rotating cache items")
+    items = []
+    with contextlib.suppress(FileNotFoundError):
+        items += map(
+            lambda x: f"bot_files/cache/images/{x}/",
+            os.listdir("bot_files/cache/images/"),
+        )
+    with contextlib.suppress(FileNotFoundError):
+        items += map(
+            lambda x: f"bot_files/cache/songs/{x}/",
+            os.listdir("bot_files/cache/songs/"),
+        )
+    logger.info(f"num birds: {len(items)}")
+    delete = random.choices(
+        items, k=math.ceil(len(items) * 0.05)
+    )  # choose 5% of the items to delete
+    for directory in delete:
+        shutil.rmtree(directory)
+        logger.info(f"{directory} removed")
 
 
 def spellcheck_list(word_to_check, correct_list, abs_cutoff=None):

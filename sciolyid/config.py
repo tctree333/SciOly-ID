@@ -39,6 +39,8 @@ web_required: Dict[str, Optional[str]] = {
 optional: Dict[str, Any] = {
     "members_intent": False,  # whether the privileged members intent is enabled in the developer portal
     "download_func": None,  # asyncronous function that downloads images locally to download_dir
+    "refresh_images": True,  # whether to run download_func once every 24 hours with None as an argument
+    "evict_images": False,  # whether to delete items from download_dir
     "download_dir": "github_download/",  # local directory containing media (images)
     "data_dir": "data/",  # local directory containing the id data
     "group_dir": "group/",  # directory within data_dir containing group lists
@@ -89,7 +91,7 @@ web_optional: Dict[str, Any] = {
 
 options: Dict[str, Any] = {
     k: v
-    for d in (required, web_required, optional, web_optional)
+    for d in (required, default_image_required, web_required, optional, web_optional)
     for k, v in list(d.items())
 }
 
