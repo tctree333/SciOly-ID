@@ -50,7 +50,7 @@ class Media(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def error_handle(self, ctx, group_str: str, bw: bool, retries):
+    def error_handle(self, ctx, group_str: str, state_str: str, bw: bool, retries):
         """Return a function to pass to send_pic() as on_error."""
 
         async def inner(error):
@@ -67,7 +67,7 @@ class Media(commands.Cog):
             if isinstance(error, GenericError) and error.code == 100:
                 retries += 1
                 await ctx.send("**Retrying...**")
-                await self.send_pic(ctx, group_str, bw, retries)
+                await self.send_pic(ctx, group_str, state_str, bw, retries)
             else:
                 await ctx.send("*Please try again.*")
 
@@ -127,7 +127,7 @@ class Media(commands.Cog):
             await send_image(
                 ctx,
                 current_item,
-                on_error=self.error_handle(ctx, group_str, bw, retries),
+                on_error=self.error_handle(ctx, group_str, state_str, bw, retries),
                 message=IMAGE_MESSAGE,
                 bw=bw,
             )
@@ -135,7 +135,7 @@ class Media(commands.Cog):
             await send_image(
                 ctx,
                 database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8"),
-                on_error=self.error_handle(ctx, group_str, bw, retries),
+                on_error=self.error_handle(ctx, group_str, state_str, bw, retries),
                 message=IMAGE_MESSAGE,
                 bw=bw,
             )
@@ -219,7 +219,7 @@ class Media(commands.Cog):
             logger.info("race parameters")
 
             race_bw = (
-                database.hget(f"race.data:{ctx.channel.id}", "filter").decode("utf-8")
+                database.hget(f"race.data:{ctx.channel.id}", "bw").decode("utf-8")
                 == "bw"
             )
             bw = not race_bw if "bw" in args else race_bw

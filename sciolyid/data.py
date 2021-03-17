@@ -372,7 +372,7 @@ states = _state_lists()
 meme_list = _memes()
 master_id_list = _all_lists()
 wikipedia_urls = _wiki_urls()
-id_list = states[config.options["default_state_list"]]
+id_list = states[config.options["default_state_list"]]["list"]
 _config()
 
 all_categories = set(
