@@ -98,7 +98,7 @@ class Other(commands.Cog):
         group_args = set(
             map(
                 dealias_group,
-                all_categories.intersection(set(state_or_group.lower().split(""))),
+                all_categories.intersection(set(state_or_group.lower().split(" "))),
             )
         )
         state_args = set(states.keys()).intersection(

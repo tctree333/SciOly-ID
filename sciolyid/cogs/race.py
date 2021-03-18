@@ -183,7 +183,8 @@ class Race(commands.Cog):
             )
             return
 
-        args = args_str.split(" ")
+        args = set(args_str.strip().split(" "))
+        args.discard("")
         logger.info(f"args: {args}")
 
         group_args = set()
@@ -191,7 +192,7 @@ class Race(commands.Cog):
         bw = ""
         strict = ""
         limit = None
-        for arg in set(args):
+        for arg in args:
             arg = arg.lower()
             if arg == "bw":
                 bw = "bw"
