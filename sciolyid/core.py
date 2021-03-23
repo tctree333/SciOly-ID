@@ -23,6 +23,7 @@ from typing import Union
 import discord
 
 import sciolyid.config as config
+import sciolyid.data
 from sciolyid.data import GenericError, database, get_category, logger
 from sciolyid.functions import black_and_white
 
@@ -165,7 +166,7 @@ async def get_files(item, retries=0):
         logger.info("fetching files")
         logger.info("item: " + str(item))
         if retries < 3:
-            await config.options["download_func"](category, item)
+            await config.options["download_func"](sciolyid.data, category, item)
             retries += 1
             return await get_files(item, retries)
         logger.info("More than 3 retries")

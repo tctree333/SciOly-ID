@@ -29,6 +29,7 @@ from discord.ext import commands, tasks
 from sentry_sdk import capture_exception
 
 import sciolyid.config as config
+import sciolyid.data
 from sciolyid.data import GenericError, database, logger
 from sciolyid.functions import (
     backup_all,
@@ -372,7 +373,7 @@ if config.options["refresh_images"]:
     async def update_images():
         """Updates the images."""
         logger.info("updating images")
-        await config.options["download_func"](None, None)
+        await config.options["download_func"](sciolyid.data, None, None)
         logger.info("done updating images!")
 
 
