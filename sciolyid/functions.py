@@ -16,8 +16,6 @@
 
 import contextlib
 import datetime
-import difflib
-import functools
 import itertools
 import math
 import os
@@ -25,12 +23,10 @@ import pickle
 import random
 import shutil
 import string
-from io import BytesIO
 from typing import Union, Iterable
 
 import discord
 from discord.ext import commands
-from PIL import Image
 
 import sciolyid.config as config
 from sciolyid.data import (
@@ -43,54 +39,7 @@ from sciolyid.data import (
     logger,
     states,
 )
-
-
-def cache(func=None):
-    """Cache decorator based on functools.lru_cache.
-    This does not have a max_size and does not evict items.
-    In addition, results are only cached by the first provided argument.
-    """
-
-    def wrapper(func):
-        sentinel = object()
-
-        cache_ = {}
-        hits = misses = 0
-        cache_get = cache_.get
-        cache_len = cache_.__len__
-
-        def _evict():
-            """Evicts a random item from the local cache."""
-            if len(cache_) > 0:
-                cache_.pop(random.choice(tuple(cache_)), 0)
-
-        async def wrapped(*args, **kwds):
-            # Simple caching without ordering or size limit
-            logger.info("checking cache")
-            nonlocal hits, misses
-            key = hash(args[0])
-            result = cache_get(key, sentinel)
-            if result is not sentinel:
-                logger.info(f"{args[0]} found in cache!")
-                hits += 1
-                return result
-            logger.info(f"did not find {args[0]} in cache")
-            misses += 1
-            result = await func(*args, **kwds)
-            cache_[key] = result
-            return result
-
-        def cache_info():
-            """Report cache statistics"""
-            return functools._CacheInfo(hits, misses, None, cache_len())
-
-        wrapped.cache_info = cache_info
-        wrapped.evict = _evict
-        return functools.update_wrapper(wrapped, func)
-
-    if func:
-        return wrapper(func)
-    return wrapper
+from sciolyid.util import fetch_get_user
 
 
 async def channel_setup(ctx):
@@ -312,22 +261,6 @@ def streak_increment(ctx, amount: int):
         database.zadd("streak:global", {ctx.author.id: 0})
 
 
-def black_and_white(input_image_path) -> BytesIO:
-    """Returns a black and white version of an image.
-
-    Output type is a file object (BytesIO).
-
-    `input_image_path` - path to image (string) or file object
-    """
-    logger.info("black and white")
-    with Image.open(input_image_path) as color_image:
-        bw = color_image.convert("L")
-        final_buffer = BytesIO()
-        bw.save(final_buffer, "png")
-    final_buffer.seek(0)
-    return final_buffer
-
-
 def check_state_role(ctx) -> list:
     """Returns a list of state roles a user has.
 
@@ -346,33 +279,6 @@ def check_state_role(ctx) -> list:
         logger.info("dm context")
     logger.info(f"user roles: {user_states}")
     return user_states
-
-
-async def fetch_get_user(user_id: int, ctx=None, bot=None, member: bool = False):
-    if (ctx is None and bot is None) or (ctx is not None and bot is not None):
-        raise ValueError("Only one of ctx or bot must be passed")
-    if ctx:
-        bot = ctx.bot
-    elif member:
-        raise ValueError("ctx must be passed for member lookup")
-    if not member:
-        return await _fetch_cached_user(user_id, bot)
-    if bot.intents.members:
-        return ctx.guild.get_member(user_id)
-    try:
-        return await ctx.guild.fetch_member(user_id)
-    except discord.HTTPException:
-        return None
-
-
-@cache()
-async def _fetch_cached_user(user_id: int, bot):
-    if bot.intents.members:
-        return bot.get_user(user_id)
-    try:
-        return await bot.fetch_user(user_id)
-    except discord.HTTPException:
-        return None
 
 
 async def send_leaderboard(
@@ -524,12 +430,6 @@ async def get_all_users(bot):
     logger.info("User cache finished")
 
 
-def prune_user_cache(count: int = 5):
-    """Evicts `count` items from the user cache."""
-    for _ in range(count):
-        _fetch_cached_user.evict()
-
-
 def rotate_cache():
     """Deletes a random selection of cached items."""
     logger.info("Rotating cache items")
@@ -551,35 +451,6 @@ def rotate_cache():
     for directory in delete:
         shutil.rmtree(directory)
         logger.info(f"{directory} removed")
-
-
-def spellcheck_list(word_to_check, correct_list, abs_cutoff=None):
-    for correct_word in correct_list:
-        if abs_cutoff is None:
-            relative_cutoff = math.floor(len(correct_word) / 3)
-        else:
-            relative_cutoff = abs_cutoff
-        if spellcheck(word_to_check, correct_word, relative_cutoff):
-            return True
-    return False
-
-
-def spellcheck(worda, wordb, cutoff=3):
-    """Checks if two words are close to each other.
-    `worda` (str) - first word to compare
-    `wordb` (str) - second word to compare
-    `cutoff` (int) - allowed difference amount
-    """
-    worda = worda.lower().replace("-", " ").replace("'", "")
-    wordb = wordb.lower().replace("-", " ").replace("'", "")
-    shorterword = min(worda, wordb, key=len)
-    if worda != wordb:
-        if (
-            len(list(difflib.Differ().compare(worda, wordb))) - len(shorterword)
-            >= cutoff
-        ):
-            return False
-    return True
 
 
 class CustomCooldown:

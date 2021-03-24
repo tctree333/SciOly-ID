@@ -25,7 +25,7 @@ import discord
 import sciolyid.config as config
 import sciolyid.data
 from sciolyid.data import GenericError, database, get_category, logger
-from sciolyid.functions import black_and_white
+from sciolyid.util import black_and_white
 
 # Valid file types
 valid_image_extensions = {"jpg", "png", "jpeg", "gif"}

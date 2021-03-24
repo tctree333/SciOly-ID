@@ -24,7 +24,8 @@ from discord.utils import escape_markdown as esc
 
 import sciolyid.config as config
 from sciolyid.data import GenericError, database, logger
-from sciolyid.functions import CustomCooldown, send_leaderboard, fetch_get_user
+from sciolyid.functions import CustomCooldown, send_leaderboard
+from sciolyid.util import fetch_get_user
 
 
 class Score(commands.Cog):

@@ -36,10 +36,10 @@ from sciolyid.functions import (
     channel_setup,
     fools,
     get_all_users,
-    prune_user_cache,
     rotate_cache,
     user_setup,
 )
+from sciolyid.util import prune_user_cache
 
 # Initialize bot
 intent: discord.Intents = discord.Intents.none()

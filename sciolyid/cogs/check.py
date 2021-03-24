@@ -25,9 +25,9 @@ from sciolyid.functions import (
     item_setup,
     score_increment,
     session_increment,
-    spellcheck_list,
     streak_increment,
 )
+from sciolyid.util import spellcheck_list
 
 
 class Check(commands.Cog):

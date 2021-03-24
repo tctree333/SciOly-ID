@@ -29,7 +29,8 @@ from sciolyid.data import (
     logger,
     states,
 )
-from sciolyid.functions import CustomCooldown, fetch_get_user
+from sciolyid.functions import CustomCooldown
+from sciolyid.util import fetch_get_user
 
 
 class Race(commands.Cog):
