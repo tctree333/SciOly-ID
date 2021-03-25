@@ -34,6 +34,7 @@ from sciolyid.data import (
     all_categories,
     database,
     dealias_group,
+    get_category,
     groups,
     id_list,
     logger,
@@ -430,27 +431,26 @@ async def get_all_users(bot):
     logger.info("User cache finished")
 
 
-def rotate_cache():
-    """Deletes a random selection of cached items."""
-    logger.info("Rotating cache items")
-    items = []
-    with contextlib.suppress(FileNotFoundError):
-        items += map(
-            lambda x: f"bot_files/cache/images/{x}/",
-            os.listdir("bot_files/cache/images/"),
-        )
-    with contextlib.suppress(FileNotFoundError):
-        items += map(
-            lambda x: f"bot_files/cache/songs/{x}/",
-            os.listdir("bot_files/cache/songs/"),
-        )
-    logger.info(f"num birds: {len(items)}")
-    delete = random.choices(
-        items, k=math.ceil(len(items) * 0.05)
-    )  # choose 5% of the items to delete
-    for directory in delete:
-        shutil.rmtree(directory)
-        logger.info(f"{directory} removed")
+def evict_images():
+    """Deletes images for items that have exceeded a certain frequency.
+
+    This prevents images from being stale. If the item frequency has
+    been incremented more than 15 times, this function will delete the
+    top 5 items.
+    """
+    logger.info("Updating cached images")
+
+    for item in map(
+        lambda x: x.decode(),
+        database.zrevrangebyscore(
+            "frequency.item.refresh:global", "+inf", min=10, start=0, num=5
+        ),
+    ):
+        database.zadd("frequency.item.refresh:global", {item: 0})
+        category = get_category(item)
+        path = f"{config.options['download_dir']}{category}/{item.lower()}/"
+        if os.path.exists(path):
+            shutil.rmtree(path)
 
 
 class CustomCooldown:

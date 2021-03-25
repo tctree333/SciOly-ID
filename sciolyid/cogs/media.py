@@ -77,6 +77,7 @@ class Media(commands.Cog):
     def increment_item_frequency(ctx, item):
         item_setup(ctx, item)
         database.zincrby("frequency.item:global", 1, string.capwords(item))
+        database.zincrby("frequency.item.refresh:global", 1, string.capwords(item))
 
     async def send_pic(
         self, ctx, group_str: str, state_str: str, bw: Union[bool, str] = False, retries=0

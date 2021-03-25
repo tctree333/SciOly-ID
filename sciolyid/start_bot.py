@@ -36,7 +36,7 @@ from sciolyid.functions import (
     channel_setup,
     fools,
     get_all_users,
-    rotate_cache,
+    evict_images,
     user_setup,
 )
 from sciolyid.util import prune_user_cache
@@ -77,7 +77,7 @@ async def on_ready():
     if config.options["refresh_images"]:
         update_images.start()
     if config.options["evict_images"]:
-        refresh_cache.start()
+        refresh_images.start()
     refresh_user_cache.start()
     evict_user_cache.start()
     if config.options["backups_channel"]:
@@ -379,13 +379,13 @@ if config.options["refresh_images"]:
 
 if config.options["evict_images"]:
 
-    @tasks.loop(hours=1.0)
-    async def refresh_cache():
+    @tasks.loop(minutes=30)
+    async def refresh_images():
         """Task to delete a random selection of cached images every hour."""
         logger.info("TASK: Refreshing some cache items")
         event_loop = asyncio.get_event_loop()
         with concurrent.futures.ThreadPoolExecutor(1) as executor:
-            await event_loop.run_in_executor(executor, rotate_cache)
+            await event_loop.run_in_executor(executor, evict_images)
 
 
 @tasks.loop(hours=3.0)

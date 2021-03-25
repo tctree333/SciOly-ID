@@ -121,6 +121,10 @@ if config.options["sentry"]:
 #   frequency.item:global : [item name, # displayed]
 # }
 
+# last refresh frequency format = {
+#   frequency.item.refresh:global : [item name, # displayed]
+# }
+
 # command frequency format = {
 #   frequency.command:global : [command, # used]
 # }
