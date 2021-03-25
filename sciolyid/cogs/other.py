@@ -102,7 +102,7 @@ class Other(commands.Cog):
             )
         )
         state_args = set(states.keys()).intersection(
-            set(state_or_group.upper().split(""))
+            set(state_or_group.upper().split(" "))
         )
         if not state_args:
             state_args = {config.options["default_state_list"]}
