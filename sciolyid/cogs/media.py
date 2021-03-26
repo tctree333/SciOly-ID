@@ -119,7 +119,7 @@ class Media(commands.Cog):
             self.increment_item_frequency(ctx, current_item)
 
             prevI = database.hget(f"channel:{ctx.channel.id}", "prevI").decode("utf-8")
-            while current_item == prevI:
+            while current_item == prevI and len(choices) > 1:
                 current_item = random.choice(choices)
             database.hset(f"channel:{ctx.channel.id}", "prevI", str(current_item))
             database.hset(f"channel:{ctx.channel.id}", "item", str(current_item))
