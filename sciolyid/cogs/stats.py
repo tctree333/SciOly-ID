@@ -207,7 +207,7 @@ class Stats(commands.Cog):
                 value="**Accounts that answered at least 1 correctly:** `{:,}`\n".format(
                     len(today)
                 )
-                + f"**Total {config.options['id_type']} answered correctly:** `{today.sum():,}`\n".,
+                + f"**Total {config.options['id_type']} answered correctly:** `{today.sum():,}`\n",
             ).add_field(
                 name="Last 7 Days",
                 inline=False,
