@@ -432,15 +432,15 @@ def evict_images():
     """Deletes images for items that have exceeded a certain frequency.
 
     This prevents images from being stale. If the item frequency has
-    been incremented more than 15 times, this function will delete the
-    top 5 items.
+    been incremented more than 10 times, this function will delete the
+    top 3 items.
     """
     logger.info("Updating cached images")
 
     for item in map(
         lambda x: x.decode(),
         database.zrevrangebyscore(
-            "frequency.item.refresh:global", "+inf", min=10, start=0, num=5
+            "frequency.item.refresh:global", "+inf", min=10, start=0, num=3
         ),
     ):
         database.zadd("frequency.item.refresh:global", {item: 0})
