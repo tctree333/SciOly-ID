@@ -43,7 +43,7 @@ async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
         logger.error(f"error - {config.options['id_type'][:-1]} is blank")
         await ctx.send(f"**There was an error fetching {config.options['id_type']}.**")
         if on_error is not None:
-            await on_error(GenericError("bird is blank", code=100))
+            await on_error(GenericError("item is blank", code=100))
         else:
             await ctx.send("*Please try again.*")
         return
