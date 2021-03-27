@@ -160,7 +160,7 @@ class Sessions(commands.Cog):
             elif arg in all_categories:
                 group_args.add(dealias_group(arg))
             elif arg.upper() in states.keys():
-                state_args.add(dealias_group(arg))
+                state_args.add(arg.upper())
             else:
                 await ctx.send(f"**Invalid argument provided**: `{arg}`")
                 return
@@ -248,7 +248,7 @@ class Sessions(commands.Cog):
             elif arg in all_categories:
                 group_args.add(dealias_group(arg))
             elif arg.upper() in states.keys():
-                state_args.add(dealias_group(arg))
+                state_args.add(arg.upper())
             else:
                 await ctx.send(f"**Invalid argument provided**: `{arg}`")
                 return
