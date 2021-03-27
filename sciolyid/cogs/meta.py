@@ -203,8 +203,8 @@ class Meta(commands.Cog):
         database.zrem("banned:global", str(user.id))
         await ctx.send(f"Ok, {esc(user.name)} can use the bot!")
 
-    # correct command - see how many times someone got a bird correct
-    @commands.command(help="- see answered birds command", hidden=True)
+    # correct command - see how many times someone got a specimen correct
+    @commands.command(help=f"- see answered {config.options['id_type']} command", hidden=True)
     @commands.is_owner()
     async def correct(
         self,
@@ -220,7 +220,7 @@ class Meta(commands.Cog):
         logger.info(f"user-id: {user.id}")
         await send_leaderboard(
             ctx,
-            f"Top Correct Birds ({esc(user.name)})",
+            f"Top Correct {config.options['id_type'].capitalize()} ({esc(user.name)})",
             1,
             database_key=f"correct.user:{user.id}",
             items_per_page=25,

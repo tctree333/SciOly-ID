@@ -25,9 +25,9 @@ from sciolyid.functions import (
     item_setup,
     score_increment,
     session_increment,
-    spellcheck_list,
     streak_increment,
 )
+from sciolyid.util import spellcheck_list
 
 
 class Check(commands.Cog):
@@ -111,12 +111,12 @@ class Check(commands.Cog):
                         await race.stop_race(ctx)
                     else:
                         logger.info("auto sending next image")
-                        group, bw = database.hmget(
-                            f"race.data:{ctx.channel.id}", ["group", "bw"]
+                        group, state, bw = database.hmget(
+                            f"race.data:{ctx.channel.id}", ["group", "state", "bw"]
                         )
                         media = self.bot.get_cog("Media")
                         await media.send_pic(
-                            ctx, group.decode("utf-8"), bw.decode("utf-8")
+                            ctx, group.decode("utf-8"), state.decode("utf-8"), bw.decode("utf-8")
                         )
 
             else:

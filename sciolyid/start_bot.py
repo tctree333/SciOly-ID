@@ -29,15 +29,17 @@ from discord.ext import commands, tasks
 from sentry_sdk import capture_exception
 
 import sciolyid.config as config
+import sciolyid.data
 from sciolyid.data import GenericError, database, logger
 from sciolyid.functions import (
     backup_all,
     channel_setup,
     fools,
     get_all_users,
-    prune_user_cache,
+    evict_images,
     user_setup,
 )
+from sciolyid.util import prune_user_cache
 
 # Initialize bot
 intent: discord.Intents = discord.Intents.none()
@@ -48,8 +50,7 @@ intent.voice_states = True
 
 cache_flags: discord.MemberCacheFlags = discord.MemberCacheFlags.none()
 cache_flags.voice = True
-if intent.members:
-    cache_flags.joined = True
+cache_flags.joined = config.options["members_intent"]
 
 bot = commands.Bot(
     command_prefix=config.options["prefixes"],
@@ -73,7 +74,10 @@ async def on_ready():
     )
 
     # start tasks
-    update_images.start()
+    if config.options["refresh_images"]:
+        update_images.start()
+    if config.options["evict_images"]:
+        refresh_images.start()
     refresh_user_cache.start()
     evict_user_cache.start()
     if config.options["backups_channel"]:
@@ -93,13 +97,16 @@ initial_extensions = [
     "sciolyid.cogs.meta",
     "sciolyid.cogs.other",
 ]
+if config.options["state_roles"]:
+    initial_extensions.append("sciolyid.cogs.state")
+
 for extension in config.options["disable_extensions"]:
     try:
         initial_extensions.remove(f"sciolyid.cogs.{extension}")
-    except ValueError:
+    except ValueError as e:
         raise config.BotConfigError(
             f"Unable to disable extension 'sciolyid.cogs.{extension}'"
-        )
+        ) from e
 
 initial_extensions += config.options["custom_extensions"]
 initial_extensions = list(set(initial_extensions))
@@ -120,6 +127,8 @@ for extension in initial_extensions:
             )
 
         raise GenericError(f"Failed to load extension {extension}.", 999) from e
+
+
 if sys.platform == "win32":
     asyncio.set_event_loop(asyncio.ProactorEventLoop())
 
@@ -362,12 +371,25 @@ async def on_command_error(ctx, error):
         raise error
 
 
-@tasks.loop(hours=24.0)
-async def update_images():
-    """Updates the images."""
-    logger.info("updating images")
-    await config.options["download_func"]()
-    logger.info("done updating images!")
+if config.options["refresh_images"]:
+
+    @tasks.loop(hours=24.0)
+    async def update_images():
+        """Updates the images."""
+        logger.info("updating images")
+        await config.options["download_func"](sciolyid.data, None, None)
+        logger.info("done updating images!")
+
+
+if config.options["evict_images"]:
+
+    @tasks.loop(minutes=15.0)
+    async def refresh_images():
+        """Task to delete a random selection of cached images every hour."""
+        logger.info("TASK: Refreshing some cache items")
+        event_loop = asyncio.get_event_loop()
+        with concurrent.futures.ThreadPoolExecutor(1) as executor:
+            await event_loop.run_in_executor(executor, evict_images)
 
 
 @tasks.loop(hours=3.0)
@@ -381,7 +403,7 @@ async def refresh_user_cache():
 async def evict_user_cache():
     """Task to remove keys from the User cache to ensure freshness."""
     logger.info("TASK: Removing user keys")
-    await prune_user_cache(10)
+    prune_user_cache(10)
 
 
 @tasks.loop(hours=1.0)

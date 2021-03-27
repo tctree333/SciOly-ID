@@ -21,8 +21,8 @@ import discord
 from discord.ext import commands
 
 import sciolyid.config as config
-from sciolyid.data import all_categories, database, dealias_group, logger
-from sciolyid.functions import CustomCooldown
+from sciolyid.data import all_categories, database, dealias_group, logger, states
+from sciolyid.functions import CustomCooldown, check_state_role
 
 
 class Sessions(commands.Cog):
@@ -31,8 +31,8 @@ class Sessions(commands.Cog):
 
     @staticmethod
     def _get_options(ctx):
-        bw, group, wiki, strict = database.hmget(
-            f"session.data:{ctx.author.id}", ["bw", "group", "wiki", "strict"]
+        bw, state, group, wiki, strict = database.hmget(
+            f"session.data:{ctx.author.id}", ["bw", "state", "group", "wiki", "strict"]
         )
         options = (
             f"**Black & White:** {bw==b'bw'}\n"
@@ -41,6 +41,7 @@ class Sessions(commands.Cog):
                 if config.options["id_groups"]
                 else ""
             )
+            + f"**Alternate List:** {state.decode('utf-8') if state else 'None'}\n"
             + f"**Wiki Embeds**: {wiki==b'wiki'}\n"
             + f"**Strict Spelling**: {strict==b'strict'}"
         )
@@ -108,7 +109,8 @@ class Sessions(commands.Cog):
         help="- Base session command\nSessions will record your activity for an amount of time and "
         + "will give you stats on how your performance and "
         + "also set global variables such as black and white"
-        + (" or specific categories." if config.options["id_groups"] else "."),
+        + (", specific categories, " if config.options["id_groups"] else "")
+        + "or alternate lists.",
         aliases=["ses", "sesh"],
     )
     async def session(self, ctx):
@@ -126,7 +128,7 @@ class Sessions(commands.Cog):
         + f"These settings can be changed at any time with '{config.options['prefixes'][0]}session edit', "
         + "and arguments can be passed in any order.\n",
         aliases=["st"],
-        usage=("[bw] [category]" if config.options["id_groups"] else "[bw]"),
+        usage=(f"[bw] [state]{' [category]' if config.options['id_groups'] else ''}"),
     )
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.user))
     async def start(self, ctx, *args):
@@ -142,10 +144,11 @@ class Sessions(commands.Cog):
         logger.info(f"args: {args}")
 
         # parse args
+        group_args = set()
+        state_args = set()
         bw = ""
-        wiki = ""
         strict = ""
-        group_args = []
+        wiki = ""
         for arg in set(args):
             arg = arg.lower()
             if arg == "bw":
@@ -155,26 +158,35 @@ class Sessions(commands.Cog):
             elif arg == "strict":
                 strict = "strict"
             elif arg in all_categories:
-                group_args.append(dealias_group(arg))
+                group_args.add(dealias_group(arg))
+            elif arg.upper() in states.keys():
+                state_args.add(arg.upper())
             else:
                 await ctx.send(f"**Invalid argument provided**: `{arg}`")
                 return
+
+        if state_args:
+            state = " ".join(state_args).strip()
+        else:
+            state = " ".join(check_state_role(ctx))
+
         if group_args and config.options["id_groups"]:
             group = " ".join(group_args).strip()
         else:
             group = ""
 
-        logger.info(f"adding bw: {bw}; group: {group}; wiki: {wiki}; strict: {strict}")
+        logger.info(f"adding bw: {bw}; group: {group}; state: {state}; wiki: {wiki}; strict: {strict}")
 
-        database.hmset(
+        database.hset(
             f"session.data:{ctx.author.id}",
-            {
+            mapping={
                 "start": round(time.time()),
                 "stop": 0,
                 "correct": 0,
                 "incorrect": 0,
                 "total": 0,
                 "bw": bw,
+                "state": state,
                 "group": group,
                 "wiki": wiki,
                 "strict": strict,
@@ -188,72 +200,94 @@ class Sessions(commands.Cog):
         help="- Views session\nSessions will record your activity for an amount of time and "
         + "will give you stats on how your performance and "
         + "also set global variables such as black and white"
-        + (" or specific categories." if config.options["id_groups"] else "."),
+        + (", specific categories, " if config.options["id_groups"] else "")
+        + "or alternate lists.",
         aliases=["view"],
-        usage=("[bw] [category]" if config.options["id_groups"] else "[bw]"),
+        usage=(f"[bw] [state]{' [category]' if config.options['id_groups'] else ''}"),
     )
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.user))
     async def edit(self, ctx, *args):
         logger.info("command: view session")
 
-        if database.exists(f"session.data:{ctx.author.id}"):
-            logger.info(f"args: {args}")
-
-            # parse args
-            group_args = []
-            for arg in set(args):
-                arg = arg.lower()
-                if arg == "bw":
-                    if not database.hget(f"session.data:{ctx.author.id}", "bw"):
-                        logger.info("adding bw")
-                        database.hset(f"session.data:{ctx.author.id}", "bw", "bw")
-                    else:
-                        logger.info("removing bw")
-                        database.hset(f"session.data:{ctx.author.id}", "bw", "")
-                elif arg == "wiki":
-                    if database.hget(f"session.data:{ctx.author.id}", "wiki"):
-                        logger.info("disabling wiki embeds")
-                        database.hset(f"session.data:{ctx.author.id}", "wiki", "")
-                    else:
-                        logger.info("enabling wiki embeds")
-                        database.hset(f"session.data:{ctx.author.id}", "wiki", "wiki")
-                elif arg == "strict":
-                    if database.hget(f"session.data:{ctx.author.id}", "strict"):
-                        logger.info("disabling strict spelling")
-                        database.hset(f"session.data:{ctx.author.id}", "strict", "")
-                    else:
-                        logger.info("enabling strict spelling")
-                        database.hset(
-                            f"session.data:{ctx.author.id}", "strict", "strict"
-                        )
-                elif arg in all_categories:
-                    group_args.append(dealias_group(arg))
-                else:
-                    await ctx.send(f"**Invalid argument provided**: `{arg}`")
-                    return
-            if group_args and config.options["id_groups"]:
-                toggle_group = list(group_args)
-                current_group = (
-                    database.hget(f"session.data:{ctx.author.id}", "group")
-                    .decode("utf-8")
-                    .split(" ")
-                )
-                add_group = []
-                logger.info(f"toggle group: {toggle_group}")
-                logger.info(f"current group: {current_group}")
-                for o in set(toggle_group).symmetric_difference(set(current_group)):
-                    add_group.append(o)
-                logger.info(f"adding groups: {add_group}")
-                database.hset(
-                    f"session.data:{ctx.author.id}",
-                    "group",
-                    " ".join(add_group).strip(),
-                )
-            await self._send_stats(ctx, "**Session started previously.**\n")
-        else:
+        if not database.exists(f"session.data:{ctx.author.id}"):
             await ctx.send(
                 f"**There is no session running.** *You can start one with `{config.options['prefixes'][0]}session start`*"
             )
+            return
+
+        logger.info(f"args: {args}")
+
+        # parse args
+        group_args = set()
+        state_args = set()
+        for arg in set(args):
+            arg = arg.lower()
+            if arg == "bw":
+                if not database.hget(f"session.data:{ctx.author.id}", "bw"):
+                    logger.info("adding bw")
+                    database.hset(f"session.data:{ctx.author.id}", "bw", "bw")
+                else:
+                    logger.info("removing bw")
+                    database.hset(f"session.data:{ctx.author.id}", "bw", "")
+            elif arg == "wiki":
+                if database.hget(f"session.data:{ctx.author.id}", "wiki"):
+                    logger.info("disabling wiki embeds")
+                    database.hset(f"session.data:{ctx.author.id}", "wiki", "")
+                else:
+                    logger.info("enabling wiki embeds")
+                    database.hset(f"session.data:{ctx.author.id}", "wiki", "wiki")
+            elif arg == "strict":
+                if database.hget(f"session.data:{ctx.author.id}", "strict"):
+                    logger.info("disabling strict spelling")
+                    database.hset(f"session.data:{ctx.author.id}", "strict", "")
+                else:
+                    logger.info("enabling strict spelling")
+                    database.hset(
+                        f"session.data:{ctx.author.id}", "strict", "strict"
+                    )
+            elif arg in all_categories:
+                group_args.add(dealias_group(arg))
+            elif arg.upper() in states.keys():
+                state_args.add(arg.upper())
+            else:
+                await ctx.send(f"**Invalid argument provided**: `{arg}`")
+                return
+
+        if state_args:
+            current_states = set(
+                database.hget(f"session.data:{ctx.author.id}", "state")
+                .decode("utf-8")
+                .split(" ")
+            )
+            logger.info(f"toggle states: {state_args}")
+            logger.info(f"current states: {current_states}")
+            state_args.symmetric_difference_update(current_states)
+            state_args.discard("")
+            logger.info(f"new states: {state_args}")
+            database.hset(
+                f"session.data:{ctx.author.id}",
+                "state",
+                " ".join(state_args).strip(),
+            )
+
+        if group_args and config.options["id_groups"]:
+            current_group = set(
+                database.hget(f"session.data:{ctx.author.id}", "group")
+                .decode("utf-8")
+                .split(" ")
+            )
+            logger.info(f"toggle group: {group_args}")
+            logger.info(f"current group: {current_group}")
+            group_args.symmetric_difference_update(current_group)
+            group_args.discard("")
+            logger.info(f"new groups: {group_args}")
+            database.hset(
+                f"session.data:{ctx.author.id}",
+                "group",
+                " ".join(group_args).strip(),
+            )
+        await self._send_stats(ctx, "**Session started previously.**\n")
+
 
     # stops session
     @session.command(help="- Stops session", aliases=["stp", "end"])

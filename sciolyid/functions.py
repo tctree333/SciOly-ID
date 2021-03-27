@@ -15,75 +15,29 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import datetime
-import difflib
-import functools
-import math
+import itertools
 import os
 import pickle
-import random
+import shutil
 import string
-from io import BytesIO
+from typing import Union, Iterable
 
 import discord
 from discord.ext import commands
-from PIL import Image
 
 import sciolyid.config as config
 from sciolyid.data import (
     GenericError,
     all_categories,
     database,
+    dealias_group,
+    get_category,
     groups,
     id_list,
     logger,
-    dealias_group,
+    states,
 )
-
-
-def cache(func=None):
-    """Cache decorator based on functools.lru_cache.
-    This does not have a max_size and does not evict items.
-    In addition, results are only cached by the first provided argument.
-    """
-
-    def wrapper(func):
-        sentinel = object()
-
-        cache_ = {}
-        hits = misses = 0
-        cache_get = cache_.get
-        cache_len = cache_.__len__
-
-        def _evict():
-            """Evicts a random item from the local cache."""
-            cache_.pop(random.choice(tuple(cache_)), 0)
-
-        async def wrapped(*args, **kwds):
-            # Simple caching without ordering or size limit
-            logger.info("checking cache")
-            nonlocal hits, misses
-            key = hash(args[0])
-            result = cache_get(key, sentinel)
-            if result is not sentinel:
-                logger.info(f"{args[0]} found in cache!")
-                hits += 1
-                return result
-            logger.info(f"did not find {args[0]} in cache")
-            misses += 1
-            result = await func(*args, **kwds)
-            cache_[key] = result
-            return result
-
-        def cache_info():
-            """Report cache statistics"""
-            return functools._CacheInfo(hits, misses, None, cache_len())
-
-        wrapped.cache_info = cache_info
-        return functools.update_wrapper(wrapped, func)
-
-    if func:
-        return wrapper(func)
-    return wrapper
+from sciolyid.util import fetch_get_user
 
 
 async def channel_setup(ctx):
@@ -93,9 +47,9 @@ async def channel_setup(ctx):
     """
     logger.info("checking channel setup")
     if not database.exists(f"channel:{ctx.channel.id}"):
-        database.hmset(
+        database.hset(
             f"channel:{ctx.channel.id}",
-            {"item": "", "answered": 1, "prevJ": 20, "prevI": ""},
+            mapping={"item": "", "answered": 1, "prevJ": 20, "prevI": ""},
         )
         # true = 1, false = 0, prevJ is 20 to define as integer
         logger.info("channel data added")
@@ -305,47 +259,26 @@ def streak_increment(ctx, amount: int):
         database.zadd("streak:global", {ctx.author.id: 0})
 
 
-def black_and_white(input_image_path) -> BytesIO:
-    """Returns a black and white version of an image.
+def check_state_role(ctx) -> list:
+    """Returns a list of state roles a user has.
 
-    Output type is a file object (BytesIO).
-
-    `input_image_path` - path to image (string) or file object
+    `ctx` - Discord context object
     """
-    logger.info("black and white")
-    with Image.open(input_image_path) as color_image:
-        bw = color_image.convert("L")
-        final_buffer = BytesIO()
-        bw.save(final_buffer, "png")
-    final_buffer.seek(0)
-    return final_buffer
-
-
-async def fetch_get_user(user_id: int, ctx=None, bot=None, member: bool = False):
-    if (ctx is None and bot is None) or (ctx is not None and bot is not None):
-        raise ValueError("Only one of ctx or bot must be passed")
-    if ctx:
-        bot = ctx.bot
-    elif member:
-        raise ValueError("ctx must be passed for member lookup")
-    if not member:
-        return await _fetch_cached_user(user_id, bot)
-    if bot.intents.members:
-        return ctx.guild.get_member(user_id)
-    try:
-        return await ctx.guild.fetch_member(user_id)
-    except discord.HTTPException:
-        return None
-
-
-@cache()
-async def _fetch_cached_user(user_id: int, bot):
-    if bot.intents.members:
-        return bot.get_user(user_id)
-    try:
-        return await bot.fetch_user(user_id)
-    except discord.HTTPException:
-        return None
+    logger.info("checking roles")
+    if not config.options["state_roles"]:
+        return []
+    user_states = []
+    if ctx.guild is not None:
+        logger.info("server context")
+        user_role_names = [role.name.lower() for role in ctx.author.roles]
+        for state in states:
+            # gets similarities
+            if set(user_role_names).intersection(set(states[state]["aliases"])):
+                user_states.append(state)
+    else:
+        logger.info("dm context")
+    logger.info(f"user roles: {user_states}")
+    return user_states
 
 
 async def send_leaderboard(
@@ -395,36 +328,51 @@ async def send_leaderboard(
     await ctx.send(embed=embed)
 
 
-def build_id_list(group_str: str = ""):
+def build_id_list(
+    categories: Union[str, Iterable] = "", state: Union[str, Iterable] = ""
+):
+    """Generates an ID list based on given arguments
+
+    - `categories`: category string/Iterable
+    - `state`: state string/Iterable
+    """
     logger.info("building id list")
-    categories = group_str.lower().split(" ")
-    logger.info(f"categories: {categories}")
+    if isinstance(categories, str):
+        categories = categories.split(" ")
+    if isinstance(state, str):
+        state = state.split(" ")
 
     id_choices = []
-    category_output = ""
+    group_args = set(
+        map(dealias_group, all_categories.intersection(set(map(str.lower, categories))))
+    )
+    state_args = set(states.keys()).intersection(set(map(str.upper, state)))
+    logger.info(f"group_args: {group_args}, state_args: {state_args}")
 
     if not config.options["id_groups"]:
         logger.info("no groups allowed")
-        return (id_list, "None")
-    group_args = []
-    for group in all_categories.intersection(categories):
-        group_args.append(dealias_group(group))
-    logger.info(f"group_args: {group_args}")
+        group_args = set()
 
-    category_output = " ".join(group_args).strip()
-    for group in group_args:
-        logger.info(f"group: {group}")
-        id_choices += groups[group]
-
-    if not id_choices:
-        logger.info("no choices")
-        id_choices += id_list
-        category_output = "None"
+    if group_args:
+        items_in_group = set(
+            itertools.chain.from_iterable(groups.get(o, []) for o in group_args)
+        )
+        if state_args:
+            items_in_state = set(
+                itertools.chain(*(states[state]["list"] for state in state_args))
+            )
+            id_choices = list(items_in_group.intersection(items_in_state))
+        else:
+            id_choices = list(items_in_group.intersection(set(id_list)))
+    elif state_args:
+        id_choices = list(
+            set(itertools.chain(*(states[state]["list"] for state in state_args)))
+        )
+    else:
+        id_choices = id_list
 
     logger.info(f"id_choices length: {len(id_choices)}")
-    logger.info(f"category_output: {category_output}")
-
-    return (id_choices, category_output)
+    return id_choices
 
 
 def backup_all():
@@ -482,39 +430,26 @@ async def get_all_users(bot):
     logger.info("User cache finished")
 
 
-def prune_user_cache(count: int = 5):
-    """Evicts `count` items from the user cache."""
-    for _ in range(count):
-        _fetch_cached_user.evict()
+def evict_images():
+    """Deletes images for items that have exceeded a certain frequency.
 
-
-def spellcheck_list(word_to_check, correct_list, abs_cutoff=None):
-    for correct_word in correct_list:
-        if abs_cutoff is None:
-            relative_cutoff = math.floor(len(correct_word) / 3)
-        else:
-            relative_cutoff = abs_cutoff
-        if spellcheck(word_to_check, correct_word, relative_cutoff):
-            return True
-    return False
-
-
-def spellcheck(worda, wordb, cutoff=3):
-    """Checks if two words are close to each other.
-    `worda` (str) - first word to compare
-    `wordb` (str) - second word to compare
-    `cutoff` (int) - allowed difference amount
+    This prevents images from being stale. If the item frequency has
+    been incremented more than 10 times, this function will delete the
+    top 3 items.
     """
-    worda = worda.lower().replace("-", " ").replace("'", "")
-    wordb = wordb.lower().replace("-", " ").replace("'", "")
-    shorterword = min(worda, wordb, key=len)
-    if worda != wordb:
-        if (
-            len(list(difflib.Differ().compare(worda, wordb))) - len(shorterword)
-            >= cutoff
-        ):
-            return False
-    return True
+    logger.info("Updating cached images")
+
+    for item in map(
+        lambda x: x.decode(),
+        database.zrevrangebyscore(
+            "frequency.item.refresh:global", "+inf", min=10, start=0, num=3
+        ),
+    ):
+        database.zadd("frequency.item.refresh:global", {item: 0})
+        category = get_category(item)
+        path = f"{config.options['download_dir']}{category}/{item.lower()}/"
+        if os.path.exists(path):
+            shutil.rmtree(path)
 
 
 class CustomCooldown:

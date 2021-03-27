@@ -22,8 +22,15 @@ from discord.ext import commands
 from discord.utils import escape_markdown as esc
 
 import sciolyid.config as config
-from sciolyid.data import all_categories, database, dealias_group, logger
-from sciolyid.functions import CustomCooldown, fetch_get_user
+from sciolyid.data import (
+    all_categories,
+    database,
+    dealias_group,
+    logger,
+    states,
+)
+from sciolyid.functions import CustomCooldown
+from sciolyid.util import fetch_get_user
 
 
 class Race(commands.Cog):
@@ -32,8 +39,8 @@ class Race(commands.Cog):
 
     @staticmethod
     def _get_options(ctx):
-        bw, group, limit, strict = database.hmget(
-            f"race.data:{ctx.channel.id}", ["bw", "group", "limit", "strict"]
+        bw, state, group, limit, strict = database.hmget(
+            f"race.data:{ctx.channel.id}", ["bw", "state", "group", "limit", "strict"]
         )
         options = (
             f"**Black & White:** {bw==b'bw'}\n"
@@ -42,6 +49,7 @@ class Race(commands.Cog):
                 if config.options["id_groups"]
                 else ""
             )
+            + f"**Alternate List:** {state.decode('utf-8') if state else 'None'}\n"
             + f"**Amount to Win:** {limit.decode('utf-8')}\n"
             + f"**Strict Spelling:** {strict == b'strict'}"
         )
@@ -81,7 +89,9 @@ class Race(commands.Cog):
                 else:
                     user_info = f"**{esc(user.name)}#{user.discriminator}**"
             else:
-                user_info = f"**{esc(user.name)}#{user.discriminator}** ({user.mention})"
+                user_info = (
+                    f"**{esc(user.name)}#{user.discriminator}** ({user.mention})"
+                )
 
             leaderboard += f"{i+1}. {user_info} - {int(stats[1])}\n"
 
@@ -153,10 +163,10 @@ class Race(commands.Cog):
         Arguments passed will become the default arguments to '{config.options['prefixes'][0]}pic', but some can be manually overwritten during use.
         Arguments can be passed in any order.""",
         aliases=["st"],
-        usage=f"[bw]{' [group]' if config.options['id_groups'] else ''} [amount to win (default 10)]",
+        usage=f"[bw] [state]{' [group]' if config.options['id_groups'] else ''} [amount to win (default 10)]",
     )
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.channel))
-    async def start(self, ctx, *args):
+    async def start(self, ctx, *, args_str: str = ""):
         logger.info("command: start race")
 
         if not str(ctx.channel.name).startswith("racing"):
@@ -173,52 +183,70 @@ class Race(commands.Cog):
                 f"**There is already a race in session.** *View stats with `{config.options['prefixes'][0]}race view`*"
             )
             return
+
+        args = set(args_str.strip().split(" "))
+        args.discard("")
         logger.info(f"args: {args}")
 
-        # parse args
+        group_args = set()
+        state_args = set()
         bw = ""
         strict = ""
-        group_args = []
-        limit = 10
-        for arg in set(args):
+        limit = None
+        for arg in args:
             arg = arg.lower()
-            if arg == "strict":
-                strict = "strict"
-            elif arg == "bw":
+            if arg == "bw":
                 bw = "bw"
+            elif arg == "strict":
+                strict = "strict"
             elif arg in all_categories:
-                group_args.append(dealias_group(arg))
+                group_args.add(dealias_group(arg))
+            elif arg.upper() in states.keys():
+                state_args.add(arg.upper())
             else:
-                try:
-                    limit = int(arg)
-                except ValueError:
-                    await ctx.send(f"**Invalid argument provided**: `{arg}`")
-                    return
+                if not limit:
+                    try:
+                        limit = int(arg)
+                        continue
+                    except ValueError:
+                        pass
+                await ctx.send(f"**Invalid argument provided**: `{arg}`")
+                return
         group = " ".join(group_args).strip()
+        state = " ".join(state_args).strip()
+        limit = limit if limit else 10
 
         if limit > 1000000:
             await ctx.send("**Sorry, the maximum amount to win is 1 million.**")
             limit = 1000000
 
-        logger.info(f"adding bw: {bw}; group: {group}; ")
+        logger.info(f"bw: {bw}; group: {group}; state: {state}; limit: {limit}")
 
-        database.hmset(
+        database.hset(
             f"race.data:{ctx.channel.id}",
-            {
+            mapping={
                 "start": round(time.time()),
                 "stop": 0,
                 "limit": limit,
+                "state": state,
                 "bw": bw,
                 "group": group,
                 "strict": strict,
             },
         )
-        database.zadd(f"race.scores:{ctx.channel.id}", {str(ctx.author.id): 0})
-        await ctx.send(f"**Race started with options:**\n{self._get_options(ctx)}")
 
-        logger.info("auto sending next image")
+        database.zadd(f"race.scores:{ctx.channel.id}", {str(ctx.author.id): 0})
+        await ctx.send(
+            f"**Race started with options:**\n{self._get_options(ctx)}"
+        )
+
+        logger.info("clearing previous item")
+        database.hset(f"channel:{ctx.channel.id}", "item", "")
+        database.hset(f"channel:{ctx.channel.id}", "answered", "1")
+
+        logger.info("auto sending next item")
         media = self.bot.get_cog("Media")
-        await media.send_pic(ctx, group, bw)
+        await media.send_pic(ctx, group, state, bw)
 
     @race.command(
         brief="- Views race",

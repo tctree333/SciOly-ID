@@ -24,7 +24,8 @@ from discord.ext import commands
 
 import sciolyid.config as config
 from sciolyid.data import database, logger
-from sciolyid.functions import CustomCooldown, send_leaderboard, fetch_get_user
+from sciolyid.functions import CustomCooldown, send_leaderboard
+from sciolyid.util import fetch_get_user
 
 
 class Stats(commands.Cog):
@@ -206,25 +207,21 @@ class Stats(commands.Cog):
                 value="**Accounts that answered at least 1 correctly:** `{:,}`\n".format(
                     len(today)
                 )
-                + "**Total birds answered correctly:** `{:,}`\n".format(today.sum()),
+                + f"**Total {config.options['id_type']} answered correctly:** `{today.sum():,}`\n",
             ).add_field(
                 name="Last 7 Days",
                 inline=False,
                 value="**Accounts that answered at least 1 correctly:** `{:,}`\n".format(
                     len(week)
                 )
-                + "**Total birds answered correctly:** `{:,}`\n".format(
-                    week.sum().sum()
-                ),
+                + f"**Total {config.options['id_type']} answered correctly:** `{week.sum().sum():,}`\n",
             ).add_field(
                 name="Last 30 Days",
                 inline=False,
                 value="**Accounts that answered at least 1 correctly:** `{:,}`\n".format(
                     len(month)
                 )
-                + "**Total birds answered correctly:** `{:,}`\n".format(
-                    month.sum().sum()
-                ),
+                + f"**Total {config.options['id_type']} answered correctly:** `{month.sum().sum():,}`\n",
             ).add_field(
                 name="Total",
                 inline=False,
@@ -239,11 +236,6 @@ class Stats(commands.Cog):
                 + "**Accounts that answered at least 1 correctly:** `{:,} ({:,.1%})`\n".format(
                     len(total[total > 0]), len(total[total > 0]) / len(total)
                 )
-                + "**Users the bot can see:** `{:,}`\n".format(len(self.bot.users))
-                + "**Percentage of users the bot can see that have used the bot:** `{:,.1%}`\n".format(
-                    len(total) / len(self.bot.users)
-                )
-                + "*(Note: There may be users the bot can't see anymore).*\n",
             )
 
         await ctx.send(embed=embed)

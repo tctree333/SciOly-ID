@@ -15,14 +15,17 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
+import io
 import os
 from functools import partial
+from typing import Union
 
 import discord
 
 import sciolyid.config as config
+import sciolyid.data
 from sciolyid.data import GenericError, database, get_category, logger
-from sciolyid.functions import black_and_white
+from sciolyid.util import black_and_white
 
 # Valid file types
 valid_image_extensions = {"jpg", "png", "jpeg", "gif"}
@@ -40,7 +43,7 @@ async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
         logger.error(f"error - {config.options['id_type'][:-1]} is blank")
         await ctx.send(f"**There was an error fetching {config.options['id_type']}.**")
         if on_error is not None:
-            await on_error(GenericError("bird is blank", code=100))
+            await on_error(GenericError("item is blank", code=100))
         else:
             await ctx.send("*Please try again.*")
         return
@@ -73,6 +76,7 @@ async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
         await delete.delete()
         await ctx.send("**Oops! File too large :(**\n*Please try again.*")
     else:
+        file_stream: Union[str, io.BufferedIOBase]
         if bw:
             # prevent the black and white conversion from blocking
             loop = asyncio.get_running_loop()
@@ -162,7 +166,7 @@ async def get_files(item, retries=0):
         logger.info("fetching files")
         logger.info("item: " + str(item))
         if retries < 3:
-            await config.options["download_func"]()
+            await config.options["download_func"](sciolyid.data, category, item)
             retries += 1
             return await get_files(item, retries)
         logger.info("More than 3 retries")

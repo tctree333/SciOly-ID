@@ -18,42 +18,42 @@ import sciolyid.config as config
 
 
 def setup(*args, **kwargs):
-    required = config.required.keys()
-    id_required = config.id_required.keys()
-    web_required = config.web_required.keys()
-    optional = tuple(config.optional.keys()) + tuple(config.web_optional.keys())
-
     if len(args) == 1 and isinstance(args[0], dict):
         kwargs = args[0]
 
-    for option in required:
+    for option in config.required:
         try:
             config.options[option] = kwargs[option]
-        except KeyError:
-            raise config.BotConfigError(f"Required setup argument {option}")
+        except KeyError as e:
+            raise config.BotConfigError(f"Required setup argument {option}") from e
 
-    for option in optional:
+    for option in tuple(config.optional.keys()) + tuple(config.web_optional.keys()):
         try:
             config.options[option] = kwargs[option]
         except KeyError:
             continue
 
-    if kwargs.get("web", None):
-        for option in web_required:
+    if config.options["download_func"] is None:
+        for option in config.default_image_required:
             try:
                 config.options[option] = kwargs[option]
-            except KeyError:
-                raise config.BotConfigError(f"Required web setup argument {option}")
+            except KeyError as e:
+                raise config.BotConfigError(f"Required argument {option} if no download function provided") from e
 
-    if config.options["id_groups"]:
-        for option in id_required:
+    if kwargs.get("web", None):
+        if config.options["download_func"] is not None:
+            raise config.BotConfigError("Web cannot be set if a custom download function is set")
+        for option in config.web_required:
             try:
                 config.options[option] = kwargs[option]
-            except KeyError:
-                raise config.BotConfigError(
-                    f"Required setup argument {option} when id_groups is True"
-                )
+            except KeyError as e:
+                raise config.BotConfigError(f"Required web setup argument {option}") from e
+
+    if config.options["category_name"]:
+        config.options["id_groups"] = True
         config.options["category_name"] = config.options["category_name"].title()
+    else:
+        config.options["id_groups"] = False
 
     directory_config_items = (
         "backups_dir",
@@ -61,9 +61,9 @@ def setup(*args, **kwargs):
         "bot_files_dir",
         "data_dir",
         "download_dir",
-        "list_dir",
+        "group_dir",
         "log_dir",
-        "restricted_list_dir",
+        "state_dir",
         "tmp_upload_dir",
         "validation_local_dir",
         "validation_repo_dir",
@@ -86,9 +86,9 @@ def setup(*args, **kwargs):
             ] = f"{config.options['bot_files_dir']}{config.options[item]}"
 
     data_subdirs = (
-        "list_dir",
+        "group_dir",
         "meme_file",
-        "restricted_list_dir",
+        "state_dir",
         "wikipedia_file",
     )
     for item in data_subdirs:
