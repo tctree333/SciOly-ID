@@ -92,12 +92,14 @@ initial_extensions = [
     "sciolyid.cogs.hint",
     "sciolyid.cogs.score",
     "sciolyid.cogs.stats",
-    "sciolyid.cogs.state",
     "sciolyid.cogs.sessions",
     "sciolyid.cogs.race",
     "sciolyid.cogs.meta",
     "sciolyid.cogs.other",
 ]
+if config.options["state_roles"]:
+    initial_extensions.append("sciolyid.cogs.state")
+
 for extension in config.options["disable_extensions"]:
     try:
         initial_extensions.remove(f"sciolyid.cogs.{extension}")
@@ -125,6 +127,8 @@ for extension in initial_extensions:
             )
 
         raise GenericError(f"Failed to load extension {extension}.", 999) from e
+
+
 if sys.platform == "win32":
     asyncio.set_event_loop(asyncio.ProactorEventLoop())
 

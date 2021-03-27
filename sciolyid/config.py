@@ -45,6 +45,7 @@ optional: Dict[str, Any] = {
     "data_dir": "data/",  # local directory containing the id data
     "group_dir": "group/",  # directory within data_dir containing group lists
     "state_dir": "state/",  # directory within data_dir containing alternate lists
+    "state_roles": False,  # allow state roles
     "default_state_list": "NATS",  # name of the "state" that should be considered default
     "wikipedia_file": "wikipedia.txt",  # filename within data_dir containing wiki urls for every item
     "meme_file": None,

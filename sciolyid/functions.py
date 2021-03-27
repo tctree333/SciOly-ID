@@ -265,6 +265,8 @@ def check_state_role(ctx) -> list:
     `ctx` - Discord context object
     """
     logger.info("checking roles")
+    if not config.options["state_roles"]:
+        return []
     user_states = []
     if ctx.guild is not None:
         logger.info("server context")

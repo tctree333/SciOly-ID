@@ -21,7 +21,7 @@ from discord.ext import commands
 from sentry_sdk import capture_exception
 
 import sciolyid.config as config
-from sciolyid.data import GenericError, database, logger, states
+from sciolyid.data import GenericError, logger, states
 from sciolyid.functions import CustomCooldown
 
 
