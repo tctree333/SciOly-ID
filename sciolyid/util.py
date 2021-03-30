@@ -140,7 +140,7 @@ def spellcheck(worda, wordb, cutoff=3):
     if worda != wordb:
         if (
             len(list(difflib.Differ().compare(worda, wordb))) - len(shorterword)
-            >= cutoff
+            > cutoff
         ):
             return False
     return True
