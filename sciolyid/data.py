@@ -16,6 +16,7 @@
 
 import csv
 import datetime
+import itertools
 import logging
 import logging.handlers
 import os
@@ -382,7 +383,10 @@ _config()
 all_categories = set(
     list(groups.keys())
     + [item for group in groups for item in config.options["category_aliases"][group]]
-)  # includes aliases
+)  # includes category aliases
+alias_id_list = tuple(
+    master_id_list + list(itertools.chain.from_iterable(aliases.values()))
+)  # includes item aliases
 
 logger.info(f"List Lengths: {len(id_list)}")
 logger.info(f"Master List Lengths: {len(master_id_list)}")

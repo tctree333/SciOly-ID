@@ -19,6 +19,7 @@ import functools
 import math
 import random
 from io import BytesIO
+from typing import Iterable, Optional
 
 import discord
 from PIL import Image
@@ -117,7 +118,9 @@ def prune_user_cache(count: int = 5):
         _fetch_cached_user.evict()
 
 
-def spellcheck_list(word_to_check, correct_list, abs_cutoff=None):
+def spellcheck_list(
+    word_to_check: str, correct_list: Iterable[str], abs_cutoff: Optional[int] = None
+):
     for correct_word in correct_list:
         if abs_cutoff is None:
             relative_cutoff = math.floor(len(correct_word) / 3)
@@ -128,7 +131,7 @@ def spellcheck_list(word_to_check, correct_list, abs_cutoff=None):
     return False
 
 
-def spellcheck(worda, wordb, cutoff=3):
+def spellcheck(worda: str, wordb: str, cutoff: int = 3) -> bool:
     """Checks if two words are close to each other.
     `worda` (str) - first word to compare
     `wordb` (str) - second word to compare
@@ -144,3 +147,15 @@ def spellcheck(worda, wordb, cutoff=3):
         ):
             return False
     return True
+
+
+def better_spellcheck(word: str, correct: Iterable[str], options: Iterable[str]) -> bool:
+    """Allow lenient spelling unless another answer is closer."""
+    matches = difflib.get_close_matches(
+        word.lower(), map(str.lower, options), n=1, cutoff=(2 / 3)
+    )
+    if not matches:
+        return False
+    if matches[0] in map(str.lower, correct):
+        return True
+    return False

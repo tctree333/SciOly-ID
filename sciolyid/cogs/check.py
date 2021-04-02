@@ -18,7 +18,7 @@ import string
 
 from discord.ext import commands
 
-from sciolyid.data import database, get_aliases, get_wiki_url, logger
+from sciolyid.data import alias_id_list, database, get_aliases, get_wiki_url, logger
 from sciolyid.data_functions import (
     incorrect_increment,
     item_setup,
@@ -27,7 +27,7 @@ from sciolyid.data_functions import (
     streak_increment,
 )
 from sciolyid.functions import CustomCooldown
-from sciolyid.util import spellcheck_list
+from sciolyid.util import better_spellcheck
 
 
 class Check(commands.Cog):
@@ -63,7 +63,7 @@ class Check(commands.Cog):
                     correct = arg in correct_list
                 else:
                     logger.info("spelling leniency")
-                    correct = spellcheck_list(arg, correct_list)
+                    correct = better_spellcheck(arg, correct_list, alias_id_list)
             else:
                 logger.info("no race")
                 if database.hget(f"session.data:{ctx.author.id}", "strict"):
@@ -71,7 +71,7 @@ class Check(commands.Cog):
                     correct = arg in correct_list
                 else:
                     logger.info("spelling leniency")
-                    correct = spellcheck_list(arg, correct_list)
+                    correct = better_spellcheck(arg, correct_list, alias_id_list)
 
             if correct:
                 logger.info("correct")
