@@ -17,7 +17,8 @@
 from discord.ext import commands
 
 from sciolyid.data import database, get_wiki_url, logger
-from sciolyid.functions import CustomCooldown, streak_increment
+from sciolyid.data_functions import streak_increment
+from sciolyid.functions import CustomCooldown
 
 
 class Skip(commands.Cog):

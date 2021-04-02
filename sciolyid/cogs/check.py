@@ -19,14 +19,14 @@ import string
 from discord.ext import commands
 
 from sciolyid.data import database, get_aliases, get_wiki_url, logger
-from sciolyid.functions import (
-    CustomCooldown,
+from sciolyid.data_functions import (
     incorrect_increment,
     item_setup,
     score_increment,
     session_increment,
     streak_increment,
 )
+from sciolyid.functions import CustomCooldown
 from sciolyid.util import spellcheck_list
 
 
@@ -116,7 +116,10 @@ class Check(commands.Cog):
                         )
                         media = self.bot.get_cog("Media")
                         await media.send_pic(
-                            ctx, group.decode("utf-8"), state.decode("utf-8"), bw.decode("utf-8")
+                            ctx,
+                            group.decode("utf-8"),
+                            state.decode("utf-8"),
+                            bw.decode("utf-8"),
                         )
 
             else:

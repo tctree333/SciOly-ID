@@ -16,28 +16,23 @@
 
 import asyncio
 import concurrent.futures
-import errno
 import os
 import sys
 from datetime import date, datetime, timedelta, timezone
 
-import aiohttp
 import discord
-import redis
-import wikipedia
 from discord.ext import commands, tasks
-from sentry_sdk import capture_exception
 
 import sciolyid.config as config
 import sciolyid.data
 from sciolyid.data import GenericError, database, logger
+from sciolyid.data_functions import user_setup, channel_setup
 from sciolyid.functions import (
     backup_all,
-    channel_setup,
+    evict_images,
     fools,
     get_all_users,
-    evict_images,
-    user_setup,
+    handle_error,
 )
 from sciolyid.util import prune_user_cache
 
@@ -189,187 +184,7 @@ async def on_command_error(ctx, error):
     if hasattr(ctx.command, "on_error"):
         return
 
-    if isinstance(error, commands.CommandOnCooldown):  # send cooldown
-        await ctx.send(
-            "**Cooldown.** Try again after " + str(round(error.retry_after, 2)) + " s.",
-            delete_after=5.0,
-        )
-
-    elif isinstance(error, commands.CommandNotFound):
-        capture_exception(error)
-        await ctx.send("Sorry, the command was not found.")
-
-    elif isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send("This command requires an argument!")
-
-    elif isinstance(error, commands.BadArgument):
-        await ctx.send("The argument passed was invalid. Please try again.")
-
-    elif isinstance(error, commands.ArgumentParsingError):
-        await ctx.send("An invalid character was detected. Please try again.")
-
-    elif isinstance(error, commands.BotMissingPermissions):
-        await ctx.send(
-            "**The bot does not have enough permissions to fully function.**\n"
-            + f"**Permissions Missing:** `{', '.join(map(str, error.missing_perms))}`\n"
-            + "*Please try again once the correct permissions are set.*"
-        )
-
-    elif isinstance(error, commands.MissingPermissions):
-        await ctx.send(
-            "You do not have the required permissions to use this command.\n"
-            + f"**Required Perms:** `{'`, `'.join(error.missing_perms)}`"
-        )
-
-    elif isinstance(error, commands.NoPrivateMessage):
-        await ctx.send("**This command is unavailable in DMs!**")
-
-    elif isinstance(error, commands.PrivateMessageOnly):
-        await ctx.send("**This command is only available in DMs!**")
-
-    elif isinstance(error, commands.NotOwner):
-        logger.info("not owner")
-        await ctx.send("Sorry, the command was not found.")
-
-    elif isinstance(error, GenericError):
-        if error.code == 192:
-            # channel is ignored
-            return
-        if error.code == 842:
-            await ctx.send("**Sorry, you cannot use this command.**")
-        elif error.code == 666:
-            logger.info("GenericError 666")
-        elif error.code == 201:
-            logger.info("HTTP Error")
-            capture_exception(error)
-            await ctx.send(
-                "**An unexpected HTTP Error has occurred.**\n *Please try again.*"
-            )
-        else:
-            logger.info("uncaught generic error")
-            capture_exception(error)
-            await ctx.send(
-                "**An uncaught generic error has occurred.**\n"
-                + "*Please log this message in #support in the support server below, or try again.*\n"
-                + f"**Error code:** `{error.code}`"
-            )
-            await ctx.send(config.options["support_server"])
-            raise error
-
-    elif isinstance(error, commands.CommandInvokeError):
-        if isinstance(error.original, redis.exceptions.ResponseError):
-            capture_exception(error.original)
-            if database.exists(f"channel:{ctx.channel.id}"):
-                await ctx.send(
-                    "**An unexpected ResponseError has occurred.**\n"
-                    + "*Please log this message in #support in the support server below, or try again.*\n"
-                )
-                await ctx.send(config.options["support_server"])
-            else:
-                await channel_setup(ctx)
-                await ctx.send("Please run that command again.")
-
-        elif isinstance(error.original, wikipedia.exceptions.DisambiguationError):
-            await ctx.send("Wikipedia page not found. (Disambiguation Error)")
-
-        elif isinstance(error.original, wikipedia.exceptions.PageError):
-            await ctx.send("Wikipedia page not found. (Page Error)")
-
-        elif isinstance(error.original, wikipedia.exceptions.WikipediaException):
-            capture_exception(error.original)
-            await ctx.send("Wikipedia page unavailable. Try again later.")
-
-        elif isinstance(error.original, discord.Forbidden):
-            if error.original.code == 50007:
-                await ctx.send(
-                    "I was unable to DM you. Check if I was blocked and try again."
-                )
-            elif error.original.code == 50013:
-                await ctx.send(
-                    "There was an error with permissions. Check the bot has proper permissions and try again."
-                )
-            else:
-                capture_exception(error)
-                await ctx.send(
-                    "**An unexpected Forbidden error has occurred.**\n"
-                    + "*Please log this message in #support in the support server below, or try again.*\n"
-                    + f"**Error code:** `{error.original.code}`"
-                )
-                await ctx.send(config.options["support_server"])
-
-        elif isinstance(error.original, discord.HTTPException):
-            capture_exception(error.original)
-            if error.original.status == 502:
-                await ctx.send(
-                    "**An error has occured with discord. :(**\n*Please try again.*"
-                )
-            else:
-                await ctx.send(
-                    "**An unexpected HTTPException has occurred.**\n"
-                    + "*Please log this message in #support in the support server below, or try again*\n"
-                    + f"**Reponse Code:** `{error.original.status}`"
-                )
-                await ctx.send(config.options["support_server"])
-
-        elif isinstance(error.original, aiohttp.ClientOSError):
-            capture_exception(error.original)
-            if error.original.errno == errno.ECONNRESET:
-                await ctx.send(
-                    "**An error has occured with discord. :(**\n*Please try again.*"
-                )
-            else:
-                await ctx.send(
-                    "**An unexpected ClientOSError has occurred.**\n"
-                    + "*Please log this message in #support in the support server below, or try again.*\n"
-                    + "**Error:** "
-                    + str(error.original)
-                )
-                await ctx.send(config.options["support_server"])
-
-        elif isinstance(error.original, aiohttp.ServerDisconnectedError):
-            capture_exception(error.original)
-            await ctx.send("**The server disconnected.**\n*Please try again.*")
-
-        elif isinstance(error.original, asyncio.TimeoutError):
-            capture_exception(error.original)
-            await ctx.send("**The request timed out.**\n*Please try again in a bit.*")
-
-        elif isinstance(error.original, OSError):
-            capture_exception(error.original)
-            if error.original.errno == errno.ENOSPC:
-                await ctx.send(
-                    "**No space is left on the server!**\n"
-                    + "*Please report this message in #support in the support server below!*\n"
-                )
-                await ctx.send(config.options["support_server"])
-            else:
-                await ctx.send(
-                    "**An unexpected OSError has occurred.**\n"
-                    + "*Please log this message in #support in the support server below, or try again.*\n"
-                    + f"**Error code:** `{error.original.errno}`"
-                )
-                await ctx.send(config.options["support_server"])
-
-        else:
-            logger.info("uncaught command error")
-            capture_exception(error.original)
-            await ctx.send(
-                "**An uncaught command error has occurred.**\n"
-                + "*Please log this message in #support in the support server below, or try again.*\n"
-            )
-            await ctx.send(config.options["support_server"])
-            raise error
-
-    else:
-        logger.info("uncaught non-command")
-        capture_exception(error)
-        await ctx.send(
-            "**An uncaught non-command error has occurred.**\n"
-            + "*Please log this message in #support in the support server below, or try again.*\n"
-        )
-        await ctx.send(config.options["support_server"])
-        raise error
-
+    await handle_error(ctx, error)
 
 if config.options["refresh_images"]:
 
