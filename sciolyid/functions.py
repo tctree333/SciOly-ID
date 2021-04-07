@@ -19,7 +19,6 @@ import errno
 import itertools
 import os
 import pickle
-import shutil
 from typing import Iterable, Union
 
 import aiohttp
@@ -30,6 +29,7 @@ from discord.ext import commands
 from sentry_sdk import capture_exception
 
 import sciolyid.config as config
+import sciolyid.data
 from sciolyid.data import (
     GenericError,
     all_categories,
@@ -228,14 +228,12 @@ def evict_images():
     for item in map(
         lambda x: x.decode(),
         database.zrevrangebyscore(
-            "frequency.item.refresh:global", "+inf", min=10, start=0, num=3
+            "frequency.item.refresh:global", "+inf", min=config.options["evict_threshold"], start=0, num=config.options["max_evict"]
         ),
     ):
         database.zadd("frequency.item.refresh:global", {item: 0})
         category = get_category(item)
-        path = f"{config.options['download_dir']}{category}/{item.lower()}/"
-        if os.path.exists(path):
-            shutil.rmtree(path)
+        config.options["max_evict"](sciolyid.data, category, item.lower())
 
 
 class CustomCooldown:

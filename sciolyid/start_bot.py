@@ -186,6 +186,7 @@ async def on_command_error(ctx, error):
 
     await handle_error(ctx, error)
 
+
 if config.options["refresh_images"]:
 
     @tasks.loop(hours=24.0)
@@ -197,8 +198,7 @@ if config.options["refresh_images"]:
 
 
 if config.options["evict_images"]:
-
-    @tasks.loop(minutes=15.0)
+    @tasks.loop(minutes=config.options["evict_frequency"])
     async def refresh_images():
         """Task to delete a random selection of cached images every hour."""
         logger.info("TASK: Refreshing some cache items")

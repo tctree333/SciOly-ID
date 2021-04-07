@@ -20,6 +20,7 @@ import itertools
 import logging
 import logging.handlers
 import os
+import shutil
 import sys
 
 import redis
@@ -370,6 +371,13 @@ def _config():
 
     if config.options["download_func"] is None:
         config.options["download_func"] = download_github
+
+    if config.options["evict_func"] is None:
+        def evict(data, category, item):
+            path = f"{config.options['download_dir']}{category}/{item.lower()}/"
+            if os.path.exists(path):
+                shutil.rmtree(path)
+        config.options["evict_func"] = evict
 
 
 groups, aliases = _groups()
