@@ -233,7 +233,7 @@ def evict_images():
     ):
         database.zadd("frequency.item.refresh:global", {item: 0})
         category = get_category(item)
-        config.options["max_evict"](sciolyid.data, category, item.lower())
+        config.options["evict_func"](sciolyid.data, category, item.lower())
 
 
 class CustomCooldown:
