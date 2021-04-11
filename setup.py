@@ -18,6 +18,8 @@ setuptools.setup(
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
     ],
     url="https://github.com/tctree333/SciOly-ID",
     author="Tomi Chen",
@@ -44,5 +46,5 @@ setuptools.setup(
         ]
     },
     py_modules=["config", "core", "data", "functions", "downloads", "start_bot"],
-    python_requires="~=3.7",
+    python_requires=">=3.7, <=3.9",
 )
