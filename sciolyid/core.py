@@ -160,7 +160,7 @@ async def get_files(item, retries=0):
             logger.info("no files in directory")
             raise GenericError("No Files", code=100)
         logger.info("files found!")
-        return [f"{directory}{path}" for path in files_dir]
+        return [f"{directory}{path}" for path in sorted(files_dir)]
     except (FileNotFoundError, GenericError):
         # if not found, fetch images
         logger.info("fetching files")
