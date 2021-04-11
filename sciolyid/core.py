@@ -166,8 +166,9 @@ async def get_files(item, retries=0):
         logger.info("fetching files")
         logger.info("item: " + str(item))
         if retries < 3:
-            await config.options["download_func"](sciolyid.data, category, item)
             retries += 1
+            await asyncio.sleep(1.5 ** retries)
+            await config.options["download_func"](sciolyid.data, category, item)
             return await get_files(item, retries)
         logger.info("More than 3 retries")
         return []
