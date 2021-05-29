@@ -39,16 +39,15 @@ class Hint(commands.Cog):
             elif (args[0] == "count" or args[0] == "c"):
                 await ctx.send(f"The answer has {str(len(current_item))} letters.")
             elif (args[0] == "last" or args[0] == "l"):
-                await ctx.send(f"The last letter is {current_item[len(current_item)-1]}.")
+                await ctx.send(f"The last letter is {current_item[-1]}.")
             elif (args[0] == "all" or args[0] == "a"):
-                blanks = len(current_item)-2
                 the_hint = "`"+current_item[0]
-                for i in range(1, len(current_item)-1):
-                    if(current_item[i]!= " "):
+                for letter in current_item[1:-1]:
+                    if(letter!= " "):
                         the_hint += " _ "
                     else:
                         the_hint+="   "
-                await ctx.send(the_hint+ current_item[len(current_item)-1] + "`")
+                await ctx.send(the_hint+ current_item[-1] + "`")
             else:
                 await ctx.send(f"The first letter is {current_item[0]}.")
         else:
@@ -57,3 +56,4 @@ class Hint(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Hint(bot))
+
