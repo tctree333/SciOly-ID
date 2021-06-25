@@ -61,6 +61,7 @@ if config.options["sentry"]:
         dsn=os.getenv(config.options["sentry_dsn_env"]),
         integrations=[RedisIntegration(), AioHttpIntegration()],
         before_send=before_sentry_send,
+        traces_sample_rate=0.75,
     )
 
 # Database Format Definitions
@@ -302,7 +303,7 @@ def _groups():
         lists[category_name] = []
         with open(filename, "r") as f:
             for line in f:
-                line = list(map(lambda x: x.strip().lower(), line.split(",")))
+                line = tuple(map(lambda x: x.strip().lower(), line.split(",")))
                 lists[category_name].append(line[0])
                 if len(line) > 1:
                     aliases_[line[0]] = line
@@ -336,11 +337,25 @@ def _state_lists():
     return states_
 
 
+def _prompt():
+    """Converts a txt file of prompt data into a dictionary of tuples."""
+    logger.info("Working on prompts")
+    if config.options["prompt_file"]:
+        data = {}
+        with open(config.options["prompt_file"], "r") as f:
+            for line in f.readlines():
+                line_content = line.split(",")
+                data[line_content[0].strip()] = tuple(map(str.strip, line_content[1:]))
+        logger.info("Done with prompts")
+        return data
+    return {}
+
+
 def _memes():
     """Converts a txt file of memes/video urls into a list."""
     logger.info("Working on memes")
     if config.options["meme_file"]:
-        with open(f'{config.options["meme_file"]}', "r") as f:
+        with open(config.options["meme_file"], "r") as f:
             memes = [line.strip() for line in f]
         logger.info("Done with memes")
         return memes
@@ -353,7 +368,7 @@ def _all_lists():
     master = []
     for state in states.values():
         master += state["list"]
-    master = list(set(master))
+    master = tuple(set(master))
     logger.info("Done with master lists!")
     return master
 
@@ -373,15 +388,18 @@ def _config():
         config.options["download_func"] = download_github
 
     if config.options["evict_func"] is None:
-        def evict(data, category, item):
+
+        def evict(_, category, item):
             path = f"{config.options['download_dir']}{category}/{item.lower()}/"
             if os.path.exists(path):
                 shutil.rmtree(path)
+
         config.options["evict_func"] = evict
 
 
 groups, aliases = _groups()
 states = _state_lists()
+prompts = _prompt()
 meme_list = _memes()
 master_id_list = _all_lists()
 wikipedia_urls = _wiki_urls()
@@ -389,11 +407,13 @@ id_list = states[config.options["default_state_list"]]["list"]
 _config()
 
 all_categories = set(
-    list(groups.keys())
-    + [item for group in groups for item in config.options["category_aliases"][group]]
+    tuple(groups.keys())
+    + tuple(
+        item for group in groups for item in config.options["category_aliases"][group]
+    )
 )  # includes category aliases
-alias_id_list = tuple(
-    master_id_list + list(itertools.chain.from_iterable(aliases.values()))
+alias_id_list = master_id_list + tuple(
+    itertools.chain.from_iterable(aliases.values())
 )  # includes item aliases
 
 logger.info(f"List Lengths: {len(id_list)}")

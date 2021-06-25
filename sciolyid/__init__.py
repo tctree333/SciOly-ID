@@ -88,6 +88,7 @@ def setup(*args, **kwargs):
     data_subdirs = (
         "group_dir",
         "meme_file",
+        "prompt_file",
         "state_dir",
         "wikipedia_file",
     )

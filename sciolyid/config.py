@@ -52,7 +52,8 @@ optional: Dict[str, Any] = {
     "state_roles": False,  # allow state roles
     "default_state_list": "NATS",  # name of the "state" that should be considered default
     "wikipedia_file": "wikipedia.txt",  # filename within data_dir containing wiki urls for every item
-    "meme_file": None,
+    "prompt_file": None,  # filename within data_dir containing "close" answers that should be prompted on
+    "meme_file": None,  # filename within data_dir containing memes to send
     "logs": True,  # enable logging
     "log_dir": "logs/",  # directory for text logs/backups
     "bot_files_dir": "",  # folder for bot generated files (downloaded images, logs)
