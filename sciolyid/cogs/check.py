@@ -131,7 +131,9 @@ class Check(commands.Cog):
                         bw.decode("utf-8"),
                     )
 
-        elif better_spellcheck(arg, prompts[current_item], possible_words):
+        elif len(prompts.get(current_item, [])) != 0 and better_spellcheck(
+            arg, prompts.get(current_item, []), possible_words
+        ):
             logger.info("prompt")
             await ctx.send(
                 "Close, but not quite what we were looking for. Can you be more specific?"
