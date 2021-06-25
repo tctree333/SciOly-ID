@@ -344,8 +344,8 @@ def _prompt():
         data = {}
         with open(config.options["prompt_file"], "r") as f:
             for line in f.readlines():
-                line_content = line.split(",")
-                data[line_content[0].strip()] = tuple(map(str.strip, line_content[1:]))
+                line_content = tuple(map(lambda x: x.strip().lower(), line.split(",")))
+                data[line_content[0]] = line_content[1:]
         logger.info("Done with prompts")
         return data
     return {}
@@ -412,9 +412,9 @@ all_categories = set(
         item for group in groups for item in config.options["category_aliases"][group]
     )
 )  # includes category aliases
-alias_id_list = master_id_list + tuple(
-    itertools.chain.from_iterable(aliases.values())
-)  # includes item aliases
+possible_words = tuple(
+    itertools.chain(master_id_list, *aliases.values(), *prompts.values())
+)  # item list that includes item aliases and prompt values
 
 logger.info(f"List Lengths: {len(id_list)}")
 logger.info(f"Master List Lengths: {len(master_id_list)}")

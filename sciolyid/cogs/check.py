@@ -18,7 +18,14 @@ import string
 
 from discord.ext import commands
 
-from sciolyid.data import alias_id_list, database, get_aliases, get_wiki_url, logger
+from sciolyid.data import (
+    database,
+    get_aliases,
+    get_wiki_url,
+    logger,
+    possible_words,
+    prompts,
+)
 from sciolyid.data_functions import (
     incorrect_increment,
     item_setup,
@@ -65,7 +72,7 @@ class Check(commands.Cog):
                 correct = arg in correct_list
             else:
                 logger.info("spelling leniency")
-                correct = better_spellcheck(arg, correct_list, alias_id_list)
+                correct = better_spellcheck(arg, correct_list, possible_words)
         else:
             logger.info("no race")
             if database.hget(f"session.data:{ctx.author.id}", "strict"):
@@ -73,7 +80,7 @@ class Check(commands.Cog):
                 correct = arg in correct_list
             else:
                 logger.info("spelling leniency")
-                correct = better_spellcheck(arg, correct_list, alias_id_list)
+                correct = better_spellcheck(arg, correct_list, possible_words)
 
         if correct:
             logger.info("correct")
@@ -123,6 +130,12 @@ class Check(commands.Cog):
                         state.decode("utf-8"),
                         bw.decode("utf-8"),
                     )
+
+        elif better_spellcheck(arg, prompts[current_item], possible_words):
+            logger.info("prompt")
+            await ctx.send(
+                "Close, but not quite what we were looking for. Can you be more specific?"
+            )
 
         else:
             logger.info("incorrect")
