@@ -66,7 +66,7 @@ class Other(commands.Cog):
 
         matches = get_close_matches(
             arg.lower(),
-            master_id_list + list(itertools.chain.from_iterable(aliases.values())),
+            itertools.chain(master_id_list, *aliases.values()),
             n=1,
             cutoff=0.8,
         )
@@ -152,9 +152,7 @@ class Other(commands.Cog):
         async def groups(self, ctx):
             logger.info("command: list")
 
-            await ctx.send(
-                f"**Valid Groups**: `{', '.join(map(str, list(groups.keys())))}`"
-            )
+            await ctx.send(f"**Valid Groups**: `{', '.join(map(str, groups.keys()))}`")
 
     # Wiki command - argument is the wiki page
     @commands.command(help="- Fetch the wikipedia page for any given argument")

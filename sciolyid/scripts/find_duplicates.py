@@ -4,8 +4,8 @@ import imagehash
 
 
 def get_hashlist():
-    hashes = list()
-    filenames = list()
+    hashes = []
+    filenames = []
     with open("hashes.csv", "r") as f:
         reader = csv.reader(f)
         for filename, img_hash in reader:

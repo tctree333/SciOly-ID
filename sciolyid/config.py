@@ -98,7 +98,7 @@ web_optional: Dict[str, Any] = {
 options: Dict[str, Any] = {
     k: v
     for d in (required, default_image_required, web_required, optional, web_optional)
-    for k, v in list(d.items())
+    for k, v in d.items()
 }
 
 

@@ -104,9 +104,8 @@ for extension in config.options["disable_extensions"]:
         ) from e
 
 initial_extensions += config.options["custom_extensions"]
-initial_extensions = list(set(initial_extensions))
 
-for extension in initial_extensions:
+for extension in set(initial_extensions):
     try:
         bot.load_extension(extension)
     except (
@@ -198,6 +197,7 @@ if config.options["refresh_images"]:
 
 
 if config.options["evict_images"]:
+
     @tasks.loop(minutes=config.options["evict_frequency"])
     async def refresh_images():
         """Task to delete a random selection of cached images every hour."""

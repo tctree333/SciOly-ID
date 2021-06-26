@@ -123,7 +123,9 @@ class Stats(commands.Cog):
             return
 
         embed = discord.Embed(
-            title="Bot Stats", type="rich", color=discord.Color.blue(),
+            title="Bot Stats",
+            type="rich",
+            color=discord.Color.blue(),
         )
 
         if topic == "help":
@@ -184,9 +186,10 @@ class Stats(commands.Cog):
             past_month = pd.date_range(  # pylint: disable=no-member
                 today - datetime.timedelta(29), today
             ).date
-            keys = list(f"daily.score:{str(date)}" for date in past_month)
-            keys = ["users:global"] + keys
-            titles = list(
+            keys = ("users:global",) + tuple(
+                f"daily.score:{str(date)}" for date in past_month
+            )
+            titles = tuple(
                 reversed(range(1, 32))
             )  # label columns by # days ago, today is 1 day ago
             month = self.generate_dataframe(keys, titles)
@@ -198,7 +201,7 @@ class Stats(commands.Cog):
             today = week.loc[:, 1]  # generate today from week
             today = today.loc[today != 0]
 
-            channels_see = len(list(self.bot.get_all_channels()))
+            channels_see = len(tuple(self.bot.get_all_channels()))
             channels_used = int(database.zcard("score:global"))
 
             embed.add_field(
@@ -235,7 +238,7 @@ class Stats(commands.Cog):
                 )
                 + "**Accounts that answered at least 1 correctly:** `{:,} ({:,.1%})`\n".format(
                     len(total[total > 0]), len(total[total > 0]) / len(total)
-                )
+                ),
             )
 
         await ctx.send(embed=embed)
@@ -294,15 +297,16 @@ class Stats(commands.Cog):
         )
 
         logger.info("exporting missed")
-        keys = list(
-            map(
-                lambda x: x.decode("utf-8"),
-                database.scan_iter(match="daily.incorrect:????-??-??", count=5000),
+        keys = tuple(
+            sorted(
+                map(
+                    lambda x: x.decode("utf-8"),
+                    database.scan_iter(match="daily.incorrect:????-??-??", count=5000),
+                )
             )
         )
-        keys.sort()
         titles = ",".join(map(lambda x: x.split(":")[1], keys))
-        keys = ["incorrect:global"] + keys
+        keys = ("incorrect:global",) + keys
         await _export_helper(
             keys,
             f"{config.options['id_type']},total missed,{titles}\n",
@@ -311,15 +315,15 @@ class Stats(commands.Cog):
         )
 
         logger.info("exporting scores")
-        keys = list(
+        keys = tuple(
+            sorted(
             map(
                 lambda x: x.decode("utf-8"),
                 database.scan_iter(match="daily.score:????-??-??", count=5000),
-            )
+            ))
         )
-        keys.sort()
         titles = ",".join(map(lambda x: x.split(":")[1], keys))
-        keys = ["users:global"] + keys
+        keys = ("users:global",) + keys
         await _export_helper(
             keys, f"username#discrim,total score,{titles}\n", "scores.csv", users=True
         )

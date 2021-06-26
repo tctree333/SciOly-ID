@@ -142,14 +142,16 @@ def spellcheck(worda: str, wordb: str, cutoff: int = 3) -> bool:
     shorterword = min(worda, wordb, key=len)
     if worda != wordb:
         if (
-            len(list(difflib.Differ().compare(worda, wordb))) - len(shorterword)
+            len(tuple(difflib.Differ().compare(worda, wordb))) - len(shorterword)
             > cutoff
         ):
             return False
     return True
 
 
-def better_spellcheck(word: str, correct: Iterable[str], options: Iterable[str]) -> bool:
+def better_spellcheck(
+    word: str, correct: Iterable[str], options: Iterable[str]
+) -> bool:
     """Allow lenient spelling unless another answer is closer."""
     matches = difflib.get_close_matches(
         word.lower(), map(str.lower, options), n=1, cutoff=(2 / 3)

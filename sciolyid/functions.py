@@ -128,7 +128,7 @@ def build_id_list(
     if isinstance(state, str):
         state = state.split(" ")
 
-    id_choices = []
+    id_choices = set()
     group_args = set(
         map(dealias_group, all_categories.intersection(set(map(str.lower, categories))))
     )
@@ -145,20 +145,20 @@ def build_id_list(
         )
         if state_args:
             items_in_state = set(
-                itertools.chain(*(states[state]["list"] for state in state_args))
+                itertools.chain.from_iterable(states[state]["list"] for state in state_args)
             )
-            id_choices = list(items_in_group.intersection(items_in_state))
+            id_choices = items_in_group.intersection(items_in_state)
         else:
-            id_choices = list(items_in_group.intersection(set(id_list)))
+            id_choices = items_in_group.intersection(set(id_list))
     elif state_args:
-        id_choices = list(
-            set(itertools.chain(*(states[state]["list"] for state in state_args)))
+        id_choices = set(
+            itertools.chain.from_iterable(states[state]["list"] for state in state_args)
         )
     else:
         id_choices = id_list
 
     logger.info(f"id_choices length: {len(id_choices)}")
-    return id_choices
+    return tuple(id_choices)
 
 
 def backup_all():
@@ -228,7 +228,11 @@ def evict_images():
     for item in map(
         lambda x: x.decode(),
         database.zrevrangebyscore(
-            "frequency.item.refresh:global", "+inf", min=config.options["evict_threshold"], start=0, num=config.options["max_evict"]
+            "frequency.item.refresh:global",
+            "+inf",
+            min=config.options["evict_threshold"],
+            start=0,
+            num=config.options["max_evict"],
         ),
     ):
         database.zadd("frequency.item.refresh:global", {item: 0})
