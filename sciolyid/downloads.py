@@ -28,18 +28,18 @@ download_logger = logging.getLogger(config.options["name"] + ".git_downloads")
 
 async def download_github(data, category, item):  # pylint: disable=unused-argument
     download_logger.info("syncing github")
-    executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
-    loop = asyncio.get_event_loop()
-    try:
-        os.listdir(config.options["download_dir"])
-    except FileNotFoundError:
-        download_logger.info("doesn't exist, cloning")
-        await loop.run_in_executor(executor, _clone)
-        download_logger.info("done cloning")
-    else:
-        download_logger.info("exists, syncing")
-        await loop.run_in_executor(executor, _sync)
-        download_logger.info("done syncing")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        with asyncio.get_event_loop() as loop:
+            try:
+                os.listdir(config.options["download_dir"])
+            except FileNotFoundError:
+                download_logger.info("doesn't exist, cloning")
+                await loop.run_in_executor(executor, _clone)
+                download_logger.info("done cloning")
+            else:
+                download_logger.info("exists, syncing")
+                await loop.run_in_executor(executor, _sync)
+                download_logger.info("done syncing")
 
 
 def _clone():
