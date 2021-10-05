@@ -54,8 +54,10 @@ def find_duplicates(image, distance: int = 5, ignore_verify: bool = False) -> li
     files.discard("")
 
     if isinstance(image, str):
-        image = Image.open(image)
-    current_hash = imagehash.phash(image)
+        with Image.open(image) as img_obj:
+            current_hash = imagehash.phash(img_obj)
+    else:
+        current_hash = imagehash.phash(image)
     matches = []
     r = csv.reader(files)
     for url, image_hash in r:
@@ -128,7 +130,8 @@ def verify_image(f, mimetype) -> Union[bool, str]:
         return False
 
     try:
-        Image.open(f).verify()
+        with Image.open(f) as image:
+            image.verify()
     except:  # pylint: disable=bare-except
         return False
 

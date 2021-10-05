@@ -44,7 +44,8 @@ def calculate_image_hashes(images, start_path, base_url):
     hashes = []
     os.path.normpath(start_path)
     for path in images:
-        image_hash = imagehash.phash(Image.open(path))
+        with Image.open(path) as image:
+            image_hash = imagehash.phash(image)
         hashes.append((base_url + os.path.relpath(path, start_path), str(image_hash)))
     return hashes
 
