@@ -236,9 +236,9 @@ async def refresh_backup():
     except FileNotFoundError:
         logger.info("Already cleared backup keys")
 
-    with asyncio.get_event_loop() as event_loop:
-        with concurrent.futures.ThreadPoolExecutor(1) as executor:
-            await event_loop.run_in_executor(executor, backup_all)
+    event_loop = asyncio.get_event_loop()
+    with concurrent.futures.ThreadPoolExecutor(1) as executor:
+        await event_loop.run_in_executor(executor, backup_all)
 
     logger.info("Sending backup files")
     channel = bot.get_channel(config.options["backups_channel"])
