@@ -220,8 +220,8 @@ def evict_images():
     """Deletes images for items that have exceeded a certain frequency.
 
     This prevents images from being stale. If the item frequency has
-    been incremented more than 10 times, this function will delete the
-    top 3 items.
+    been incremented more than `evict_threshold` (e.g. 10) times,
+    this function will delete the top `max_evict` (e.g. 3) items.
     """
     logger.info("Updating cached images")
 
