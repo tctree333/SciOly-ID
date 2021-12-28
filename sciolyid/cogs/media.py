@@ -80,7 +80,7 @@ class Media(commands.Cog):
                 await self.send_pic(ctx, group_str, state_str, bw, retries)
             else:
                 await ctx.send("*Please try again.*")
-            await self._send_race_next_media(ctx)
+                await self._send_race_next_media(ctx)
 
         return inner
 
