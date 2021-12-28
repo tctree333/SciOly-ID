@@ -46,22 +46,12 @@ class Skip(commands.Cog):
             )  # sends wiki page
             streak_increment(ctx, None)  # reset streak
             if database.exists(f"race.data:{ctx.channel.id}"):
-
-                limit = int(database.hget(f"race.data:{ctx.channel.id}", "limit"))
-                first = database.zrevrange(f"race.scores:{ctx.channel.id}", 0, 0, True)[
-                    0
-                ]
-                if int(first[1]) >= limit:
-                    logger.info("race ending")
-                    race = self.bot.get_cog("Race")
-                    await race.stop_race(ctx)
-                else:
-                    logger.info("auto sending next image")
-                    group, state, bw = database.hmget(
-                        f"race.data:{ctx.channel.id}", ["group", "state", "bw"]
-                    )
-                    media = self.bot.get_cog("Media")
-                    await media.send_pic(ctx, group.decode("utf-8"), state.decode("utf-8"), bw.decode("utf-8"))
+                logger.info("auto sending next image")
+                group, state, bw = database.hmget(
+                    f"race.data:{ctx.channel.id}", ["group", "state", "bw"]
+                )
+                media = self.bot.get_cog("Media")
+                await media.send_pic(ctx, group.decode("utf-8"), state.decode("utf-8"), bw.decode("utf-8"))
         else:
             await ctx.send("You need to ask for an image first!")
 
