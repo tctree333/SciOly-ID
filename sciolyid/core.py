@@ -115,6 +115,7 @@ async def get_image(ctx, item):
         logger.info("prevJ: " + str(prevJ))
         logger.info("j: " + str(j))
 
+        valid = False
         for x in range(0, len(images)):  # check file type and size
             y = (x + j) % len(images)
             image_link = images[y]
@@ -127,9 +128,10 @@ async def get_image(ctx, item):
                 and stat_info.st_size < 4000000  # keep files less than 4mb
             ):
                 logger.info("found one!")
+                valid = True
                 break
-            if y == prevJ:
-                raise GenericError("No Valid Images Found", code=999)
+        if not valid:
+            raise GenericError("No Valid Images Found", code=999)
 
         database.hset(f"channel:{ctx.channel.id}", "prevJ", str(j))
     else:
