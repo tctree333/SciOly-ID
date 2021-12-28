@@ -166,7 +166,6 @@ if config.options["sentry"]:
 # setup logging
 logger = logging.getLogger(config.options["name"])
 if config.options["logs"]:
-    logger.setLevel(logging.DEBUG)
     os.makedirs(config.options["log_dir"], exist_ok=True)
 
     file_handler = logging.handlers.TimedRotatingFileHandler(
@@ -185,11 +184,12 @@ if config.options["logs"]:
         logging.Formatter("{filename:10} -  {levelname:8} - {message}", style="{")
     )
 
+    logger.setLevel(logging.DEBUG)
     logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
-    if config.options["download_func"] is None:
-        download_logger.addHandler(file_handler)
-        download_logger.addHandler(stream_handler)
+    download_logger.setLevel(logging.DEBUG)
+    download_logger.addHandler(file_handler)
+    download_logger.addHandler(stream_handler)
 
     # log uncaught exceptions
     def handle_exception(exc_type, exc_value, exc_traceback):
