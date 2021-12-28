@@ -39,7 +39,7 @@ from sciolyid.functions import (
 
 IMAGE_MESSAGE = (
     f"*Here you go!* \n**Use `{config.options['prefixes'][0]}pic` again to get a new image of the same {config.options['id_type'][:-1]}, "
-    + f"or `{config.options['prefixes'][0]}skip` to get a new {config.options['id_type'][:-1]}."
+    + f"or `{config.options['prefixes'][0]}skip` to get a new {config.options['id_type'][:-1]}. "
     + f"Use `{config.options['prefixes'][0]}check [guess]` to check your answer. "
     + f"Use `{config.options['prefixes'][0]}hint` for a hint.**"
 )
@@ -48,6 +48,16 @@ IMAGE_MESSAGE = (
 class Media(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    async def _send_race_next_media(self, ctx):
+        if database.exists(f"race.data:{ctx.channel.id}"):
+            logger.info("auto sending next image")
+            group, state, bw = database.hmget(
+                f"race.data:{ctx.channel.id}", ["group", "state", "bw"]
+            )
+            await self.send_pic(
+                ctx, group.decode("utf-8"), state.decode("utf-8"), bw.decode("utf-8")
+            )
 
     def error_handle(self, ctx, group_str: str, state_str: str, bw: bool, retries):
         """Return a function to pass to send_pic() as on_error."""
@@ -61,6 +71,7 @@ class Media(commands.Cog):
 
             if retries >= 2:  # only retry twice
                 await ctx.send("**Too many retries.**\n*Please try again.*")
+                await self._send_race_next_media(ctx)
                 return
 
             if isinstance(error, GenericError) and error.code == 100:
@@ -69,6 +80,7 @@ class Media(commands.Cog):
                 await self.send_pic(ctx, group_str, state_str, bw, retries)
             else:
                 await ctx.send("*Please try again.*")
+            await self._send_race_next_media(ctx)
 
         return inner
 
@@ -79,7 +91,12 @@ class Media(commands.Cog):
         database.zincrby("frequency.item.refresh:global", 1, string.capwords(item))
 
     async def send_pic(
-        self, ctx, group_str: str, state_str: str, bw: Union[bool, str] = False, retries=0
+        self,
+        ctx,
+        group_str: str,
+        state_str: str,
+        bw: Union[bool, str] = False,
+        retries=0,
     ):
         if isinstance(bw, str):
             bw = bw == "bw"
@@ -89,20 +106,23 @@ class Media(commands.Cog):
             + database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8")
         )
 
+        currently_in_race = bool(database.exists(f"race.data:{ctx.channel.id}"))
+
         answered = int(database.hget(f"channel:{ctx.channel.id}", "answered"))
         logger.info(f"answered: {answered}")
         # check to see if previous item was answered
         if answered:  # if yes, give a new item
             session_increment(ctx, "total", 1)
 
-            if config.options["id_groups"]:
-                await ctx.send(
-                    f"**Recognized arguments:** *Black & White*: `{bw}`, "
-                    + f"**{config.options['category_name']}**: `{'None' if group_str == '' else group_str}`, "
-                    + f"**Detected State**: `{'None' if state_str == '' else state_str}`"
-                )
-            else:
-                await ctx.send(f"**Recognized arguments:** *Black & White*: `{bw}`")
+            if not currently_in_race:
+                if config.options["id_groups"]:
+                    await ctx.send(
+                        f"**Recognized arguments:** *Black & White*: `{bw}`, "
+                        + f"**{config.options['category_name']}**: `{'None' if group_str == '' else group_str}`, "
+                        + f"**Detected State**: `{'None' if state_str == '' else state_str}`"
+                    )
+                else:
+                    await ctx.send(f"**Recognized arguments:** *Black & White*: `{bw}`")
 
             choices = build_id_list(group_str, state_str)
 
@@ -128,7 +148,7 @@ class Media(commands.Cog):
                 ctx,
                 current_item,
                 on_error=self.error_handle(ctx, group_str, state_str, bw, retries),
-                message=IMAGE_MESSAGE,
+                message=IMAGE_MESSAGE if not currently_in_race else "*Here you go!*",
                 bw=bw,
             )
         else:  # if no, give the same item
@@ -136,7 +156,7 @@ class Media(commands.Cog):
                 ctx,
                 database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8"),
                 on_error=self.error_handle(ctx, group_str, state_str, bw, retries),
-                message=IMAGE_MESSAGE,
+                message=IMAGE_MESSAGE if not currently_in_race else "*Here you go!*",
                 bw=bw,
             )
 
