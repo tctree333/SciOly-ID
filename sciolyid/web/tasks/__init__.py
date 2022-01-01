@@ -32,18 +32,18 @@ celery_app = Celery(
     include=("sciolyid.web.tasks.git_tasks"),
 )
 
-CHECK_INTERVAL = 60 * 15
-celery_app.conf.beat_schedule = {
-    "update_repos": {
-        "task": "sciolyid.web.tasks.git_tasks.move_images",
-        "schedule": CHECK_INTERVAL,
-        "args": tuple(),
-    },
-}
-
-
 worker = celery.bin.worker.worker(app=celery_app)
-beat = celery.bin.beat.beat(app=celery_app)
+
+if not config.options["disable_validation"]:
+    CHECK_INTERVAL = 60 * 15  # 15 minutes
+    celery_app.conf.beat_schedule = {
+        "update_repos": {
+            "task": "sciolyid.web.tasks.git_tasks.move_images",
+            "schedule": CHECK_INTERVAL,
+            "args": tuple(),
+        },
+    }
+    beat = celery.bin.beat.beat(app=celery_app)
 
 
 def run_worker(args: list):
@@ -51,15 +51,18 @@ def run_worker(args: list):
 
 
 def run_beat(args: list):
-    beat.run_from_argv(
-        "celery",
-        args
-        + [
-            f"--schedule={config.options['bot_files_dir']}celerybeat-schedule",
-            f"--max-interval={CHECK_INTERVAL + 10}",
-        ],
-        "beat",
-    )
+    if not config.options["disable_validation"]:
+        beat.run_from_argv(
+            "celery",
+            args
+            + [
+                f"--schedule={config.options['bot_files_dir']}celerybeat-schedule",
+                f"--max-interval={CHECK_INTERVAL + 10}",
+            ],
+            "beat",
+        )
+    else:
+        raise RuntimeError("Cannot run beat if validation is disabled")
 
 
 ### Database communication definitions ###

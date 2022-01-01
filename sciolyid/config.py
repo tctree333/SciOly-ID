@@ -93,6 +93,8 @@ web_optional: Dict[str, Any] = {
     "client_secret_env": "DISCORD_CLIENT_SECRET",  # name of environment variable for discord client secret
     "discord_webhook_env": "DISCORD_WEBHOOK_URL",  # webhook url for discord notification log
     "verification_server": None,  # invite to special discord server for people adding images, default to support server
+    "disable_upload": False,  # disable user uploads
+    "disable_validation": False,  # disable validation
 }
 
 options: Dict[str, Any] = {
