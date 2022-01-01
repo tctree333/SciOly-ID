@@ -95,6 +95,11 @@ web_optional: Dict[str, Any] = {
     "verification_server": None,  # invite to special discord server for people adding images, default to support server
     "disable_upload": False,  # disable user uploads
     "disable_validation": False,  # disable validation
+    "validation_thresholds": {  # number of flags of each type to move the image on during validation
+        "invalid": 3,
+        "duplicate": 3,
+        "valid": 3,
+    },
 }
 
 options: Dict[str, Any] = {

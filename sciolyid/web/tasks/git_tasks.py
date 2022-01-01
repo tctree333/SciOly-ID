@@ -57,6 +57,10 @@ GIT_PUSH_OPCODES = (
     "BEGIN",  # 1
 )
 
+VALID_THRESH = config.options["validation_thresholds"]["valid"]
+DUPLICATE_THRESH = config.options["validation_thresholds"]["duplicate"]
+INVALID_THRESH = config.options["validation_thresholds"]["invalid"]
+
 
 def _push_helper(repo, commit_message, progress=None):
     logger.info("pushing (helper)")
@@ -143,25 +147,35 @@ def move_images():
     delete = set(
         map(
             lambda x: x.decode("utf-8"),
-            database.zrangebyscore("sciolyid.verify.images:invalid", 3, "+inf")
-            + database.zrangebyscore("sciolyid.verify.images:duplicate", 3, "+inf"),
+            database.zrangebyscore(
+                "sciolyid.verify.images:invalid", INVALID_THRESH, "+inf"
+            )
+            + database.zrangebyscore(
+                "sciolyid.verify.images:duplicate", DUPLICATE_THRESH, "+inf"
+            ),
         )
     )
     if delete:
-        database.zremrangebyscore("sciolyid.verify.images:invalid", 3, "+inf")
-        database.zremrangebyscore("sciolyid.verify.images:duplicate", 3, "+inf")
+        database.zremrangebyscore(
+            "sciolyid.verify.images:invalid", INVALID_THRESH, "+inf"
+        )
+        database.zremrangebyscore(
+            "sciolyid.verify.images:duplicate", DUPLICATE_THRESH, "+inf"
+        )
         for image in delete:
             verify_repo.index.remove(lookup[image], working_tree=True)
 
     valid = set(
         map(
             lambda x: x.decode("utf-8"),
-            database.zrangebyscore("sciolyid.verify.images:valid", 3, "+inf"),
+            database.zrangebyscore(
+                "sciolyid.verify.images:valid", VALID_THRESH, "+inf"
+            ),
         )
     )
     added_items = []
     if valid:
-        database.zremrangebyscore("sciolyid.verify.images:valid", 3, "+inf")
+        database.zremrangebyscore("sciolyid.verify.images:valid", VALID_THRESH, "+inf")
         for image in valid:
             if image in delete:
                 continue
