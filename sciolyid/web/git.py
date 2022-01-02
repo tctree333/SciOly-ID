@@ -15,38 +15,23 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import os
-import random
-import time
 
+import git.repo.fun
 from git import Repo
 
 import sciolyid.config as config
 from sciolyid.data import logger
 
 
-def _lock():
-    sleep_cycle = 0
-    time.sleep(random.random())
-    while os.path.exists(config.options["bot_files_dir"] + "git.lock"):
-        logger.info("waiting...")
-        sleep_cycle += 1
-        time.sleep(random.random())
-        if sleep_cycle > 120:
-            os.remove(config.options["bot_files_dir"] + "git.lock")
-    with open(config.options["bot_files_dir"] + "git.lock", "w") as f:
-        f.write("locked")
-    logger.info("locked")
-
-
 def _setup_repo(repo_url: str, repo_dir: str) -> Repo:
-    _lock()
-    repo: Repo
-    if os.path.exists(repo_dir):
+    if os.path.exists(repo_dir) and git.repo.fun.is_git_dir(
+        os.path.join(repo_dir, ".git")
+    ):
         repo = Repo(repo_dir)
         repo.remote("origin").fetch()
         repo.head.reset(working_tree=True)
     else:
-        os.makedirs(repo_dir)
+        os.makedirs(repo_dir, exist_ok=True)
         new_repo_url = repo_url.split("/")
         if ":" not in new_repo_url[2] and "@" not in new_repo_url[2]:
             new_repo_url[2] = (
@@ -57,7 +42,6 @@ def _setup_repo(repo_url: str, repo_dir: str) -> Repo:
                 + new_repo_url[2]
             )
         repo = Repo.clone_from("/".join(new_repo_url), repo_dir)
-    os.remove(config.options["bot_files_dir"] + "git.lock")
     logger.info("done!")
 
     with repo.config_writer() as cw:
