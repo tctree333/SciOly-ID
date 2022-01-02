@@ -37,6 +37,7 @@ setuptools.setup(
     ],
     extras_require={
         "web": [
+            "filelock>=3.4.2, <3.5.0",
             "Flask>=1.1.2, <1.2.0",
             "Authlib==0.14.1",
             "gunicorn>=20.0.4, <21.0.0",

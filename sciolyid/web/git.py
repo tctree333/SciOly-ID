@@ -16,6 +16,7 @@
 
 import os
 
+import filelock
 import git.repo.fun
 from git import Repo
 
@@ -24,29 +25,34 @@ from sciolyid.data import logger
 
 
 def _setup_repo(repo_url: str, repo_dir: str) -> Repo:
-    if os.path.exists(repo_dir) and git.repo.fun.is_git_dir(
-        os.path.join(repo_dir, ".git")
-    ):
-        repo = Repo(repo_dir)
-        repo.remote("origin").fetch()
-        repo.head.reset(working_tree=True)
-    else:
-        os.makedirs(repo_dir, exist_ok=True)
-        new_repo_url = repo_url.split("/")
-        if ":" not in new_repo_url[2] and "@" not in new_repo_url[2]:
-            new_repo_url[2] = (
-                os.environ[config.options["git_user_env"]]
-                + ":"
-                + os.environ[config.options["git_token_env"]]
-                + "@"
-                + new_repo_url[2]
-            )
-        repo = Repo.clone_from("/".join(new_repo_url), repo_dir)
-    logger.info("done!")
+    lock = filelock.FileLock(repo_dir.strip("/") + ".lock")
+    with lock:
+        if os.path.exists(repo_dir) and git.repo.fun.is_git_dir(
+            os.path.join(repo_dir, ".git")
+        ):
+            repo = Repo(repo_dir)
+            repo.remote("origin").fetch()
+            repo.head.reset(working_tree=True)
+        else:
+            os.makedirs(repo_dir, exist_ok=True)
+            new_repo_url = repo_url.split("/")
+            if ":" not in new_repo_url[2] and "@" not in new_repo_url[2]:
+                new_repo_url[2] = (
+                    os.environ[config.options["git_user_env"]]
+                    + ":"
+                    + os.environ[config.options["git_token_env"]]
+                    + "@"
+                    + new_repo_url[2]
+                )
+            repo = Repo.clone_from("/".join(new_repo_url), repo_dir)
 
-    with repo.config_writer() as cw:
-        cw.set_value("user", "email", os.environ[config.options["git_email_env"]])
-        cw.set_value("user", "name", os.environ[config.options["git_user_env"]])
+            with repo.config_writer() as cw:
+                cw.set_value(
+                    "user", "email", os.environ[config.options["git_email_env"]]
+                )
+                cw.set_value("user", "name", os.environ[config.options["git_user_env"]])
+
+    logger.info("done!")
     return repo
 
 
