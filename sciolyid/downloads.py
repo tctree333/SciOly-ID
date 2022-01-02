@@ -19,6 +19,7 @@ import concurrent.futures
 import os
 import logging
 
+import filelock
 from git import Repo
 
 import sciolyid.config as config
@@ -43,11 +44,13 @@ async def download_github(data, category, item):  # pylint: disable=unused-argum
 
 
 def _clone():
-    Repo.clone_from(
-        config.options["github_image_repo_url"],
-        config.options["download_dir"],
-        multi_options=["--depth=1"],
-    )
+    lock = filelock.FileLock(config.options["download_dir"].strip("/") + ".lock")
+    with lock:
+        Repo.clone_from(
+            config.options["github_image_repo_url"],
+            config.options["download_dir"],
+            multi_options=["--depth=1"],
+        )
 
 
 def _sync():
