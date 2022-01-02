@@ -25,7 +25,7 @@ app.register_blueprint(about.bp)
 app.register_blueprint(user.bp)
 if not config.options["disable_upload"]:
     app.register_blueprint(upload.bp)
-if not config.options["disable_verification"]:
+if not config.options["disable_validation"]:
     app.register_blueprint(verify.bp)
 
 
