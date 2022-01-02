@@ -48,13 +48,14 @@ def _setup_repo(repo_url: str, repo_dir: str) -> Repo:
     else:
         os.makedirs(repo_dir)
         new_repo_url = repo_url.split("/")
-        new_repo_url[2] = (
-            os.environ[config.options["git_user_env"]]
-            + ":"
-            + os.environ[config.options["git_token_env"]]
-            + "@"
-            + new_repo_url[2]
-        )
+        if ":" not in new_repo_url[2] and "@" not in new_repo_url[2]:
+            new_repo_url[2] = (
+                os.environ[config.options["git_user_env"]]
+                + ":"
+                + os.environ[config.options["git_token_env"]]
+                + "@"
+                + new_repo_url[2]
+            )
         repo = Repo.clone_from("/".join(new_repo_url), repo_dir)
     os.remove(config.options["bot_files_dir"] + "git.lock")
     logger.info("done!")
