@@ -38,7 +38,7 @@ def find_duplicates(image, distance: int = 5, ignore_verify: bool = False) -> li
     for url in config.options["hashes_url"]:
         if (
             ignore_verify
-            and "/".join(config.options["validation_repo_url"].split("/")[-2:-1]).split(
+            and "/".join(config.options["validation_repo_url"].split("/")[-2:]).split(
                 ".git"
             )[0]
             in url
@@ -72,7 +72,7 @@ def generate_id_lookup(ignore_verify: bool = False) -> Optional[Dict[str, str]]:
     for url in config.options["ids_url"]:
         if (
             ignore_verify
-            and "/".join(config.options["validation_repo_url"].split("/")[-2:-1]).split(
+            and "/".join(config.options["validation_repo_url"].split("/")[-2:]).split(
                 ".git"
             )[0]
             in url
