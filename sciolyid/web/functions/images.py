@@ -103,7 +103,9 @@ def filename_lookup(start_path: str) -> dict:
     while stack:
         current = stack.pop()
         for child_filename in os.listdir(current):
-            child_path = current + "/" + child_filename
+            if child_filename.startswith("."):
+                continue
+            child_path = os.path.join(current, child_filename)
             if os.path.isdir(child_path):
                 stack.append(child_path)
                 continue

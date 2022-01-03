@@ -29,14 +29,14 @@ def get_image_files(start_path):
     while stack:
         current = stack.pop()
         for child in os.listdir(current):
-            child = current + "/" + child
-            if child not in visited:
-                visited.append(child)
-                thing = file_type(child)
-                if thing == "img":
-                    image_paths.append(child)
-                elif thing == "dir":
-                    stack.append(child)
+            if child.startswith("."):
+                continue
+            child = os.path.join(current, child)
+            thing = file_type(child)
+            if thing == "img":
+                image_paths.append(child)
+            elif thing == "dir":
+                stack.append(child)
     return image_paths
 
 
