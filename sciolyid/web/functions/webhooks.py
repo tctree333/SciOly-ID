@@ -83,6 +83,9 @@ def send(type_of: str, **opt):
     if type_of not in ("add", "verify", "valid", "error"):
         raise TypeError("Invalid type_of value!")
 
+    if type_of in config.options["discord_webhook_disable"]:
+        return
+
     if type_of == "add":
         username = fetch_profile(opt["user_id"])["username"]
         items = opt["items"]
