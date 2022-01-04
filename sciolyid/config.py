@@ -60,6 +60,7 @@ optional: Dict[str, Any] = {
     "short_id_type": "",  # short (usually 1 letter) form of id_type, used as alias for the pic command
     "invite": "This bot is currently not available outside the support server.",  # bot server invite link
     "authors": "person_v1.32, hmmm, and EraserBird",  # creator names
+    "extra_about_fields": None,  # list of dicts containing keys "name" and "value" to be added to the botinfo command
     # "id_groups": True,  # true/false - if you want to be able to select certain groups of items to id, set automatically from "category_name"
     "category_name": None,  # space thing, bird order, muscle group - what you are splitting groups by
     "category_aliases": {},  # aliases for categories

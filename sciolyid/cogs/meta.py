@@ -47,6 +47,13 @@ class Meta(commands.Cog):
             + f"The bot's source can be found here: {config.options['source_link']}",
             inline=False,
         )
+        if config.options["extra_about_fields"]:
+            for field in config.options["extra_about_fields"]:
+                embed.add_field(
+                    name=field["name"],
+                    value=field["value"],
+                    inline=False,
+                )
         embed.add_field(
             name="Support",
             value="If you are experiencing any issues, have feature requests, "
@@ -63,7 +70,9 @@ class Meta(commands.Cog):
         await ctx.send(config.options["support_server"])
 
     # ping command - gives bot latency
-    @commands.command(help="- Pings the bot and displays latency",)
+    @commands.command(
+        help="- Pings the bot and displays latency",
+    )
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.channel))
     async def ping(self, ctx):
         logger.info("command: ping")
@@ -204,7 +213,9 @@ class Meta(commands.Cog):
         await ctx.send(f"Ok, {esc(user.name)} can use the bot!")
 
     # correct command - see how many times someone got a specimen correct
-    @commands.command(help=f"- see answered {config.options['id_type']} command", hidden=True)
+    @commands.command(
+        help=f"- see answered {config.options['id_type']} command", hidden=True
+    )
     @commands.is_owner()
     async def correct(
         self,
