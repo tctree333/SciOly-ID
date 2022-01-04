@@ -88,7 +88,7 @@ def send(type_of: str, **opt):
 
     if type_of == "add":
         username = fetch_profile(opt["user_id"])["username"]
-        items = opt["items"]
+        items = list(set(opt["items"]))
         items[-1] = "and " + items[-1] if len(items) > 1 else items[-1]
 
         name = "New images added!"
@@ -113,7 +113,7 @@ def send(type_of: str, **opt):
         color = color_options[opt["action"]]
 
     elif type_of == "valid":
-        items = opt["items"]
+        items = list(set(opt["items"]))
         if opt["added"] != 0:
             items[-1] = "and " + items[-1] if len(items) > 1 else items[-1]
 
