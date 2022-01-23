@@ -10,8 +10,6 @@ from PIL import Image
 def file_type(filename):
     if os.path.isdir(filename):
         return "dir"
-    if imghdr.what(filename) not in ("jpeg", "png"):
-        return None
     try:
         Image.open(filename).verify()
     except:  # pylint: disable=bare-except
