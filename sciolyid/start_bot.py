@@ -36,6 +36,22 @@ from sciolyid.functions import (
 )
 from sciolyid.util import prune_user_cache
 
+
+class CustomBot(commands.Bot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.on_message_handler = []
+
+    async def on_message(self, message: discord.Message):
+        if message.author.id != self.user.id:
+            for handler in self.on_message_handler:
+                await handler(message)
+        await super().on_message(message)
+
+    def add_message_handler(self, handler):
+        self.on_message_handler.append(handler)
+
+
 # Initialize bot
 intent: discord.Intents = discord.Intents.none()
 intent.guilds = True
@@ -47,8 +63,8 @@ cache_flags: discord.MemberCacheFlags = discord.MemberCacheFlags.none()
 cache_flags.voice = True
 cache_flags.joined = config.options["members_intent"]
 
-bot = commands.Bot(
-    command_prefix=config.options["prefixes"],
+bot = CustomBot(
+    command_prefix=commands.when_mentioned_or(*config.options["prefixes"]),
     case_insensitive=True,
     description=config.options["bot_description"],
     help_command=commands.DefaultHelpCommand(verify_checks=False),

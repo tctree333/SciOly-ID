@@ -15,7 +15,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import string
+from difflib import get_close_matches
 
+import discord
 from discord.ext import commands
 
 from sciolyid.data import (
@@ -155,6 +157,20 @@ class Check(commands.Cog):
                 url = get_wiki_url(ctx, current_item)
                 await ctx.send(url)
 
+    async def race_autocheck(self, message: discord.Message):
+        if not database.exists(f"race.data:{message.channel.id}"):
+            return
+        if len(get_close_matches(message.content.strip().lower(), possible_words)) != 0:
+            logger.info("race autocheck found: checking")
+            ctx = commands.Context(
+                message=message,
+                bot=self.bot,
+                prefix="race-autocheck",
+            )
+            await self.check(ctx, arg=message.content)
+
 
 def setup(bot):
-    bot.add_cog(Check(bot))
+    cog = Check(bot)
+    bot.add_message_handler(cog.race_autocheck)
+    bot.add_cog(cog)
