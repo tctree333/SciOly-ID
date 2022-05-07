@@ -24,7 +24,8 @@ async def channel_setup(ctx):
         logger.info("channel score added")
 
     if ctx.guild is not None:
-        database.zadd("channels:global", {f"{ctx.guild.id}:{ctx.channel.id}": 0})
+        channels = map(lambda x: str(x.id), ctx.guild.text_channels)
+        database.sadd(f"channels:{ctx.guild.id}", *channels)
 
 
 async def user_setup(ctx):
@@ -52,11 +53,15 @@ async def user_setup(ctx):
         logger.info("added streak")
 
     if ctx.guild is not None:
-        global_score = database.zscore("users:global", str(ctx.author.id))
-        database.zadd(
-            f"users.server:{ctx.guild.id}", {str(ctx.author.id): global_score}
-        )
-        logger.info("synced scores")
+        if database.exists(f"users.server:{ctx.guild.id}"):
+            users = map(
+                lambda x: x.decode("utf-8"),
+                database.zrange(f"users.server:{ctx.guild.id}", 0, -1),
+            )
+            database.sadd(f"users.server.id:{ctx.guild.id}", *users)
+            database.delete(f"users.server:{ctx.guild.id}")
+        database.sadd(f"users.server.id:{ctx.guild.id}", str(ctx.author.id))
+        logger.info("synced user to server")
 
 
 def item_setup(ctx, item: str):
@@ -191,14 +196,11 @@ def score_increment(ctx, amount: int = 1):
     database.zincrby("score:global", amount, str(ctx.channel.id))
     database.zincrby("users:global", amount, str(ctx.author.id))
     database.zincrby(f"daily.score:{date}", amount, str(ctx.author.id))
-    if ctx.guild is not None:
-        logger.info("no dm")
-        database.zincrby(f"users.server:{ctx.guild.id}", amount, str(ctx.author.id))
-    else:
-        logger.info("dm context")
-    if database.exists(f"race.data:{ctx.channel.id}"):
+    if ctx.guild is not None and database.exists(f"race.data:{ctx.channel.id}"):
         logger.info("race in session")
         database.zincrby(f"race.scores:{ctx.channel.id}", amount, str(ctx.author.id))
+    else:
+        logger.info("dm context")
 
 
 def streak_increment(ctx, amount: int):

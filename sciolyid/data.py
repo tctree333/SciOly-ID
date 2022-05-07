@@ -29,7 +29,7 @@ from discord.ext import commands
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 
-import sciolyid.config as config
+from sciolyid import config
 from sciolyid.downloads import download_github, download_logger
 
 # define database for one connection
@@ -102,7 +102,7 @@ if config.options["sentry"]:
 
 # leaderboard format = {
 #    users:global : [user id, # of correct]
-#    users.server:guild_id : [user id, # of correct]
+#    users.server.id:guild_id : [user id ... ]
 # }
 
 # streaks format = {
@@ -134,7 +134,7 @@ if config.options["sentry"]:
 
 # channel score format = {
 #   score:global : [channel id, # of correct]
-#   channels:global : ["guild id:channel id", 0]
+#   channels:guild_id : [channel id ... ]
 # }
 
 # daily update format = {
