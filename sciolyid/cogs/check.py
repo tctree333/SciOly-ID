@@ -23,7 +23,7 @@ from discord.ext import commands
 from sciolyid.data import (
     database,
     get_aliases,
-    get_wiki_url,
+    format_wiki_url,
     logger,
     possible_words,
     prompts,
@@ -103,12 +103,8 @@ class Check(commands.Cog):
                 if not database.exists(f"race.data:{ctx.channel.id}")
                 else f"**{ctx.author.mention}**, you are correct! The image was **{current_item}**."
             )
-            url = get_wiki_url(ctx, current_item)
-            await ctx.send(
-                url
-                if not database.exists(f"race.data:{ctx.channel.id}")
-                else f"<{url}>"
-            )  # sends wiki page
+            url = format_wiki_url(ctx, current_item)
+            await ctx.send(url)  # sends wiki page
             score_increment(ctx, 1)
             if database.exists(f"race.data:{ctx.channel.id}"):
 
@@ -154,7 +150,7 @@ class Check(commands.Cog):
                 database.hset(f"channel:{ctx.channel.id}", "item", "")
                 database.hset(f"channel:{ctx.channel.id}", "answered", "1")
                 await ctx.send("Sorry, the image was actually " + current_item + ".")
-                url = get_wiki_url(ctx, current_item)
+                url = format_wiki_url(ctx, current_item)
                 await ctx.send(url)
 
     async def race_autocheck(self, message: discord.Message):
