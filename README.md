@@ -10,40 +10,21 @@ To setup your own bot, follow these steps:
 
 1. Create a new folder and install SciOly-ID.
 
-    SciOly-ID can be installed with pip:
+   SciOly-ID can be installed with pip:
 
-    `pip install -U sciolyid`
+   `pip install -U sciolyid`
 
-    Or you can install the latest version of the code from git:
-    `pip install -U git+git://github.com/tctree333/SciOly-ID.git`
+   Or you can install the latest version of the code from git:
+   `pip install -U git+git://github.com/tctree333/SciOly-ID.git`
 
 2. Setup your bot by calling `sciolyid.setup` and passing in your config options as arguments:
 
-    ```python
-    import sciolyid
-    sciolyid.setup(...)
-    ```
+   ```python
+   import sciolyid
+   sciolyid.setup(...)
+   ```
 
-    For examples of configs, see the [examples section](#examples). Here is a list of config options:
-
-    #### Required
-
-    - `bot_description` - This is a description of the Discord bot.
-    - `bot_signature` - This is what is displayed at the top of an embed. This is also a short description of the bot.
-    - `prefixes` - This is what is used to call your bot. The first item of the list will be used when giving example commands. Having different cased versions of your prefix may be helpful to mobile users, along with having a prefix with only letters and periods.
-    - `id_type` - This is a plural noun that describes what you are IDing.
-    - `github_image_repo_url` - This is a link to the GitHub repo hosting your images, which we will create later.
-    - `support_server` - This is the link to the Discord server that will act as a support server.
-    - `source_link` - This is the link to the GitHub repo hosting your code.
-
-    #### Optional
-
-    - `name` - It doesn't really matter what this is, basically an id for your bot.
-    - `invite` - This is a Discord link that lets people invite your bot to a server.
-    - `authors` - Put your name/username here. Credit people for their part in the bot's creation.
-    - `id_groups` - Set this to `True` if you want to categorize the items. Possible categories include taxons for birds/fossils, muscle groups for anatomy, or categories of space objects for astronomy.
-    - `category_name` - This is what you are splitting your categories by. _This is required if `id_groups` is `True`._
-    - `category_aliases` - This is a dict of different aliases your categories may go by for ease of use. You do not need to put all your categories here, only if it has an alias.
+   For examples of configs, see the [examples section](#examples). For a full list of config options, see the [source code](sciolyid/config.py).
 
 3. Create a new file called `setup.sh`:
 
@@ -66,24 +47,28 @@ This next step will be the most difficult to do online, though it is possible. S
 
 Once you have all of this set up, it's now time to run your bot.
 
-10. Install a local Redis server by running [install-redis.sh](https://github.com/tctree333/Fossil-ID/blob/master/install-redis.sh). Start your Redis server with `python -m sciolyid.scripts.install_redis`. [Source](https://redis.io/topics/quickstart)
-11. You are now ready to run the application! Setup the environment with `source setup.sh`. Start the bot by calling the python file.
+1.  Install a local Redis server by running [install-redis.sh](install-redis.sh). Start your Redis server with `python -m sciolyid.scripts.install_redis`. [Source](https://redis.io/topics/quickstart)
+2.  You are now ready to run the application! Setup the environment with `source setup.sh`. Start the bot by calling the python file.
 
 **Congrats! You just created your own ID Discord bot.** Add your bot to the Discord server of your choice using the invite link generated in step 6.
 
-If there are any issues or you have any questions, let us know in the Bird-ID [Discord support server.](https://discord.gg/xDqYddK)
+If there are any issues or you have any questions, let us know in the SciOlyID [Discord support server.](https://discord.gg/2HbshwGjnm)
+
+It may also be helpful to use an existing bot as a template. See the examples section below.
 
 ## Examples
 
--   **Reach for the Stars ID Bot** - [https://github.com/tctree333/Reach-For-The-Stars-Bot]
--   **Reach for the Stars ID Bot Images** - [https://github.com/tctree333/Reach-For-The-Stars-Images]
--   **Fossils ID Bot** - [https://github.com/tctree333/Fossil-ID]
--   **Fossils ID Images** - [https://github.com/tctree333/Fossil-Bot-Images]
--   **Bird-ID** - [https://github.com/tctree333/Bird-ID] (doesn't use this template, more advanced)
+- **Reach for the Stars ID Bot** - [https://github.com/tctree333/Reach-For-The-Stars-Bot]
+- **Reach for the Stars ID Bot Images** - [https://github.com/tctree333/Reach-For-The-Stars-Images]
+- **Fossils ID Bot** - [https://github.com/tctree333/Fossil-ID]
+- **Fossils ID Images** - [https://github.com/tctree333/Fossil-Bot-Images]
+- **Minerobo Bot** - [https://github.com/tctree333/Minerobo]
+- **Treebo Bot** - [https://github.com/tctree333/Treebo]
+- **Bird-ID** - [https://github.com/tctree333/Bird-ID] (doesn't use this template, more advanced)
 
 ## Hosting
 
-There are many options for hosting a bot, you can run it on your own computer, run it on a Raspberry Pi, or find cloud hosting options. This repo is setup to use Heroku like Bird-ID, but there are drawbacks as Heroku is fairly underpowered and will restart your bot once a day. If you are planning to use Heroku, you will want to use their cloud Redis databases. See Bird-ID for the code.
+There are many options for hosting a bot, you can run it on your own computer, run it on a Raspberry Pi, or find cloud hosting options. This repo is setup to use Heroku or Dokku, but there are drawbacks as Heroku is fairly underpowered and will restart your bot once a day. If you are planning to use Heroku, you may want to use their cloud Redis databases.
 
 ## Adding Pictures
 
