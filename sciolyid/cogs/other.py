@@ -160,13 +160,27 @@ class Other(commands.Cog):
     async def wiki(self, ctx, *, arg):
         logger.info("command: wiki")
 
+        arg = arg.capitalize()
+
         try:
-            page = wikipedia.page(arg)
-            await ctx.send(page.url)
-        except wikipedia.exceptions.DisambiguationError:
-            await ctx.send("Sorry, that page was not found. Try being more specific.")
-        except wikipedia.exceptions.PageError:
-            await ctx.send("Sorry, that page was not found.")
+            page = wikipedia.page(arg, auto_suggest=False)
+        except (
+            wikipedia.exceptions.DisambiguationError,
+            wikipedia.exceptions.PageError,
+        ):
+            # fall back to suggestion
+            try:
+                page = wikipedia.page(arg)
+            except wikipedia.exceptions.DisambiguationError:
+                await ctx.send(
+                    "Sorry, that page was not found. Try being more specific."
+                )
+                return
+            except wikipedia.exceptions.PageError:
+                await ctx.send("Sorry, that page was not found.")
+                return
+
+        await ctx.send(page.url)
 
     if config.options["meme_file"]:
         # meme command - sends a random item video/gif

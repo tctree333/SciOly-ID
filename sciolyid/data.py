@@ -244,7 +244,7 @@ def _wiki_urls():
     logger.info("Done with wiki urls")
     return urls
 
-
+# if custom lists are implemented then port https://github.com/tctree333/Bird-ID/pull/290/
 def get_wiki_url(ctx, item: str):
     logger.info("fetching wiki url")
     if database.hget(f"session.data:{ctx.author.id}", "wiki") == b"":
