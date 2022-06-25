@@ -34,10 +34,10 @@ setuptools.setup(
         "gitpython>=3.0.6, <4.0.0",
         "hiredis>=1.0.1, <3.0.0",
         "pandas>=1.3.0, <1.5.0",
+        "filelock>=3.4.2, <3.7.0",
     ],
     extras_require={
         "web": [
-            "filelock>=3.4.2, <3.7.0",
             "Flask>=1.1.2, <2.1.0",
             "Authlib>=0.15.5, <1.0.0",
             "gunicorn>=20.0.4, <21.0.0",
