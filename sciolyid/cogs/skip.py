@@ -16,7 +16,7 @@
 
 from discord.ext import commands
 
-from sciolyid.data import database, get_wiki_url, logger
+from sciolyid.data import database, format_wiki_url, logger
 from sciolyid.data_functions import streak_increment
 from sciolyid.functions import CustomCooldown
 
@@ -37,13 +37,9 @@ class Skip(commands.Cog):
         database.hset(f"channel:{ctx.channel.id}", "item", "")
         database.hset(f"channel:{ctx.channel.id}", "answered", "1")
         if current_item:  # check if there is image
-            url = get_wiki_url(ctx, current_item)
+            url = format_wiki_url(ctx, current_item)
             await ctx.send(f"Ok, skipping {current_item.lower()}")
-            await ctx.send(
-                url
-                if not database.exists(f"race.data:{ctx.channel.id}")
-                else f"<{url}>"
-            )  # sends wiki page
+            await ctx.send(url)  # sends wiki page
             streak_increment(ctx, None)  # reset streak
             if database.exists(f"race.data:{ctx.channel.id}"):
                 logger.info("auto sending next image")

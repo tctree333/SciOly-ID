@@ -245,9 +245,12 @@ def _wiki_urls():
     return urls
 
 
-def get_wiki_url(ctx, item: str):
+# if custom lists are implemented then port https://github.com/tctree333/Bird-ID/pull/290/
+def format_wiki_url(ctx, item: str):
     logger.info("fetching wiki url")
-    if database.hget(f"session.data:{ctx.author.id}", "wiki") == b"":
+    if database.hget(f"session.data:{ctx.author.id}", "wiki") == b"" or database.exists(
+        f"race.data:{ctx.channel.id}"
+    ):
         logger.info("disabling preview")
         return f"<{wikipedia_urls[item.lower()]}>"
     return wikipedia_urls[item.lower()]
