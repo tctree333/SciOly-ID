@@ -1,0 +1,12 @@
+.vscode
+venv
+__pycache__
+setup_local.sh
+dump.rdb
+*.pyc
+*.egg-info
+dist
+build
+push_to_pypi.sh
+.DS_Store
+.mypy-cache
