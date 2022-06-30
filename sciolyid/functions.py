@@ -145,7 +145,9 @@ def build_id_list(
         )
         if state_args:
             items_in_state = set(
-                itertools.chain.from_iterable(states[state]["list"] for state in state_args)
+                itertools.chain.from_iterable(
+                    states[state]["list"] for state in state_args
+                )
             )
             id_choices = items_in_group.intersection(items_in_state)
         else:
@@ -216,7 +218,7 @@ async def get_all_users(bot):
     logger.info("User cache finished")
 
 
-def evict_images():
+async def evict_images():
     """Deletes images for items that have exceeded a certain frequency.
 
     This prevents images from being stale. If the item frequency has
@@ -237,7 +239,7 @@ def evict_images():
     ):
         database.zadd("frequency.item.refresh:global", {item: 0})
         category = get_category(item)
-        config.options["evict_func"](sciolyid.data, category, item.lower())
+        await config.options["evict_func"](sciolyid.data, category, item.lower())
 
 
 class CustomCooldown:

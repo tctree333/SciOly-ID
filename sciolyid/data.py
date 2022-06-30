@@ -392,7 +392,7 @@ def _config():
 
     if config.options["evict_func"] is None:
 
-        def evict(_, category, item):
+        async def evict(_, category, item):
             path = f"{config.options['download_dir']}{category}/{item.lower()}/"
             if os.path.exists(path):
                 shutil.rmtree(path)

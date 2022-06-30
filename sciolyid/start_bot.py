@@ -224,9 +224,7 @@ if config.options["evict_images"]:
     async def refresh_images():
         """Task to delete a random selection of cached images every hour."""
         logger.info("TASK: Refreshing some cache items")
-        event_loop = asyncio.get_event_loop()
-        with concurrent.futures.ThreadPoolExecutor(1) as executor:
-            await event_loop.run_in_executor(executor, evict_images)
+        await evict_images()
 
 
 @tasks.loop(hours=3.0)

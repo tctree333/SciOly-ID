@@ -44,7 +44,7 @@ optional: Dict[str, Any] = {
     "evict_frequency": 5.0,  # how often to run eviction function
     "evict_threshold": 10,  # the number of times a specimen is seen before eviction
     "max_evict": 1,  # how many specimens to evict at a time
-    "evict_func": None,  # function to run during eviction
+    "evict_func": None,  # async function to run during eviction
     "download_dir": "github_download/",  # local directory containing media (images)
     "data_dir": "data/",  # local directory containing the id data
     "group_dir": "group/",  # directory within data_dir containing group lists
