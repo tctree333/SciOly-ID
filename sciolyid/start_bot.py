@@ -187,6 +187,12 @@ if config.options["holidays"]:
         Can be extended to other holidays as well.
         """
         logger.info("global check: checking holiday")
+
+        if ctx.command.name == "noholiday":
+            return True
+        if ctx.guild and database.sismember("noholiday:global", str(ctx.guild.id)):
+            return True
+
         now = datetime.now(tz=timezone(-timedelta(hours=4))).date()
         if now == date(now.year, 4, 1):
             return await fools(ctx)

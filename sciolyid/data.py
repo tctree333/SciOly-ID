@@ -148,6 +148,9 @@ if config.options["sentry"]:
 # ignore format:
 #   ignore:global : [channel id, guild id]
 
+# noholiday format:
+#   noholiday:global : { guild id, ... }
+
 # leave confirm format:
 #   leave:guild_id : 0
 
