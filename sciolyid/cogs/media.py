@@ -135,9 +135,9 @@ class Media(commands.Cog):
                 return
 
             if len(choices) < 5:
-                logger.info(f"list less than 3 items")
+                logger.info(f"list less than 5 items")
                 await ctx.send(
-                    f"**Sorry, you must have at least 3 {config.options['id_type']} in the taxon/state combo."
+                    f"**Sorry, you must have at least 5 {config.options['id_type']} in the taxon/state combo."
                     + f"**\n*Please try again with more {config.options['id_type']}.*"
                 )
                 return
