@@ -66,6 +66,9 @@ optional: Dict[str, Any] = {
     "category_aliases": {},  # aliases for categories
     "disable_extensions": [],  # bot extensions to disable (media, check, skip, hint, score, sessions, race, other)
     "custom_extensions": [],  # custom bot extensions to enable
+    "hooks": {  # async functions to run at different parts of the lifecycle
+        "before_media_send": None,  # await before_media_send(ctx, item, filename)
+    },
     "sentry": False,  # enable sentry.io error tracking
     "local_redis": True,  # use a local redis server instead of a remote url
     "bot_token_env": "token",  # name of environment variable containing the discord bot token

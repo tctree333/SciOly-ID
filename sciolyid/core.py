@@ -88,6 +88,9 @@ async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
         if message is not None:
             await ctx.send(message)
 
+        if config.options["hooks"]["before_media_send"]:
+            await config.options["hooks"]["before_media_send"](ctx, item, filename)
+
         # change filename to avoid spoilers
         file_obj = discord.File(file_stream, filename=f"image.{extension}")
         await ctx.send(file=file_obj)
