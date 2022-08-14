@@ -107,6 +107,7 @@ class Media(commands.Cog):
         )
 
         currently_in_race = bool(database.exists(f"race.data:{ctx.channel.id}"))
+        new_user = database.zscore("users:global", str(ctx.author.id)) < 10
 
         answered = int(database.hget(f"channel:{ctx.channel.id}", "answered"))
         logger.info(f"answered: {answered}")
@@ -156,7 +157,9 @@ class Media(commands.Cog):
                 ctx,
                 current_item,
                 on_error=self.error_handle(ctx, group_str, state_str, bw, retries),
-                message=IMAGE_MESSAGE if not currently_in_race else "*Here you go!*",
+                message=IMAGE_MESSAGE
+                if not currently_in_race and new_user
+                else "*Here you go!*",
                 bw=bw,
             )
         else:  # if no, give the same item
@@ -164,7 +167,9 @@ class Media(commands.Cog):
                 ctx,
                 database.hget(f"channel:{ctx.channel.id}", "item").decode("utf-8"),
                 on_error=self.error_handle(ctx, group_str, state_str, bw, retries),
-                message=IMAGE_MESSAGE if not currently_in_race else "*Here you go!*",
+                message=IMAGE_MESSAGE
+                if not currently_in_race and new_user
+                else "*Here you go!*",
                 bw=bw,
             )
 
