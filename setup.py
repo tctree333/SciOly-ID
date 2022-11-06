@@ -47,5 +47,5 @@ setuptools.setup(
         ]
     },
     py_modules=["config", "core", "data", "functions", "downloads", "start_bot"],
-    python_requires=">=3.7, <=3.10",
+    python_requires=">=3.7",
 )
