@@ -230,5 +230,5 @@ class Other(commands.Cog):
         await ctx.send(1 / 0)
 
 
-def setup(bot):
-    bot.add_cog(Other(bot))
+async def setup(bot):
+    await bot.add_cog(Other(bot))

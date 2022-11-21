@@ -50,7 +50,7 @@ async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
 
     delete = await ctx.send("**Fetching.** This may take a while.")
     # trigger "typing" discord message
-    await ctx.trigger_typing()
+    await ctx.typing()
 
     try:
         response = await get_image(ctx, item)
@@ -172,7 +172,7 @@ async def get_files(item, retries=0):
         logger.info("item: " + str(item))
         if retries < 3:
             retries += 1
-            await asyncio.sleep(1.5 ** retries)
+            await asyncio.sleep(1.5**retries)
             await config.options["download_func"](sciolyid.data, category, item)
             return await get_files(item, retries)
         logger.info("More than 3 retries")

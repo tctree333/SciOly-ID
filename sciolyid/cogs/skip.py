@@ -52,5 +52,5 @@ class Skip(commands.Cog):
             await ctx.send("You need to ask for an image first!")
 
 
-def setup(bot):
-    bot.add_cog(Skip(bot))
+async def setup(bot):
+    await bot.add_cog(Skip(bot))

@@ -57,6 +57,50 @@ class CustomBot(commands.Bot):
     def add_message_handler(self, handler):
         self.on_message_handler.append(handler)
 
+    async def setup_hook(self):
+        # Here we load our extensions(cogs) that are located in the cogs directory, each cog is a collection of commands
+        initial_extensions = [
+            "sciolyid.cogs.media",
+            "sciolyid.cogs.check",
+            "sciolyid.cogs.skip",
+            "sciolyid.cogs.hint",
+            "sciolyid.cogs.score",
+            "sciolyid.cogs.stats",
+            "sciolyid.cogs.sessions",
+            "sciolyid.cogs.race",
+            "sciolyid.cogs.meta",
+            "sciolyid.cogs.other",
+        ]
+        if config.options["state_roles"]:
+            initial_extensions.append("sciolyid.cogs.state")
+
+        for extension in config.options["disable_extensions"]:
+            try:
+                initial_extensions.remove(f"sciolyid.cogs.{extension}")
+            except ValueError as e:
+                raise config.BotConfigError(
+                    f"Unable to disable extension 'sciolyid.cogs.{extension}'"
+                ) from e
+
+        initial_extensions += config.options["custom_extensions"]
+
+        for extension in set(initial_extensions):
+            try:
+                await self.load_extension(extension)
+            except (
+                discord.ClientException,
+                ModuleNotFoundError,
+                commands.errors.ExtensionFailed,
+            ) as e:
+                if isinstance(e, commands.errors.ExtensionFailed) and e.args[
+                    0
+                ].endswith("is already an existing command or alias."):
+                    raise config.BotConfigError(
+                        f"short_id_type conflicts with a prexisting command in {extension}"
+                    )
+
+                raise GenericError(f"Failed to load extension {extension}.", 999) from e
+
 
 # Initialize bot
 intent: discord.Intents = discord.Intents.none()
@@ -64,6 +108,7 @@ intent.guilds = True
 intent.members = config.options["members_intent"]
 intent.messages = True
 intent.voice_states = True
+intent.message_content = True
 
 cache_flags: discord.MemberCacheFlags = discord.MemberCacheFlags.none()
 cache_flags.voice = True
@@ -101,50 +146,6 @@ async def on_ready():
         refresh_backup.start()
 
 
-# Here we load our extensions(cogs) that are located in the cogs directory, each cog is a collection of commands
-initial_extensions = [
-    "sciolyid.cogs.media",
-    "sciolyid.cogs.check",
-    "sciolyid.cogs.skip",
-    "sciolyid.cogs.hint",
-    "sciolyid.cogs.score",
-    "sciolyid.cogs.stats",
-    "sciolyid.cogs.sessions",
-    "sciolyid.cogs.race",
-    "sciolyid.cogs.meta",
-    "sciolyid.cogs.other",
-]
-if config.options["state_roles"]:
-    initial_extensions.append("sciolyid.cogs.state")
-
-for extension in config.options["disable_extensions"]:
-    try:
-        initial_extensions.remove(f"sciolyid.cogs.{extension}")
-    except ValueError as e:
-        raise config.BotConfigError(
-            f"Unable to disable extension 'sciolyid.cogs.{extension}'"
-        ) from e
-
-initial_extensions += config.options["custom_extensions"]
-
-for extension in set(initial_extensions):
-    try:
-        bot.load_extension(extension)
-    except (
-        discord.ClientException,
-        ModuleNotFoundError,
-        commands.errors.ExtensionFailed,
-    ) as e:
-        if isinstance(e, commands.errors.ExtensionFailed) and e.args[0].endswith(
-            "is already an existing command or alias."
-        ):
-            raise config.BotConfigError(
-                f"short_id_type conflicts with a prexisting command in {extension}"
-            )
-
-        raise GenericError(f"Failed to load extension {extension}.", 999) from e
-
-
 if sys.platform == "win32":
     asyncio.set_event_loop(asyncio.ProactorEventLoop())
 
@@ -155,7 +156,7 @@ if sys.platform == "win32":
 
 @bot.check
 async def prechecks(ctx):
-    await ctx.trigger_typing()
+    await ctx.typing()
 
     logger.info("global check: checking permissions")
     await commands.bot_has_permissions(

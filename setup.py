@@ -26,7 +26,7 @@ setuptools.setup(
     author_email="tomichen33@gmail.com",
     packages=setuptools.find_packages(),
     install_requires=[
-        "discord.py>=1.7.3, <2.0.0",
+        "discord.py>=2.1.0, <3.0.0",
         "redis>=3.3.5, <5.0.0",
         "sentry-sdk>=1.1.0, <2.0.0",
         "Pillow>=9.0.1, <10.0.0",

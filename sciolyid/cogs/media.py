@@ -288,5 +288,5 @@ class Media(commands.Cog):
         await self.send_pic(ctx, group, state, bw=bw)
 
 
-def setup(bot):
-    bot.add_cog(Media(bot))
+async def setup(bot):
+    await bot.add_cog(Media(bot))
