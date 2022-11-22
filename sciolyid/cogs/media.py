@@ -18,6 +18,7 @@ import random
 import string
 from typing import Union
 
+from discord import app_commands
 from discord.ext import commands
 
 import sciolyid.config as config
@@ -25,6 +26,7 @@ from sciolyid.core import send_image
 from sciolyid.data import (
     GenericError,
     all_categories,
+    arg_autocomplete,
     database,
     dealias_group,
     logger,
@@ -270,13 +272,16 @@ class Media(commands.Cog):
 
     # Pic command - no args
     # help text
-    @commands.command(
+    @commands.hybrid_command(
         help="- Sends a random image for you to ID",
         aliases=["p", config.options["id_type"][:-1], config.options["short_id_type"]],
     )
     # 5 second cooldown
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.channel))
-    async def pic(self, ctx, *, args_str: str = ""):
+    @app_commands.rename(args_str="options")
+    @app_commands.describe(args_str="options for filtering")
+    @app_commands.autocomplete(args_str=arg_autocomplete)
+    async def pic(self, ctx: commands.Context, *, args_str: str = ""):
         logger.info("command: pic")
         logger.info(f"args: {args_str}")
 

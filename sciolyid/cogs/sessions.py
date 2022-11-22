@@ -18,10 +18,18 @@ import datetime
 import time
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 import sciolyid.config as config
-from sciolyid.data import all_categories, database, dealias_group, logger, states
+from sciolyid.data import (
+    all_categories,
+    arg_autocomplete,
+    database,
+    dealias_group,
+    logger,
+    states,
+)
 from sciolyid.functions import CustomCooldown, check_state_role
 
 
@@ -30,7 +38,7 @@ class Sessions(commands.Cog):
         self.bot = bot
 
     @staticmethod
-    def _get_options(ctx):
+    def _get_options(ctx: commands.Context):
         bw, state, group, wiki, strict = database.hmget(
             f"session.data:{ctx.author.id}", ["bw", "state", "group", "wiki", "strict"]
         )
@@ -49,7 +57,7 @@ class Sessions(commands.Cog):
         return options
 
     @staticmethod
-    def _get_stats(ctx):
+    def _get_stats(ctx: commands.Context):
         start, correct, incorrect, total = map(
             int,
             database.hmget(
@@ -104,7 +112,7 @@ class Sessions(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.group(
+    @commands.hybrid_group(
         brief=f"- Base session command. Use '{config.options['prefixes'][0]}help session' for more info.",
         help="- Base session command\nSessions will record your activity for an amount of time and "
         + "will give you stats on how your performance and "
@@ -113,7 +121,7 @@ class Sessions(commands.Cog):
         + "or alternate lists.",
         aliases=["ses", "sesh"],
     )
-    async def session(self, ctx):
+    async def session(self, ctx: commands.Context):
         if ctx.invoked_subcommand is None:
             await ctx.send(
                 "**Invalid subcommand passed.**\n*Valid Subcommands:* `start, view, stop`"
@@ -131,7 +139,12 @@ class Sessions(commands.Cog):
         usage=(f"[bw] [state]{' [category]' if config.options['id_groups'] else ''}"),
     )
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.user))
-    async def start(self, ctx, *args):
+    @app_commands.rename(args_str="options")
+    @app_commands.describe(
+        args_str="Lists or groups to filter. Muliple options can be used at once (even if it doesn't autocomplete)"
+    )
+    @app_commands.autocomplete(args_str=arg_autocomplete)
+    async def start(self, ctx: commands.Context, *, args_str: str = ""):
         logger.info("command: start session")
 
         if database.exists(f"session.data:{ctx.author.id}"):
@@ -141,6 +154,7 @@ class Sessions(commands.Cog):
             )
             return
 
+        args = args_str.strip().split(" ")
         logger.info(f"args: {args}")
 
         # parse args
@@ -175,7 +189,9 @@ class Sessions(commands.Cog):
         else:
             group = ""
 
-        logger.info(f"adding bw: {bw}; group: {group}; state: {state}; wiki: {wiki}; strict: {strict}")
+        logger.info(
+            f"adding bw: {bw}; group: {group}; state: {state}; wiki: {wiki}; strict: {strict}"
+        )
 
         database.hset(
             f"session.data:{ctx.author.id}",
@@ -206,7 +222,12 @@ class Sessions(commands.Cog):
         usage=(f"[bw] [state]{' [category]' if config.options['id_groups'] else ''}"),
     )
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.user))
-    async def edit(self, ctx, *args):
+    @app_commands.rename(args_str="options")
+    @app_commands.describe(
+        args_str="Lists or groups to filter. Muliple options can be used at once (even if it doesn't autocomplete)"
+    )
+    @app_commands.autocomplete(args_str=arg_autocomplete)
+    async def edit(self, ctx: commands.Context, *, args_str: str = ""):
         logger.info("command: view session")
 
         if not database.exists(f"session.data:{ctx.author.id}"):
@@ -215,6 +236,7 @@ class Sessions(commands.Cog):
             )
             return
 
+        args = args_str.strip().split(" ")
         logger.info(f"args: {args}")
 
         # parse args
@@ -242,9 +264,7 @@ class Sessions(commands.Cog):
                     database.hset(f"session.data:{ctx.author.id}", "strict", "")
                 else:
                     logger.info("enabling strict spelling")
-                    database.hset(
-                        f"session.data:{ctx.author.id}", "strict", "strict"
-                    )
+                    database.hset(f"session.data:{ctx.author.id}", "strict", "strict")
             elif arg in all_categories:
                 group_args.add(dealias_group(arg))
             elif arg.upper() in states.keys():
@@ -288,11 +308,10 @@ class Sessions(commands.Cog):
             )
         await self._send_stats(ctx, "**Session started previously.**\n")
 
-
     # stops session
     @session.command(help="- Stops session", aliases=["stp", "end"])
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.user))
-    async def stop(self, ctx):
+    async def stop(self, ctx: commands.Context):
         logger.info("command: stop session")
 
         if database.exists(f"session.data:{ctx.author.id}"):

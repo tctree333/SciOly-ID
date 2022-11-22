@@ -16,16 +16,25 @@
 
 import datetime
 from io import BytesIO, StringIO
+from typing import Literal
 
 import discord
 import numpy as np
 import pandas as pd
+from discord import app_commands
 from discord.ext import commands
 
 import sciolyid.config as config
 from sciolyid.data import database, logger
 from sciolyid.functions import CustomCooldown, send_leaderboard
 from sciolyid.util import fetch_get_user
+
+
+def auto_options(options):
+    async def inner(_: discord.Interaction, __: str):
+        return [app_commands.Choice(name=name, value=name) for name in options]
+
+    return inner
 
 
 class Stats(commands.Cog):
@@ -77,12 +86,28 @@ class Stats(commands.Cog):
         return df
 
     # give frequency stats
-    @commands.command(
+    @commands.hybrid_command(
         help=f"- Gives info on command/{config.options['id_type']} frequencies",
         aliases=["freq"],
     )
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.channel))
-    async def frequency(self, ctx, scope="", page=1):
+    @app_commands.describe(scope="type of frequency", page="page number")
+    @app_commands.autocomplete(
+        scope=auto_options((
+                "command",
+                config.options["id_type"],
+                "commands",
+                "c",
+                config.options["id_type"][0],
+            )
+        )
+    )
+    async def frequency(
+        self,
+        ctx: commands.Context,
+        scope: str = "",
+        page: int = 1,
+    ):
         logger.info("command: frequency")
 
         if scope in ("command", "commands", "c"):
@@ -93,20 +118,26 @@ class Stats(commands.Cog):
             title = f"Most Frequent {config.options['id_type'].title()}"
         else:
             await ctx.send(
-                f"**Invalid Scope!**\n*Valid Scopes:* `commands, {config.options['id_type']}`"
+                f"**Invalid Scope!**\n*Valid Scopes:* `commands, {config.options['id_type']}`",
+                ephemeral=True,
             )
             return
 
         await send_leaderboard(ctx, title, page, database_key)
 
     # give bot stats
-    @commands.command(
+    @commands.hybrid_command(
         help="- Gives statistics on different topics",
         usage="[topic]",
         aliases=["stat"],
     )
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.channel))
-    async def stats(self, ctx, topic="help"):
+    @app_commands.describe(topic="stats on what?")
+    async def stats(
+        self,
+        ctx: commands.Context,
+        topic: Literal["scores", "usage", "help", "score", "s", "u"] = "help",
+    ):
         logger.info("command: stats")
 
         if topic in ("scores", "score", "s"):
@@ -118,9 +149,13 @@ class Stats(commands.Cog):
         else:
             valid_topics = ("help", "scores", "usage")
             await ctx.send(
-                f"**`{topic}` is not a valid topic!**\nValid Topics: `{'`, `'.join(valid_topics)}`"
+                f"**`{topic}` is not a valid topic!**\nValid Topics: `{'`, `'.join(valid_topics)}`",
+                ephemeral=True,
             )
             return
+
+        if ctx.interaction is not None:
+            await ctx.typing()
 
         embed = discord.Embed(
             title="Bot Stats",
@@ -245,9 +280,9 @@ class Stats(commands.Cog):
         return
 
     # export data as csv
-    @commands.command(help="- Exports bot data as a csv")
+    @commands.hybrid_command(help="- Exports bot data as a csv")
     @commands.check(CustomCooldown(60.0, bucket=commands.BucketType.channel))
-    async def export(self, ctx):
+    async def export(self, ctx: commands.Context):
         logger.info("command: export")
 
         files = []
@@ -271,6 +306,9 @@ class Stats(commands.Cog):
                 data.to_csv(f, header=False)
                 with BytesIO(f.getvalue().encode("utf-8")) as b:
                     files.append(discord.File(b, filename))
+
+        if ctx.interaction is not None:
+            await ctx.typing()
 
         logger.info("exporting freq command")
         await _export_helper(
@@ -317,10 +355,11 @@ class Stats(commands.Cog):
         logger.info("exporting scores")
         keys = tuple(
             sorted(
-            map(
-                lambda x: x.decode("utf-8"),
-                database.scan_iter(match="daily.score:????-??-??", count=5000),
-            ))
+                map(
+                    lambda x: x.decode("utf-8"),
+                    database.scan_iter(match="daily.score:????-??-??", count=5000),
+                )
+            )
         )
         titles = ",".join(map(lambda x: x.split(":")[1], keys))
         keys = ("users:global",) + keys

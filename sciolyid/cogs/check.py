@@ -19,6 +19,7 @@ from difflib import get_close_matches
 
 import discord
 import discord.ext.commands.view
+from discord import app_commands
 from discord.ext import commands
 
 from sciolyid.data import (
@@ -45,11 +46,13 @@ class Check(commands.Cog):
         self.bot = bot
 
     # Check command - argument is the guess
-    @commands.command(
+    @commands.hybrid_command(
         help="- Checks your answer.", usage="guess", aliases=["guess", "c"]
     )
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.user))
-    async def check(self, ctx, *, arg):
+    @app_commands.rename(arg="guess")
+    @app_commands.describe(arg="your answer")
+    async def check(self, ctx: commands.Context, *, arg: str):
         logger.info("command: check")
 
         current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode(
