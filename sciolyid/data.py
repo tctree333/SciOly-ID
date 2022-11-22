@@ -23,8 +23,10 @@ import os
 import shutil
 import sys
 
+import discord
 import redis
 import sentry_sdk
+from discord import app_commands
 from discord.ext import commands
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
@@ -257,6 +259,37 @@ def format_wiki_url(ctx, item: str):
         logger.info("disabling preview")
         return f"<{wikipedia_urls[item.lower()]}>"
     return wikipedia_urls[item.lower()]
+
+
+async def state_autocomplete(
+    _: discord.Interaction,
+    current: str,
+) -> list[app_commands.Choice[str]]:
+    return [
+        app_commands.Choice(name=state, value=state)
+        for state in states
+        if current.lower() in state.lower()
+    ][:25]
+
+
+async def group_autocomplete(
+    _: discord.Interaction,
+    current: str,
+) -> list[app_commands.Choice[str]]:
+    return [
+        app_commands.Choice(name=group, value=group)
+        for group in groups
+        if current.lower() in group.lower()
+    ][:25]
+
+
+async def arg_autocomplete(
+    _: discord.Interaction,
+    current: str,
+) -> list[app_commands.Choice[str]]:
+    return (
+        [] + await state_autocomplete(_, current) + await group_autocomplete(_, current)
+    )[:25]
 
 
 def get_aliases(item: str):

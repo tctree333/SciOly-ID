@@ -155,8 +155,9 @@ if sys.platform == "win32":
 
 
 @bot.check
-async def prechecks(ctx):
-    await ctx.typing()
+async def prechecks(ctx: commands.Context):
+    if ctx.interaction is None:
+        await ctx.typing()
 
     logger.info("global check: checking permissions")
     await commands.bot_has_permissions(
@@ -165,8 +166,15 @@ async def prechecks(ctx):
 
     logger.info("global check: checking banned")
     if database.zscore("ignore:global", str(ctx.channel.id)) is not None:
+        if ctx.interaction is not None:
+            await ctx.send(
+                "The owner of the server has disabled commands in this channel.",
+                ephemeral=True,
+            )
         raise GenericError(code=192)
     if database.zscore("banned:global", str(ctx.author.id)) is not None:
+        if ctx.interaction is not None:
+            await ctx.send("You cannot use this command!", ephemeral=True)
         raise GenericError(code=842)
 
     logger.info("global check: logging command frequency")
@@ -182,7 +190,7 @@ async def prechecks(ctx):
 if config.options["holidays"]:
 
     @bot.check
-    async def is_holiday(ctx):
+    async def is_holiday(ctx: commands.Context):
         """April Fools Prank.
 
         Can be extended to other holidays as well.
@@ -204,7 +212,7 @@ if config.options["holidays"]:
 # GLOBAL ERROR CHECKING
 ######
 @bot.event
-async def on_command_error(ctx, error):
+async def on_command_error(ctx: commands.Context, error):
     """Handles errors for all commands without local error handlers."""
     logger.info("Error: " + str(error))
 
