@@ -312,6 +312,12 @@ async def handle_error(ctx, error):
             "An invalid character was detected. Please try again.", ephemeral=True
         )
 
+    elif isinstance(error, commands.BadLiteralArgument):
+        await ctx.send(
+            f"The argument passed was invalid.\n**Valid Arguments:** `{'`, `'.join(error.literals)}`.",
+            ephemeral=True,
+        )
+
     elif isinstance(error, commands.BotMissingPermissions):
         await ctx.send(
             "**The bot does not have enough permissions to fully function.**\n"
@@ -372,30 +378,37 @@ async def handle_error(ctx, error):
                 await ctx.send(
                     "**An unexpected ResponseError has occurred.**\n"
                     + "*Please log this message in #support in the support server below, or try again.*\n"
-                    + config.options["support_server"], ephemeral=True
+                    + config.options["support_server"],
+                    ephemeral=True,
                 )
             else:
                 await channel_setup(ctx)
                 await ctx.send("Please run that command again.", ephemeral=True)
 
         elif isinstance(error.original, wikipedia.exceptions.DisambiguationError):
-            await ctx.send("Wikipedia page not found. (Disambiguation Error)", ephemeral=True)
+            await ctx.send(
+                "Wikipedia page not found. (Disambiguation Error)", ephemeral=True
+            )
 
         elif isinstance(error.original, wikipedia.exceptions.PageError):
             await ctx.send("Wikipedia page not found. (Page Error)", ephemeral=True)
 
         elif isinstance(error.original, wikipedia.exceptions.WikipediaException):
             capture_exception(error.original)
-            await ctx.send("Wikipedia page unavailable. Try again later.", ephemeral=True)
+            await ctx.send(
+                "Wikipedia page unavailable. Try again later.", ephemeral=True
+            )
 
         elif isinstance(error.original, discord.Forbidden):
             if error.original.code == 50007:
                 await ctx.send(
-                    "I was unable to DM you. Check if I was blocked and try again.", ephemeral=True
+                    "I was unable to DM you. Check if I was blocked and try again.",
+                    ephemeral=True,
                 )
             elif error.original.code == 50013:
                 await ctx.send(
-                    "There was an error with permissions. Check the bot has proper permissions and try again.", ephemeral=True
+                    "There was an error with permissions. Check the bot has proper permissions and try again.",
+                    ephemeral=True,
                 )
             else:
                 capture_exception(error)
@@ -403,28 +416,32 @@ async def handle_error(ctx, error):
                     "**An unexpected Forbidden error has occurred.**\n"
                     + "*Please log this message in #support in the support server below, or try again.*\n"
                     + f"**Error code:** `{error.original.code}`\n"
-                    + config.options["support_server"], ephemeral=True
+                    + config.options["support_server"],
+                    ephemeral=True,
                 )
 
         elif isinstance(error.original, discord.HTTPException):
             capture_exception(error.original)
             if error.original.status == 502:
                 await ctx.send(
-                    "**An error has occured with discord. :(**\n*Please try again.*", ephemeral=True
+                    "**An error has occured with discord. :(**\n*Please try again.*",
+                    ephemeral=True,
                 )
             else:
                 await ctx.send(
                     "**An unexpected HTTPException has occurred.**\n"
                     + "*Please log this message in #support in the support server below, or try again*\n"
                     + f"**Reponse Code:** `{error.original.status}`\n"
-                    + config.options["support_server"], ephemeral=True
+                    + config.options["support_server"],
+                    ephemeral=True,
                 )
 
         elif isinstance(error.original, aiohttp.ClientOSError):
             capture_exception(error.original)
             if error.original.errno == errno.ECONNRESET:
                 await ctx.send(
-                    "**An error has occured with discord. :(**\n*Please try again.*", ephemeral=True
+                    "**An error has occured with discord. :(**\n*Please try again.*",
+                    ephemeral=True,
                 )
             else:
                 await ctx.send(
@@ -433,16 +450,22 @@ async def handle_error(ctx, error):
                     + "**Error:** "
                     + str(error.original)
                     + "\n"
-                    + config.options["support_server"], ephemeral=True
+                    + config.options["support_server"],
+                    ephemeral=True,
                 )
 
         elif isinstance(error.original, aiohttp.ServerDisconnectedError):
             capture_exception(error.original)
-            await ctx.send("**The server disconnected.**\n*Please try again.*", ephemeral=True)
+            await ctx.send(
+                "**The server disconnected.**\n*Please try again.*", ephemeral=True
+            )
 
         elif isinstance(error.original, asyncio.TimeoutError):
             capture_exception(error.original)
-            await ctx.send("**The request timed out.**\n*Please try again in a bit.*", ephemeral=True)
+            await ctx.send(
+                "**The request timed out.**\n*Please try again in a bit.*",
+                ephemeral=True,
+            )
 
         elif isinstance(error.original, OSError):
             capture_exception(error.original)
@@ -450,14 +473,16 @@ async def handle_error(ctx, error):
                 await ctx.send(
                     "**No space is left on the server!**\n"
                     + "*Please report this message in #support in the support server below!*\n"
-                    + config.options["support_server"], ephemeral=True
+                    + config.options["support_server"],
+                    ephemeral=True,
                 )
             else:
                 await ctx.send(
                     "**An unexpected OSError has occurred.**\n"
                     + "*Please log this message in #support in the support server below, or try again.*\n"
                     + f"**Error code:** `{error.original.errno}`\n"
-                    + config.options["support_server"], ephemeral=True
+                    + config.options["support_server"],
+                    ephemeral=True,
                 )
 
         else:
@@ -466,7 +491,8 @@ async def handle_error(ctx, error):
             await ctx.send(
                 "**An uncaught command error has occurred.**\n"
                 + "*Please log this message in #support in the support server below, or try again.*\n"
-                + config.options["support_server"], ephemeral=True
+                + config.options["support_server"],
+                ephemeral=True,
             )
             raise error
 
@@ -476,6 +502,7 @@ async def handle_error(ctx, error):
         await ctx.send(
             "**An uncaught non-command error has occurred.**\n"
             + "*Please log this message in #support in the support server below, or try again.*\n"
-            + config.options["support_server"], ephemeral=True
+            + config.options["support_server"],
+            ephemeral=True,
         )
         raise error
