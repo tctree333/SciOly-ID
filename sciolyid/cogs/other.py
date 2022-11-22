@@ -19,6 +19,7 @@ import random
 from difflib import get_close_matches
 
 import wikipedia
+from discord import app_commands
 from discord.ext import commands
 
 import sciolyid.config as config
@@ -26,6 +27,7 @@ from sciolyid.core import send_image
 from sciolyid.data import (
     aliases,
     all_categories,
+    arg_autocomplete,
     dealias_group,
     groups,
     logger,
@@ -57,11 +59,15 @@ class Other(commands.Cog):
         return out
 
     # Info - Gives image
-    @commands.command(
+    @commands.hybrid_command(
         help=f"- Gives images of specific {config.options['id_type']}", aliases=["i"]
     )
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.user))
-    async def info(self, ctx, *, arg):
+    @app_commands.rename(arg=f"{config.options['id_type']}_and_filters")
+    @app_commands.describe(
+        arg=f"The {config.options['id_type']} must come before any options."
+    )
+    async def info(self, ctx: commands.Context, *, arg):
         logger.info("command: info")
 
         matches = get_close_matches(
@@ -77,23 +83,36 @@ class Other(commands.Cog):
                 logger.info("matched alias! getting item name.")
                 item = next(key for key, value in aliases.items() if item in value)
 
-            delete = await ctx.send("Please wait a moment.")
+            if ctx.interaction is None:
+                delete = await ctx.send("Please wait a moment.")
+            else:
+                await ctx.typing()
+
             an = "an" if item.lower()[0] in ("a", "e", "i", "o", "u") else "a"
             await send_image(
                 ctx, str(item), message=f"Here's {an} *{item.lower()}* image!"
             )
-            await delete.delete()
+            if ctx.interaction is None:
+                await delete.delete()
 
         else:
             await ctx.send(
-                f"{config.options['id_type'][:-1].title()} not found. Are you sure it's on the list?"
+                f"{config.options['id_type'][:-1].title()} not found. Are you sure it's on the list?",
+                ephemeral=True,
             )
 
     # List command
-    @commands.command(help="- DMs the user with the appropriate list.", name="list")
+    @commands.hybrid_command(
+        help="- DMs the user with the appropriate list.", name="list"
+    )
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.user))
-    async def list_of_items(self, ctx, state_or_group=""):
+    @app_commands.describe(state_or_group="list or group options")
+    @app_commands.autocomplete(state_or_group=arg_autocomplete)
+    async def list_of_items(self, ctx: commands.Context, state_or_group=""):
         logger.info("command: list")
+
+        if ctx.interaction is not None:
+            await ctx.typing()
 
         group_args = set(
             map(
@@ -138,7 +157,7 @@ class Other(commands.Cog):
     # Group command - lists groups
     if config.options["id_groups"]:
 
-        @commands.command(
+        @commands.hybrid_command(
             help="- Prints a list of all available groups.",
             aliases=[
                 config.options["category_name"].lower(),
@@ -149,15 +168,17 @@ class Other(commands.Cog):
             ],
         )
         @commands.check(CustomCooldown(8.0, bucket=commands.BucketType.user))
-        async def groups(self, ctx):
+        async def groups(self, ctx: commands.Context):
             logger.info("command: list")
 
             await ctx.send(f"**Valid Groups**: `{', '.join(map(str, groups.keys()))}`")
 
     # Wiki command - argument is the wiki page
-    @commands.command(help="- Fetch the wikipedia page for any given argument")
+    @commands.hybrid_command(help="- Fetch the wikipedia page for any given argument")
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.user))
-    async def wiki(self, ctx, *, arg):
+    @app_commands.rename(arg="query")
+    @app_commands.describe(arg="A Wikipedia query")
+    async def wiki(self, ctx: commands.Context, *, arg):
         logger.info("command: wiki")
 
         arg = arg.capitalize()
@@ -173,24 +194,25 @@ class Other(commands.Cog):
                 page = wikipedia.page(arg)
             except wikipedia.exceptions.DisambiguationError:
                 await ctx.send(
-                    "Sorry, that page was not found. Try being more specific."
+                    "Sorry, that page was not found. Try being more specific.",
+                    ephemeral=True,
                 )
                 return
             except wikipedia.exceptions.PageError:
-                await ctx.send("Sorry, that page was not found.")
+                await ctx.send("Sorry, that page was not found.", ephemeral=True)
                 return
 
         await ctx.send(page.url)
 
     if config.options["meme_file"]:
         # meme command - sends a random item video/gif
-        @commands.command(
+        @commands.hybrid_command(
             help=f"- Sends a funny {config.options['id_type'][:-1]} video/image!"
         )
         @commands.check(
             CustomCooldown(180.0, disable=True, bucket=commands.BucketType.user)
         )
-        async def meme(self, ctx):
+        async def meme(self, ctx: commands.Context):
             logger.info("command: meme")
 
             if meme_list:
@@ -202,7 +224,7 @@ class Other(commands.Cog):
         # Send command - for testing purposes only
         @commands.command(help="- send command", hidden=True, aliases=["sendas"])
         @commands.is_owner()
-        async def send_as_bot(self, ctx, *, args_str):
+        async def send_as_bot(self, ctx: commands.Context, *, args_str):
             logger.info("command: send")
 
             logger.info(f"args: {args_str}")
@@ -223,12 +245,12 @@ class Other(commands.Cog):
     #     logger.info("command: test")
     #     await ctx.send(await get_aliases(item))
 
-    # Test command - for testing purposes only
-    @commands.command(help="- test command", hidden=True)
-    async def error(self, ctx):
-        logger.info("command: error")
-        await ctx.send(1 / 0)
+    # # Test command - for testing purposes only
+    # @commands.command(help="- test command", hidden=True)
+    # async def error(self, ctx):
+    #     logger.info("command: error")
+    #     await ctx.send(1 / 0)
 
 
-def setup(bot):
-    bot.add_cog(Other(bot))
+async def setup(bot):
+    await bot.add_cog(Other(bot))

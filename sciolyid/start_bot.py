@@ -57,6 +57,50 @@ class CustomBot(commands.Bot):
     def add_message_handler(self, handler):
         self.on_message_handler.append(handler)
 
+    async def setup_hook(self):
+        # Here we load our extensions(cogs) that are located in the cogs directory, each cog is a collection of commands
+        initial_extensions = [
+            "sciolyid.cogs.media",
+            "sciolyid.cogs.check",
+            "sciolyid.cogs.skip",
+            "sciolyid.cogs.hint",
+            "sciolyid.cogs.score",
+            "sciolyid.cogs.stats",
+            "sciolyid.cogs.sessions",
+            "sciolyid.cogs.race",
+            "sciolyid.cogs.meta",
+            "sciolyid.cogs.other",
+        ]
+        if config.options["state_roles"]:
+            initial_extensions.append("sciolyid.cogs.state")
+
+        for extension in config.options["disable_extensions"]:
+            try:
+                initial_extensions.remove(f"sciolyid.cogs.{extension}")
+            except ValueError as e:
+                raise config.BotConfigError(
+                    f"Unable to disable extension 'sciolyid.cogs.{extension}'"
+                ) from e
+
+        initial_extensions += config.options["custom_extensions"]
+
+        for extension in set(initial_extensions):
+            try:
+                await self.load_extension(extension)
+            except (
+                discord.ClientException,
+                ModuleNotFoundError,
+                commands.errors.ExtensionFailed,
+            ) as e:
+                if isinstance(e, commands.errors.ExtensionFailed) and e.args[
+                    0
+                ].endswith("is already an existing command or alias."):
+                    raise config.BotConfigError(
+                        f"short_id_type conflicts with a prexisting command in {extension}"
+                    )
+
+                raise GenericError(f"Failed to load extension {extension}.", 999) from e
+
 
 # Initialize bot
 intent: discord.Intents = discord.Intents.none()
@@ -64,6 +108,7 @@ intent.guilds = True
 intent.members = config.options["members_intent"]
 intent.messages = True
 intent.voice_states = True
+intent.message_content = True
 
 cache_flags: discord.MemberCacheFlags = discord.MemberCacheFlags.none()
 cache_flags.voice = True
@@ -101,50 +146,6 @@ async def on_ready():
         refresh_backup.start()
 
 
-# Here we load our extensions(cogs) that are located in the cogs directory, each cog is a collection of commands
-initial_extensions = [
-    "sciolyid.cogs.media",
-    "sciolyid.cogs.check",
-    "sciolyid.cogs.skip",
-    "sciolyid.cogs.hint",
-    "sciolyid.cogs.score",
-    "sciolyid.cogs.stats",
-    "sciolyid.cogs.sessions",
-    "sciolyid.cogs.race",
-    "sciolyid.cogs.meta",
-    "sciolyid.cogs.other",
-]
-if config.options["state_roles"]:
-    initial_extensions.append("sciolyid.cogs.state")
-
-for extension in config.options["disable_extensions"]:
-    try:
-        initial_extensions.remove(f"sciolyid.cogs.{extension}")
-    except ValueError as e:
-        raise config.BotConfigError(
-            f"Unable to disable extension 'sciolyid.cogs.{extension}'"
-        ) from e
-
-initial_extensions += config.options["custom_extensions"]
-
-for extension in set(initial_extensions):
-    try:
-        bot.load_extension(extension)
-    except (
-        discord.ClientException,
-        ModuleNotFoundError,
-        commands.errors.ExtensionFailed,
-    ) as e:
-        if isinstance(e, commands.errors.ExtensionFailed) and e.args[0].endswith(
-            "is already an existing command or alias."
-        ):
-            raise config.BotConfigError(
-                f"short_id_type conflicts with a prexisting command in {extension}"
-            )
-
-        raise GenericError(f"Failed to load extension {extension}.", 999) from e
-
-
 if sys.platform == "win32":
     asyncio.set_event_loop(asyncio.ProactorEventLoop())
 
@@ -154,8 +155,9 @@ if sys.platform == "win32":
 
 
 @bot.check
-async def prechecks(ctx):
-    await ctx.trigger_typing()
+async def prechecks(ctx: commands.Context):
+    if ctx.interaction is None:
+        await ctx.typing()
 
     logger.info("global check: checking permissions")
     await commands.bot_has_permissions(
@@ -164,8 +166,15 @@ async def prechecks(ctx):
 
     logger.info("global check: checking banned")
     if database.zscore("ignore:global", str(ctx.channel.id)) is not None:
+        if ctx.interaction is not None:
+            await ctx.send(
+                "The owner of the server has disabled commands in this channel.",
+                ephemeral=True,
+            )
         raise GenericError(code=192)
     if database.zscore("banned:global", str(ctx.author.id)) is not None:
+        if ctx.interaction is not None:
+            await ctx.send("You cannot use this command!", ephemeral=True)
         raise GenericError(code=842)
 
     logger.info("global check: logging command frequency")
@@ -181,7 +190,7 @@ async def prechecks(ctx):
 if config.options["holidays"]:
 
     @bot.check
-    async def is_holiday(ctx):
+    async def is_holiday(ctx: commands.Context):
         """April Fools Prank.
 
         Can be extended to other holidays as well.
@@ -203,7 +212,7 @@ if config.options["holidays"]:
 # GLOBAL ERROR CHECKING
 ######
 @bot.event
-async def on_command_error(ctx, error):
+async def on_command_error(ctx: commands.Context, error):
     """Handles errors for all commands without local error handlers."""
     logger.info("Error: " + str(error))
 

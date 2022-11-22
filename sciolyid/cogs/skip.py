@@ -26,9 +26,9 @@ class Skip(commands.Cog):
         self.bot = bot
 
     # Skip command - no args
-    @commands.command(help="- Skip the current image to get a new one", aliases=["sk"])
+    @commands.hybrid_command(help="- Skip the current image to get a new one", aliases=["sk"])
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.channel))
-    async def skip(self, ctx):
+    async def skip(self, ctx: commands.Context):
         logger.info("command: skip")
 
         current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode(
@@ -52,5 +52,5 @@ class Skip(commands.Cog):
             await ctx.send("You need to ask for an image first!")
 
 
-def setup(bot):
-    bot.add_cog(Skip(bot))
+async def setup(bot):
+    await bot.add_cog(Skip(bot))

@@ -17,10 +17,11 @@
 import string
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 import sciolyid.config as config
-from sciolyid.data import logger, states
+from sciolyid.data import logger, states, state_autocomplete
 from sciolyid.functions import CustomCooldown, handle_error
 
 
@@ -44,7 +45,7 @@ class States(commands.Cog):
             await ctx.send(item)
 
     # set state role
-    @commands.command(
+    @commands.hybrid_command(
         help=f"- Sets an alternate {config.options['id_type']} list",
         name="set",
         aliases=["state", "alt"],
@@ -52,7 +53,10 @@ class States(commands.Cog):
     @commands.check(CustomCooldown(5.0, bucket=commands.BucketType.user))
     @commands.guild_only()
     @commands.bot_has_permissions(manage_roles=True)
-    async def state(self, ctx, *, args):
+    @app_commands.describe(args="the specific list")
+    @app_commands.rename(args="list")
+    @app_commands.autocomplete(args=state_autocomplete)
+    async def state(self, ctx: commands.Context, *, args: str):
         logger.info("command: state set")
 
         raw_roles = ctx.author.roles
@@ -139,5 +143,5 @@ class States(commands.Cog):
             await handle_error(ctx, error)
 
 
-def setup(bot):
-    bot.add_cog(States(bot))
+async def setup(bot):
+    await bot.add_cog(States(bot))

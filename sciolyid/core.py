@@ -48,14 +48,16 @@ async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
             await ctx.send("*Please try again.*")
         return
 
-    delete = await ctx.send("**Fetching.** This may take a while.")
-    # trigger "typing" discord message
-    await ctx.trigger_typing()
+    if ctx.interaction is None:
+        delete = await ctx.send("**Fetching.** This may take a while.")
+        # trigger "typing" discord message
+        await ctx.typing()
 
     try:
         response = await get_image(ctx, item)
     except GenericError as e:
-        await delete.delete()
+        if ctx.interaction is None:
+            await delete.delete()
         if e.code == 100:
             await ctx.send("**No images were found.**")
         else:
@@ -73,8 +75,11 @@ async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
     extension = str(response[1])
     stat_info = os.stat(filename)
     if stat_info.st_size > 4000000:  # another filesize check (4mb)
-        await delete.delete()
-        await ctx.send("**Oops! File too large :(**\n*Please try again.*")
+        if ctx.interaction is None:
+            await delete.delete()
+        await ctx.send(
+            "**Oops! File too large :(**\n*Please try again.*", ephemeral=True
+        )
     else:
         file_stream: Union[str, io.BufferedIOBase]
         if bw:
@@ -94,7 +99,8 @@ async def send_image(ctx, item: str, on_error=None, message=None, bw=False):
         # change filename to avoid spoilers
         file_obj = discord.File(file_stream, filename=f"image.{extension}")
         await ctx.send(file=file_obj)
-        await delete.delete()
+        if ctx.interaction is None:
+            await delete.delete()
 
 
 async def get_image(ctx, item):
@@ -172,7 +178,7 @@ async def get_files(item, retries=0):
         logger.info("item: " + str(item))
         if retries < 3:
             retries += 1
-            await asyncio.sleep(1.5 ** retries)
+            await asyncio.sleep(1.5**retries)
             await config.options["download_func"](sciolyid.data, category, item)
             return await get_files(item, retries)
         logger.info("More than 3 retries")

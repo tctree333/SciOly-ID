@@ -18,12 +18,14 @@ import datetime
 import time
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 from discord.utils import escape_markdown as esc
 
 import sciolyid.config as config
 from sciolyid.data import (
     all_categories,
+    arg_autocomplete,
     database,
     dealias_group,
     logger,
@@ -38,7 +40,7 @@ class Race(commands.Cog):
         self.bot = bot
 
     @staticmethod
-    def _get_options(ctx):
+    def _get_options(ctx: commands.Context):
         bw, state, group, limit, strict = database.hmget(
             f"race.data:{ctx.channel.id}", ["bw", "state", "group", "limit", "strict"]
         )
@@ -56,7 +58,7 @@ class Race(commands.Cog):
 
         return options
 
-    async def _send_stats(self, ctx, preamble):
+    async def _send_stats(self, ctx: commands.Context, preamble):
         placings = 5
         database_key = f"race.scores:{ctx.channel.id}"
         if database.zcard(database_key) == 0:
@@ -112,7 +114,7 @@ class Race(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    async def stop_race(self, ctx):
+    async def stop_race(self, ctx: commands.Context):
         first = database.zrevrange(f"race.scores:{ctx.channel.id}", 0, 0, True)[0]
         if ctx.guild is not None:
             user = await fetch_get_user(int(first[0]), ctx=ctx, member=True)
@@ -140,7 +142,7 @@ class Race(commands.Cog):
         database.delete(f"race.data:{ctx.channel.id}")
         database.delete(f"race.scores:{ctx.channel.id}")
 
-    @commands.group(
+    @commands.hybrid_group(
         brief=f"- Base race command. Use '{config.options['prefixes'][0]}help race' for more info.",
         help="- Base race command\n"
         + f"Races allow you to compete with others to see who can ID {config.options['id_type']} first. "
@@ -151,7 +153,7 @@ class Race(commands.Cog):
         + f"Races end when a player is the first to correctly ID a set amount of {config.options['id_type']}. (default 10)",
     )
     @commands.guild_only()
-    async def race(self, ctx):
+    async def race(self, ctx: commands.Context):
         if ctx.invoked_subcommand is None:
             await ctx.send(
                 "**Invalid subcommand passed.**\n*Valid Subcommands:* `start, view, stop`"
@@ -166,7 +168,12 @@ class Race(commands.Cog):
         usage=f"[bw] [state]{' [group]' if config.options['id_groups'] else ''} [amount to win (default 10)]",
     )
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.channel))
-    async def start(self, ctx, *, args_str: str = ""):
+    @app_commands.rename(args_str="options")
+    @app_commands.describe(
+        args_str="Lists or groups to filter. Muliple options can be used at once (even if it doesn't autocomplete)"
+    )
+    @app_commands.autocomplete(args_str=arg_autocomplete)
+    async def start(self, ctx: commands.Context, *, args_str: str = ""):
         logger.info("command: start race")
 
         if not str(ctx.channel.name).startswith("racing"):
@@ -254,7 +261,7 @@ class Race(commands.Cog):
         + f"Races allow you to compete with your friends to ID {config.options['id_type']} first.",
     )
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.channel))
-    async def view(self, ctx):
+    async def view(self, ctx: commands.Context):
         logger.info("command: view race")
 
         if database.exists(f"race.data:{ctx.channel.id}"):
@@ -266,7 +273,7 @@ class Race(commands.Cog):
 
     @race.command(help="- Stops race", aliases=["stp", "end"])
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.channel))
-    async def stop(self, ctx):
+    async def stop(self, ctx: commands.Context):
         logger.info("command: stop race")
 
         if database.exists(f"race.data:{ctx.channel.id}"):
@@ -277,5 +284,5 @@ class Race(commands.Cog):
             )
 
 
-def setup(bot):
-    bot.add_cog(Race(bot))
+async def setup(bot):
+    await bot.add_cog(Race(bot))

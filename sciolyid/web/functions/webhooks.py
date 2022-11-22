@@ -18,7 +18,7 @@ import datetime
 import os
 
 import requests
-from discord import Color, Embed, RequestsWebhookAdapter, Webhook
+from discord import Color, Embed, SyncWebhook
 
 import sciolyid.config as config
 from sciolyid.web.functions.user import (
@@ -31,7 +31,7 @@ from sciolyid.web.functions.user import (
 WEBHOOK_URL = os.getenv(config.options["discord_webhook_env"], None)
 
 if WEBHOOK_URL:
-    webhook = Webhook.from_url(WEBHOOK_URL, adapter=RequestsWebhookAdapter())
+    webhook = SyncWebhook.from_url(WEBHOOK_URL)
 
     def bot_info() -> dict:
         url = PROFILE_URL.format(id="@me")

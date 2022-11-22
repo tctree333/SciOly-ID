@@ -14,6 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from typing import Literal
+
+from discord import app_commands
 from discord.ext import commands
 
 from sciolyid.data import database, logger
@@ -25,26 +28,32 @@ class Hint(commands.Cog):
         self.bot = bot
 
     # give hint
-    @commands.command(
+    @commands.hybrid_command(
         help="- Gives first letter of current image",
         usage="[count|c last|l all|a]",
         aliases=["h"],
     )
     @commands.check(CustomCooldown(3.0, bucket=commands.BucketType.channel))
-    async def hint(self, ctx, *args):
+    @app_commands.describe(option="type of hint to give")
+    @app_commands.rename(option="type")
+    async def hint(
+        self,
+        ctx: commands.Context,
+        option: Literal["count", "last", "all", "c", "l", "a", "first"] = "first",
+    ):
         logger.info("command: hint")
 
         current_item = database.hget(f"channel:{ctx.channel.id}", "item").decode(
             "utf-8"
         )
         if current_item != "":  # check if there is item
-            if len(args) == 0:
+            if len(option) == 0 or option == "first":
                 await ctx.send(f"The first letter is {current_item[0]}.")
-            elif args[0] == "count" or args[0] == "c":
+            elif option == "count" or option == "c":
                 await ctx.send(f"The answer has {str(len(current_item))} letters.")
-            elif args[0] == "last" or args[0] == "l":
+            elif option == "last" or option == "l":
                 await ctx.send(f"The last letter is {current_item[-1]}.")
-            elif args[0] == "all" or args[0] == "a":
+            elif option == "all" or option == "a":
                 the_hint = "`" + current_item[0]
                 for letter in current_item[1:-1]:
                     if letter != " ":
@@ -58,5 +67,5 @@ class Hint(commands.Cog):
             await ctx.send("You need to ask for a image first!")
 
 
-def setup(bot):
-    bot.add_cog(Hint(bot))
+async def setup(bot):
+    await bot.add_cog(Hint(bot))
