@@ -45,11 +45,11 @@ class CustomBot(commands.Bot):
     async def on_message(self, message: discord.Message):
         prefixes = await self.get_prefix(message)
         if isinstance(prefixes, str):
-            command = message.content.startswith(prefixes)
+            is_command = message.content.startswith(prefixes)
         else:
-            command = message.content.startswith(tuple(prefixes))
+            is_command = any(message.content.startswith(prefix) for prefix in prefixes)
 
-        if not message.author.bot and not command:
+        if not message.author.bot and not is_command:
             for handler in self.on_message_handler:
                 await handler(message)
         await super().on_message(message)
